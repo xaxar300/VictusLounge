@@ -1,12 +1,13 @@
 using Microsoft.EntityFrameworkCore;
+using System.IO;
+using System.Text.Json;
 using VictusLounge.Models;
 
 namespace VictusLounge.Data;
 
 public class AppDbContext : DbContext
 {
-    public const string ConnectionString =
-        "Server=localhost;Database=victus_lounge;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=True";
+    public static string ConnectionString { get; } = LoadConnectionString();
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Computer> Computers => Set<Computer>();
@@ -31,6 +32,44 @@ public class AppDbContext : DbContext
         {
             optionsBuilder.UseSqlServer(ConnectionString);
         }
+    }
+
+    private static string LoadConnectionString()
+    {
+        var fromEnvironment = Environment.GetEnvironmentVariable("VICTUS_DB");
+        if (!string.IsNullOrWhiteSpace(fromEnvironment))
+        {
+            return fromEnvironment;
+        }
+
+        const string fallback = "Server=localhost;Database=victus_lounge;Trusted_Connection=True;TrustServerCertificate=True";
+        var appSettingsPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+        if (!File.Exists(appSettingsPath))
+        {
+            appSettingsPath = Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json");
+        }
+
+        if (!File.Exists(appSettingsPath))
+        {
+            return fallback;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(File.ReadAllText(appSettingsPath));
+            if (document.RootElement.TryGetProperty("ConnectionStrings", out var connectionStrings)
+                && connectionStrings.TryGetProperty("DefaultConnection", out var defaultConnection)
+                && !string.IsNullOrWhiteSpace(defaultConnection.GetString()))
+            {
+                return defaultConnection.GetString()!;
+            }
+        }
+        catch
+        {
+            return fallback;
+        }
+
+        return fallback;
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -89,11 +128,11 @@ public class AppDbContext : DbContext
         {
             entity.Property(booking => booking.Id).ValueGeneratedNever();
             entity.Property(booking => booking.Status).HasMaxLength(30).IsRequired();
-            entity.HasOne<User>()
+            entity.HasOne(booking => booking.User)
                 .WithMany()
                 .HasForeignKey(booking => booking.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne<Computer>()
+            entity.HasOne(booking => booking.Computer)
                 .WithMany()
                 .HasForeignKey(booking => booking.ComputerId)
                 .OnDelete(DeleteBehavior.Restrict);
@@ -107,11 +146,11 @@ public class AppDbContext : DbContext
             entity.Property(session => session.Id).ValueGeneratedNever();
             entity.Property(session => session.TotalPrice).HasPrecision(10, 2);
             entity.Property(session => session.Status).HasMaxLength(30).IsRequired();
-            entity.HasOne<User>()
+            entity.HasOne(session => session.User)
                 .WithMany()
                 .HasForeignKey(session => session.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne<Computer>()
+            entity.HasOne(session => session.Computer)
                 .WithMany()
                 .HasForeignKey(session => session.ComputerId)
                 .OnDelete(DeleteBehavior.Restrict);
@@ -126,7 +165,7 @@ public class AppDbContext : DbContext
             entity.Property(payment => payment.Amount).HasPrecision(10, 2);
             entity.Property(payment => payment.PaymentType).HasMaxLength(50).IsRequired();
             entity.Property(payment => payment.Comment).HasMaxLength(300).IsRequired();
-            entity.HasOne<User>()
+            entity.HasOne(payment => payment.User)
                 .WithMany()
                 .HasForeignKey(payment => payment.UserId)
                 .OnDelete(DeleteBehavior.Restrict);

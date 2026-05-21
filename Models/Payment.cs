@@ -6,6 +6,7 @@ public class Payment
 {
     public int Id { get; set; }
     public int UserId { get; set; }
+    public User User { get; set; } = null!;
     public decimal Amount { get; set; }
     public string PaymentType { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }

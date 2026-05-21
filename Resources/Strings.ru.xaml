@@ -1,3 +1,4 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
@@ -102,7 +103,7 @@
     <sys:String x:Key="Cabinet.ProgressValue">72% · осталось 420 бонусных очков</sys:String>
     <sys:String x:Key="Cabinet.ActiveBooking">Активная бронь</sys:String>
     <sys:String x:Key="Cabinet.NextBenefit">Следующая выгода</sys:String>
-    <sys:String x:Key="Cabinet.NextBenefitText">Evening Pack выгоднее обычной оплаты на 13 BYN при игре 4 часа.</sys:String>
+    <sys:String x:Key="Cabinet.NextBenefitText">Подсказка обновляется по текущим тарифам.</sys:String>
     <sys:String x:Key="Cabinet.Balance">Баланс</sys:String>
     <sys:String x:Key="Cabinet.Bonuses">Бонусы</sys:String>
     <sys:String x:Key="Cabinet.Played">Наиграно</sys:String>

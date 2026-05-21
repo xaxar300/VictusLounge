@@ -102,7 +102,7 @@
     <sys:String x:Key="Cabinet.ProgressValue">72% · 420 bonus points left</sys:String>
     <sys:String x:Key="Cabinet.ActiveBooking">Active booking</sys:String>
     <sys:String x:Key="Cabinet.NextBenefit">Next benefit</sys:String>
-    <sys:String x:Key="Cabinet.NextBenefitText">Evening Pack saves 13 BYN compared with regular payment for a 4-hour session.</sys:String>
+    <sys:String x:Key="Cabinet.NextBenefitText">The hint updates from the current tariffs.</sys:String>
     <sys:String x:Key="Cabinet.Balance">Balance</sys:String>
     <sys:String x:Key="Cabinet.Bonuses">Bonuses</sys:String>
     <sys:String x:Key="Cabinet.Played">Played</sys:String>
