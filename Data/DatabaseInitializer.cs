@@ -40,32 +40,8 @@ public static class DatabaseInitializer
         UpsertGameSessions(dbContext);
         UpsertPayments(dbContext);
         UpsertShifts(dbContext);
-        NormalizeUserBalancesFromPayments(dbContext);
 
         dbContext.SaveChanges();
-    }
-
-    private static void NormalizeUserBalancesFromPayments(AppDbContext dbContext)
-    {
-        foreach (var user in dbContext.Users)
-        {
-            var topups = dbContext.Payments
-                .Where(payment => payment.UserId == user.Id
-                    && payment.Comment.Contains("Balance top-up")
-                    && (payment.PaymentType == "Card" || payment.PaymentType == "Online"))
-                .Sum(payment => payment.Amount);
-            if (topups <= 0)
-            {
-                continue;
-            }
-
-            var packagePurchases = dbContext.Payments
-                .Where(payment => payment.UserId == user.Id
-                    && payment.Comment.StartsWith("Package purchase"))
-                .Sum(payment => payment.Amount);
-            var calculatedBalance = Math.Max(0, topups - packagePurchases);
-            user.Balance = calculatedBalance;
-        }
     }
 
     private static void UpsertUsers(AppDbContext dbContext)

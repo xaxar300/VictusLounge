@@ -947,7 +947,7 @@
                                             <Button x:Name="BalanceReceiptButton" Content="Экспорт" DockPanel.Dock="Right" Style="{StaticResource GhostButtonStyle}" Tag="export" Click="BalanceAction_Click" Width="96" MinHeight="34" Padding="0" />
                                         </DockPanel>
 
-                                        <Grid>
+                                        <Grid x:Name="BalanceHistoryGrid">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="0.7*" />
                                                 <ColumnDefinition Width="1.7*" />
@@ -957,10 +957,6 @@
                                             </Grid.ColumnDefinitions>
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto" />
-                                                <RowDefinition Height="Auto" />
-                                                <RowDefinition Height="Auto" />
-                                                <RowDefinition Height="Auto" />
-                                                <RowDefinition Height="Auto" />
                                             </Grid.RowDefinitions>
 
                                             <TextBlock x:Name="BalanceDateHeaderText" Text="Дата" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" />
@@ -968,30 +964,6 @@
                                             <TextBlock x:Name="BalanceMethodHeaderText" Grid.Column="2" Text="Метод" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" />
                                             <TextBlock x:Name="BalanceSumHeaderText" Grid.Column="3" Text="Сумма" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" />
                                             <TextBlock x:Name="BalanceStatusHeaderText" Grid.Column="4" Text="Статус" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" HorizontalAlignment="Right" />
-
-                                            <TextBlock Grid.Row="1" Text="08.05" Foreground="{DynamicResource MutedBrush}" Margin="0,13,0,0" />
-                                            <TextBlock x:Name="BalanceHistoryBookingText" Grid.Row="1" Grid.Column="1" Text="Бронь VIP-03" FontWeight="Bold" Margin="0,13,0,0" />
-                                            <TextBlock x:Name="BalanceHistoryBalanceMethodText" Grid.Row="1" Grid.Column="2" Text="Баланс" Foreground="{DynamicResource MutedBrush}" Margin="0,13,0,0" />
-                                            <TextBlock Grid.Row="1" Grid.Column="3" Text="-32.4 BYN" Foreground="{DynamicResource DangerBrush}" FontWeight="Bold" Margin="0,13,0,0" />
-                                            <TextBlock x:Name="BalanceHistoryPaidText" Grid.Row="1" Grid.Column="4" Text="Списано" Foreground="{DynamicResource OkBrush}" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,13,0,0" />
-
-                                            <TextBlock Grid.Row="2" Text="05.05" Foreground="{DynamicResource MutedBrush}" Margin="0,13,0,0" />
-                                            <TextBlock x:Name="BalanceHistoryTopupText" Grid.Row="2" Grid.Column="1" Text="Пополнение" FontWeight="Bold" Margin="0,13,0,0" />
-                                            <TextBlock Grid.Row="2" Grid.Column="2" Text="Card" Foreground="{DynamicResource MutedBrush}" Margin="0,13,0,0" />
-                                            <TextBlock Grid.Row="2" Grid.Column="3" Text="+50 BYN" Foreground="{DynamicResource OkBrush}" FontWeight="Bold" Margin="0,13,0,0" />
-                                            <TextBlock x:Name="BalanceHistorySuccessText" Grid.Row="2" Grid.Column="4" Text="Успешно" Foreground="{DynamicResource OkBrush}" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,13,0,0" />
-
-                                            <TextBlock Grid.Row="3" Text="05.05" Foreground="{DynamicResource MutedBrush}" Margin="0,13,0,0" />
-                                            <TextBlock x:Name="BalanceHistoryBonusText" Grid.Row="3" Grid.Column="1" Text="Gold бонус" FontWeight="Bold" Margin="0,13,0,0" />
-                                            <TextBlock Grid.Row="3" Grid.Column="2" Text="Bonus" Foreground="{DynamicResource MutedBrush}" Margin="0,13,0,0" />
-                                            <TextBlock Grid.Row="3" Grid.Column="3" Text="+5" Foreground="{DynamicResource OkBrush}" FontWeight="Bold" Margin="0,13,0,0" />
-                                            <TextBlock x:Name="BalanceHistoryAccruedText" Grid.Row="3" Grid.Column="4" Text="Начислено" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,13,0,0" />
-
-                                            <TextBlock Grid.Row="4" Text="01.05" Foreground="{DynamicResource MutedBrush}" Margin="0,13,0,0" />
-                                            <TextBlock Grid.Row="4" Grid.Column="1" Text="Night Pack" FontWeight="Bold" Margin="0,13,0,0" />
-                                            <TextBlock x:Name="BalanceHistoryPackageMethodText" Grid.Row="4" Grid.Column="2" Text="Пакет" Foreground="{DynamicResource MutedBrush}" Margin="0,13,0,0" />
-                                            <TextBlock Grid.Row="4" Grid.Column="3" Text="-49 BYN" Foreground="{DynamicResource DangerBrush}" FontWeight="Bold" Margin="0,13,0,0" />
-                                            <TextBlock x:Name="BalanceHistoryActivatedText" Grid.Row="4" Grid.Column="4" Text="Активирован" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,13,0,0" />
                                         </Grid>
                                     </StackPanel>
                                 </Border>

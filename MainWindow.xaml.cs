@@ -596,6 +596,7 @@ public partial class MainWindow : Window
         }
 
         RebuildCabinetSessionsGrid(userSessions, computers);
+        RebuildBalanceHistoryGrid(userPayments);
     }
 
     private void RebuildCabinetSessionsGrid(IReadOnlyCollection<GameSession> sessions, IReadOnlyDictionary<int, Computer> computers)
@@ -668,6 +669,211 @@ public partial class MainWindow : Window
         Grid.SetRow(textBlock, row);
         Grid.SetColumn(textBlock, column);
         CabinetSessionsGrid.Children.Add(textBlock);
+    }
+
+    private void RefreshBalanceHistoryFromDatabase()
+    {
+        if (BalanceHistoryGrid is null)
+        {
+            return;
+        }
+
+        if (_currentUserId <= 0)
+        {
+            RebuildBalanceHistoryGrid(Array.Empty<Payment>());
+            return;
+        }
+
+        try
+        {
+            using var dbContext = new AppDbContext();
+            var payments = dbContext.Payments
+                .AsNoTracking()
+                .Where(payment => payment.UserId == _currentUserId)
+                .OrderByDescending(payment => payment.CreatedAt)
+                .Take(8)
+                .ToList();
+            RebuildBalanceHistoryGrid(payments);
+        }
+        catch
+        {
+            RebuildBalanceHistoryGrid(Array.Empty<Payment>());
+        }
+    }
+
+    private void RebuildBalanceHistoryGrid(IReadOnlyList<Payment> payments)
+    {
+        if (BalanceHistoryGrid is null)
+        {
+            return;
+        }
+
+        var headerChildren = BalanceHistoryGrid.Children
+            .OfType<UIElement>()
+            .Where(child => Grid.GetRow(child) == 0)
+            .ToArray();
+        BalanceHistoryGrid.Children.Clear();
+        BalanceHistoryGrid.RowDefinitions.Clear();
+        BalanceHistoryGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        foreach (var child in headerChildren)
+        {
+            BalanceHistoryGrid.Children.Add(child);
+        }
+
+        if (payments.Count == 0)
+        {
+            BalanceHistoryGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            var emptyText = new TextBlock
+            {
+                Text = "Пока нет операций по балансу.",
+                Foreground = (Brush)FindResource("MutedBrush"),
+                Margin = new Thickness(0, 13, 0, 0),
+                TextWrapping = TextWrapping.Wrap
+            };
+            Grid.SetRow(emptyText, 1);
+            Grid.SetColumn(emptyText, 0);
+            Grid.SetColumnSpan(emptyText, 5);
+            BalanceHistoryGrid.Children.Add(emptyText);
+            return;
+        }
+
+        var visible = payments.Take(8).ToList();
+        for (var i = 0; i < visible.Count; i++)
+        {
+            var payment = visible[i];
+            var rowIndex = i + 1;
+            BalanceHistoryGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            var status = FormatPaymentStatus(payment);
+            var (amountBrush, statusBrush) = ResolveBalanceHistoryBrushes(payment, status);
+
+            AddBalanceHistoryCell(rowIndex, 0, payment.CreatedAt.ToString("dd.MM"), "MutedBrush", FontWeights.Normal);
+            AddBalanceHistoryCell(rowIndex, 1, FormatPaymentOperation(payment), "TextBrush", FontWeights.Bold);
+            AddBalanceHistoryCell(rowIndex, 2, FormatPaymentMethod(payment), "MutedBrush", FontWeights.Normal);
+            AddBalanceHistoryCell(rowIndex, 3, FormatPaymentAmount(payment), amountBrush, FontWeights.Bold);
+            AddBalanceHistoryCell(rowIndex, 4, status, statusBrush, FontWeights.Bold, alignRight: true);
+        }
+    }
+
+    private void AddBalanceHistoryCell(int row, int column, string text, string brushKey, FontWeight weight, bool alignRight = false)
+    {
+        var block = new TextBlock
+        {
+            Text = text,
+            Foreground = (Brush)FindResource(brushKey),
+            FontWeight = weight,
+            Margin = new Thickness(0, 13, 0, 0),
+            HorizontalAlignment = alignRight ? HorizontalAlignment.Right : HorizontalAlignment.Left,
+            TextWrapping = TextWrapping.Wrap
+        };
+        Grid.SetRow(block, row);
+        Grid.SetColumn(block, column);
+        BalanceHistoryGrid.Children.Add(block);
+    }
+
+    private static string FormatPaymentAmount(Payment payment)
+    {
+        if (payment.Amount > 0)
+        {
+            return $"+{payment.Amount:0.##} BYN";
+        }
+        if (payment.Amount < 0)
+        {
+            return $"{payment.Amount:0.##} BYN";
+        }
+        return "0 BYN";
+    }
+
+    private static (string AmountBrush, string StatusBrush) ResolveBalanceHistoryBrushes(Payment payment, string status)
+    {
+        var amountBrush = string.Equals(payment.PaymentType, "Bonus", StringComparison.OrdinalIgnoreCase)
+            ? "GoldLightBrush"
+            : payment.Amount < 0
+                ? "DangerBrush"
+                : "OkBrush";
+        var statusBrush = status switch
+        {
+            "Ожидает" => "WaitBrush",
+            "Начислено" => "GoldLightBrush",
+            _ => "OkBrush"
+        };
+        return (amountBrush, statusBrush);
+    }
+
+    private static string FormatPaymentOperation(Payment payment)
+    {
+        var comment = payment.Comment ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(comment))
+        {
+            return string.Equals(payment.PaymentType, "Bonus", StringComparison.OrdinalIgnoreCase)
+                ? "Бонус"
+                : "Операция";
+        }
+        if (comment.StartsWith("Pending balance top-up", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Ожидание пополнения";
+        }
+        if (comment.Contains("Balance top-up", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Пополнение баланса";
+        }
+        if (comment.StartsWith("Package purchase", StringComparison.OrdinalIgnoreCase))
+        {
+            var separator = comment.IndexOf(';');
+            var head = separator > 0 ? comment[..separator] : comment;
+            return head.Replace("Package purchase", "Покупка пакета", StringComparison.OrdinalIgnoreCase);
+        }
+        if (comment.StartsWith("Guest session", StringComparison.OrdinalIgnoreCase))
+        {
+            return comment.Replace("Guest session", "Гостевая сессия", StringComparison.OrdinalIgnoreCase);
+        }
+        if (comment.StartsWith("Session extension", StringComparison.OrdinalIgnoreCase))
+        {
+            return comment.Replace("Session extension", "Продление сессии", StringComparison.OrdinalIgnoreCase);
+        }
+        if (comment.StartsWith("Payment confirmed", StringComparison.OrdinalIgnoreCase))
+        {
+            return comment.Replace("Payment confirmed", "Оплата сессии", StringComparison.OrdinalIgnoreCase);
+        }
+        if (comment.StartsWith("Shift expense", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Расход смены";
+        }
+        if (comment.StartsWith("Bulk payment", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Подтверждение очереди оплат";
+        }
+        return comment.Length > 60 ? comment[..60] + "…" : comment;
+    }
+
+    private static string FormatPaymentMethod(Payment payment)
+    {
+        var paymentType = payment.PaymentType ?? string.Empty;
+        return paymentType switch
+        {
+            "Card" => "Карта",
+            "Cash" => "Наличные",
+            "Online" => "Онлайн",
+            "Bonus" => "Бонусы",
+            "PendingErip" => "ЕРИП",
+            "PendingCash" => "Наличные",
+            _ when paymentType.StartsWith("Pending", StringComparison.OrdinalIgnoreCase) => "Ожидание",
+            _ => paymentType
+        };
+    }
+
+    private static string FormatPaymentStatus(Payment payment)
+    {
+        var paymentType = payment.PaymentType ?? string.Empty;
+        if (paymentType.StartsWith("Pending", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Ожидает";
+        }
+        if (string.Equals(paymentType, "Bonus", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Начислено";
+        }
+        return payment.Amount < 0 ? "Списано" : "Успешно";
     }
 
     private static string GetClientTier(decimal balance)
@@ -1075,15 +1281,7 @@ public partial class MainWindow : Window
         BalanceMethodHeaderText.Text = T("Balance.Method");
         BalanceSumHeaderText.Text = T("Table.Amount");
         BalanceStatusHeaderText.Text = T("Balance.Status");
-        BalanceHistoryBookingText.Text = T("Balance.HistoryBooking");
-        BalanceHistoryBalanceMethodText.Text = T("Nav.Balance");
-        BalanceHistoryPaidText.Text = T("Balance.Paid");
-        BalanceHistoryTopupText.Text = T("Balance.TopupOperation");
-        BalanceHistorySuccessText.Text = T("Balance.Success");
-        BalanceHistoryBonusText.Text = T("Balance.GoldBonus");
-        BalanceHistoryAccruedText.Text = T("Balance.Accrued");
-        BalanceHistoryPackageMethodText.Text = T("Balance.Package");
-        BalanceHistoryActivatedText.Text = T("Balance.Activated");
+        RefreshBalanceHistoryFromDatabase();
     }
 
     private string GetStatusText(string status, bool useMaintenanceWord = false)
@@ -2696,6 +2894,12 @@ public partial class MainWindow : Window
         }
 
         BookingErrorText.Visibility = Visibility.Collapsed;
+
+        if (!SaveBookingSelectionToDatabase())
+        {
+            return;
+        }
+
         BookingConfirmText.Text =
             $"ПК: {SummarySeatsText.Text}\n" +
             $"Зона: {SummaryZoneText.Text}\n" +
@@ -2704,34 +2908,69 @@ public partial class MainWindow : Window
             $"Тариф: {SummaryTariffText.Text}\n" +
             $"Итого: {SummaryTotalText.Text}";
 
-        SaveBookingSelectionToDatabase();
-
-        foreach (var seat in _selectedSeats.ToArray())
-        {
-            SetPcStatus(seat, "reserved");
-        }
-        RefreshAdminUx();        BookingConfirmOverlay.Visibility = Visibility.Visible;
+        ApplyMapPcButtonStatuses();
+        RebuildBookingSeatGrid();
+        RefreshAdminUx();
+        BookingConfirmOverlay.Visibility = Visibility.Visible;
         ShowStatus("Бронь подтверждена", $"{SummarySeatsText.Text}, {SummaryDateText.Text}, {SummaryTimeText.Text}. Итог: {SummaryTotalText.Text}.");
     }
 
-    private void SaveBookingSelectionToDatabase()
+    private bool SaveBookingSelectionToDatabase()
     {
+        var start = _bookingDate.Date.AddHours(_bookingHour).AddMinutes(_bookingMinute);
+        var end = start.AddHours(_bookingDuration);
+
+        if (end <= start)
+        {
+            BookingErrorText.Text = "Окончание брони должно быть позже её начала.";
+            BookingErrorText.Visibility = Visibility.Visible;
+            return false;
+        }
+
+        if (start < DateTime.Now.AddMinutes(-15))
+        {
+            BookingErrorText.Text = "Нельзя бронировать на прошедшее время. Выберите ближайший свободный час.";
+            BookingErrorText.Visibility = Visibility.Visible;
+            return false;
+        }
+
         try
         {
             using var dbContext = new AppDbContext();
-            var nextBookingId = dbContext.Bookings.Any() ? dbContext.Bookings.Max(booking => booking.Id) + 1 : 1;
-            var nextPaymentId = dbContext.Payments.Any() ? dbContext.Payments.Max(payment => payment.Id) + 1 : 1;
-            var start = _bookingDate.Date.AddHours(_bookingHour).AddMinutes(_bookingMinute);
-            var end = start.AddHours(_bookingDuration);
-            var total = _bookingTariff * _bookingDuration * _selectedSeats.Count * GetDiscountFactor();
 
-            foreach (var seat in _selectedSeats.Order())
+            var seats = _selectedSeats.Order().ToArray();
+            var resolvedComputers = new Dictionary<string, Computer>(StringComparer.Ordinal);
+            foreach (var seat in seats)
             {
                 var computer = dbContext.Computers.FirstOrDefault(item => item.Name == seat);
                 if (computer is null)
                 {
-                    continue;
+                    BookingErrorText.Text = $"ПК {seat} не найден в базе данных.";
+                    BookingErrorText.Visibility = Visibility.Visible;
+                    return false;
                 }
+
+                var hasConflict = dbContext.Bookings.Any(booking =>
+                    booking.ComputerId == computer.Id
+                    && booking.Status != "Cancelled"
+                    && booking.StartTime < end
+                    && booking.EndTime > start);
+                if (hasConflict)
+                {
+                    BookingErrorText.Text = $"ПК {seat} уже занят на это время. Выберите другой интервал или место.";
+                    BookingErrorText.Visibility = Visibility.Visible;
+                    return false;
+                }
+
+                resolvedComputers[seat] = computer;
+            }
+
+            var nextBookingId = dbContext.Bookings.Any() ? dbContext.Bookings.Max(booking => booking.Id) + 1 : 1;
+            var isImminent = start.Date == DateTime.Today && start <= DateTime.Now.AddHours(1);
+
+            foreach (var seat in seats)
+            {
+                var computer = resolvedComputers[seat];
 
                 dbContext.Bookings.Add(new Booking
                 {
@@ -2744,18 +2983,11 @@ public partial class MainWindow : Window
                     CreatedAt = DateTime.Now
                 });
 
-                computer.Status = "reserved";
+                if (isImminent)
+                {
+                    computer.Status = "reserved";
+                }
             }
-
-            dbContext.Payments.Add(new Payment
-            {
-                Id = nextPaymentId,
-                UserId = _currentUserId,
-                Amount = total,
-                PaymentType = "Pending",
-                CreatedAt = DateTime.Now,
-                Comment = $"Booking: {string.Join(", ", _selectedSeats.Order())}"
-            });
 
             dbContext.SaveChanges();
             LoadDatabaseState();
@@ -2765,10 +2997,14 @@ public partial class MainWindow : Window
             {
                 RefreshClientUx(dbContext, currentUser);
             }
+
+            return true;
         }
         catch
         {
-            // The booking confirmation remains visible even if SQL Server is unavailable.
+            BookingErrorText.Text = "Не удалось сохранить бронь: проверьте подключение к SQL Server.";
+            BookingErrorText.Visibility = Visibility.Visible;
+            return false;
         }
     }
 
