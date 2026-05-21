@@ -1,0 +1,23 @@
+# Build output
+bin/
+obj/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Local databases and logs
+*.db
+*.db-shm
+*.db-wal
+*.mdf
+*.ldf
+*.log
+
+# OS files
+Thumbs.db
+Desktop.ini

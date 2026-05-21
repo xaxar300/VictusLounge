@@ -1,0 +1,18 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Color x:Key="Theme.BgColor">#070707</Color>
+    <Color x:Key="Theme.ShellColor">#181818</Color>
+    <Color x:Key="Theme.PanelColor">#1F1F1F</Color>
+    <Color x:Key="Theme.SurfaceColor">#151515</Color>
+    <Color x:Key="Theme.TextColor">#F6F0E3</Color>
+    <Color x:Key="Theme.MutedColor">#A9A092</Color>
+    <Color x:Key="Theme.DimColor">#70685E</Color>
+    <Color x:Key="Theme.GoldColor">#D4AF37</Color>
+    <Color x:Key="Theme.GoldLightColor">#F2D57A</Color>
+    <Color x:Key="Theme.GoldDarkColor">#A88928</Color>
+    <Color x:Key="Theme.LineColor">#4DD4AF37</Color>
+    <Color x:Key="Theme.LineSoftColor">#17FFFFFF</Color>
+    <Color x:Key="Theme.OkColor">#68D889</Color>
+    <Color x:Key="Theme.DangerColor">#E66B6B</Color>
+    <Color x:Key="Theme.WaitColor">#EDC86B</Color>
+</ResourceDictionary>
