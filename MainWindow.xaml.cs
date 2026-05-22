@@ -291,6 +291,7 @@ public partial class MainWindow : Window
             UpdateAnnouncementText();
             UpdateCabinetNextBenefit();
             RebuildTodayClubList(dbContext);
+            RebuildOwnerStaffList(dbContext);
         }
         catch (Exception ex)
         {
@@ -435,6 +436,44 @@ public partial class MainWindow : Window
             {
                 Text = "На сегодня нет активных броней и сессий.",
                 Foreground = (Brush)FindResource("MutedBrush"),
+                TextWrapping = TextWrapping.Wrap
+            });
+        }
+    }
+
+    private void RebuildOwnerStaffList(AppDbContext dbContext)
+    {
+        if (!IsLoaded || OwnerStaffList is null)
+        {
+            return;
+        }
+
+        OwnerStaffList.Children.Clear();
+        var shifts = dbContext.Shifts
+            .AsNoTracking()
+            .OrderByDescending(shift => shift.StartTime)
+            .Take(3)
+            .ToList();
+
+        if (shifts.Count == 0)
+        {
+            OwnerStaffList.Children.Add(new TextBlock
+            {
+                Text = "Смены пока не заведены.",
+                Foreground = (Brush)FindResource("MutedBrush"),
+                TextWrapping = TextWrapping.Wrap
+            });
+            return;
+        }
+
+        foreach (var shift in shifts)
+        {
+            var endText = shift.EndTime?.ToString("HH:mm") ?? "открыта";
+            OwnerStaffList.Children.Add(new TextBlock
+            {
+                Text = $"{shift.EmployeeName} · {shift.StartTime:dd.MM HH:mm}-{endText} · касса {shift.CashTotal:0.##} BYN",
+                Foreground = (Brush)FindResource("MutedBrush"),
+                Margin = new Thickness(0, 0, 0, 10),
                 TextWrapping = TextWrapping.Wrap
             });
         }
@@ -2370,6 +2409,11 @@ public partial class MainWindow : Window
         }
 
         var action = element.Tag?.ToString() ?? "admin-action";
+        if (HandleAdminSessionAction(action))
+        {
+            return;
+        }
+
         switch (action)
         {
             case "admin-new-session":
@@ -2385,70 +2429,24 @@ public partial class MainWindow : Window
 
             case "admin-payment":
             case "admin-pay-std10":
-                if (AdminStd10Button.IsEnabled)
-                {
-                    _adminPaymentQueue = Math.Max(0, _adminPaymentQueue - 1);
-                    _shiftCash += 24;
-                    SavePaymentConfirmation("STD-10", 24m);
-                    AdminStd10Status.Text = "Оплачено";
-                    AdminStd10Status.Foreground = (Brush)FindResource("OkBrush");
-                    AdminStd10Button.Content = "Готово";
-                    AdminStd10Button.IsEnabled = false;
-                    AdminStd10Button.Style = (Style)FindResource("GhostButtonStyle");
-                    RefreshAdminUx();
-                    AddAdminLog("STD-10 payment confirmed");
-                    ShowStatus("Оплата принята", "STD-10 переведен в оплаченные. Касса +24 BYN.");
-                }
-                else
-                {
-                    ShowStatus("Оплата уже отмечена", "STD-10 уже не находится в очереди платежей.");
-                }
+                PayFirstPendingAdminSession();
                 break;
 
             case "admin-settle-all":
                 SaveAllPendingPaymentsAsCash(18m);
                 _shiftCash += _adminPaymentQueue * 18;
                 _adminPaymentQueue = 0;
-                AdminStd10Status.Text = "Оплачено";
-                AdminStd10Status.Foreground = (Brush)FindResource("OkBrush");
-                AdminStd10Button.Content = "Готово";
-                AdminStd10Button.IsEnabled = false;
-                AdminStd10Button.Style = (Style)FindResource("GhostButtonStyle");
                 RefreshAdminUx();
                 AddAdminLog("All pending payments settled");
                 ShowStatus("Оплаты закрыты", "Все ожидающие платежи отмечены как оплаченные, касса пересчитана.");
                 break;
 
             case "admin-close-vip03":
-                if (AdminVip03Button.IsEnabled)
-                {
-                    _adminActiveSessions = Math.Max(0, _adminActiveSessions - 1);
-                    _adminFreePcs++;
-                    SaveSessionClosed("VIP-03");
-                    AdminVip03Status.Text = "Закрыта";
-                    AdminVip03Status.Foreground = (Brush)FindResource("MutedBrush");
-                    AdminVip03Button.Content = "Закрыто";
-                    AdminVip03Button.IsEnabled = false;
-                    SetPcStatus("VIP-03", PcStatuses.Free);
-                    RefreshAdminUx();
-                    AddAdminLog("VIP-03 closed and released");
-                    ShowStatus("Сессия закрыта", "VIP-03 освобожден и стал доступен на карте клуба.");
-                }
-                else
-                {
-                    ShowStatus("Уже закрыто", "VIP-03 уже был освобожден ранее.");
-                }
+                CloseAdminSession("VIP-03");
                 break;
 
             case "admin-extend-ba01":
-                AdminBa01Time.Text = AdminBa01Time.Text == "21:00" ? "22:00" : "23:00";
-                AdminBa01Status.Text = "Продлена";
-                AdminBa01Status.Foreground = (Brush)FindResource("OkBrush");
-                _shiftOnline += 36;
-                SaveSessionExtension("BA-01", 36m);
-                RefreshAdminUx();
-                AddAdminLog($"BA-01 extended until {AdminBa01Time.Text}");
-                ShowStatus("Сессия продлена", $"Bootcamp A продлен до {AdminBa01Time.Text}. Онлайн +36 BYN.");
+                ExtendAdminSession("BA-01");
                 break;
 
             case "admin-service":
@@ -2590,9 +2588,130 @@ public partial class MainWindow : Window
         ShowStatus(done ? "Задача выполнена" : "Задача возвращена", checkBox.Content?.ToString() ?? "Задача смены");
     }
 
+    private bool HandleAdminSessionAction(string action)
+    {
+        var parts = action.Split('|', 2);
+        if (parts.Length != 2)
+        {
+            return false;
+        }
+
+        switch (parts[0])
+        {
+            case "admin-close-session":
+                CloseAdminSession(parts[1]);
+                return true;
+
+            case "admin-pay-session":
+                PayAdminSession(parts[1]);
+                return true;
+
+            case "admin-extend-session":
+                ExtendAdminSession(parts[1]);
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
+    private void CloseAdminSession(string computerName)
+    {
+        _adminActiveSessions = Math.Max(0, _adminActiveSessions - 1);
+        _adminFreePcs++;
+        SaveSessionClosed(computerName);
+        SetPcStatus(computerName, PcStatuses.Free);
+        RefreshAdminUx();
+        AddAdminLog($"{computerName} closed and released");
+        ShowStatus("Сессия закрыта", $"{computerName} освобожден и стал доступен на карте клуба.");
+    }
+
+    private void PayAdminSession(string computerName)
+    {
+        var amount = GetOpenSessionAmount(computerName) ?? 0m;
+        if (amount <= 0)
+        {
+            ShowStatus("Оплата не найдена", $"{computerName}: нет ожидающей оплаты в активных сессиях.");
+            return;
+        }
+
+        _adminPaymentQueue = Math.Max(0, _adminPaymentQueue - 1);
+        _shiftCash += amount;
+        SavePaymentConfirmation(computerName, amount);
+        RefreshAdminUx();
+        AddAdminLog($"{computerName} payment confirmed");
+        ShowStatus("Оплата принята", $"{computerName}: касса +{amount:0.##} BYN.");
+    }
+
+    private void PayFirstPendingAdminSession()
+    {
+        try
+        {
+            using var dbContext = new AppDbContext();
+            var session = dbContext.GameSessions
+                .AsNoTracking()
+                .Where(item => item.EndTime == null && item.Status == SessionStatuses.AwaitingPayment)
+                .OrderBy(item => item.StartTime)
+                .FirstOrDefault();
+            if (session is null)
+            {
+                ShowStatus("Оплата не найдена", "В БД нет активных сессий, ожидающих оплату.");
+                return;
+            }
+
+            var computerName = dbContext.Computers
+                .AsNoTracking()
+                .Where(item => item.Id == session.ComputerId)
+                .Select(item => item.Name)
+                .FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(computerName))
+            {
+                ShowStatus("Оплата не найдена", "ПК для ожидающей оплаты не найден в БД.");
+                return;
+            }
+
+            PayAdminSession(computerName);
+        }
+        catch (Exception ex)
+        {
+            ShowDatabaseError("Ошибка поиска оплаты", ex);
+        }
+    }
+
+    private void ExtendAdminSession(string computerName)
+    {
+        const decimal extensionPrice = 36m;
+        _shiftOnline += extensionPrice;
+        SaveSessionExtension(computerName, extensionPrice);
+        RefreshAdminUx();
+        AddAdminLog($"{computerName} extended");
+        ShowStatus("Сессия продлена", $"{computerName}: онлайн +{extensionPrice:0.##} BYN.");
+    }
+
+    private decimal? GetOpenSessionAmount(string computerName)
+    {
+        try
+        {
+            using var dbContext = new AppDbContext();
+            return dbContext.GameSessions
+                .AsNoTracking()
+                .Where(session => session.EndTime == null
+                    && dbContext.Computers.Any(computer => computer.Id == session.ComputerId && computer.Name == computerName))
+                .OrderByDescending(session => session.StartTime)
+                .Select(session => (decimal?)session.TotalPrice)
+                .FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            ShowDatabaseError("Ошибка чтения сессии", ex);
+            return null;
+        }
+    }
+
     private void RefreshAdminUx()
     {
         RecalculateOwnerMetrics();
+        RebuildAdminSessionsGrid();
 
         AdminActiveSessionsValue.Text = _adminActiveSessions.ToString();
         AdminPaymentQueueValue.Text = _adminPaymentQueue.ToString();
@@ -2611,6 +2730,138 @@ public partial class MainWindow : Window
         OwnerRoyalPriceText.Text = $"{_royalRate} BYN/час · 5 ПК";
         OwnerPeakModeButton.Style = (Style)FindResource(_ownerDemandMode == "peak" ? "PrimaryButtonStyle" : "GhostButtonStyle");
         OwnerNightModeButton.Style = (Style)FindResource(_ownerDemandMode == "night" ? "PrimaryButtonStyle" : "GhostButtonStyle");
+    }
+
+    private void RebuildAdminSessionsGrid()
+    {
+        if (!IsLoaded || AdminSessionsGrid is null)
+        {
+            return;
+        }
+
+        while (AdminSessionsGrid.Children.Count > 4)
+        {
+            AdminSessionsGrid.Children.RemoveAt(4);
+        }
+
+        while (AdminSessionsGrid.RowDefinitions.Count > 1)
+        {
+            AdminSessionsGrid.RowDefinitions.RemoveAt(AdminSessionsGrid.RowDefinitions.Count - 1);
+        }
+
+        try
+        {
+            using var dbContext = new AppDbContext();
+            var sessions = dbContext.GameSessions
+                .AsNoTracking()
+                .Where(session => session.EndTime == null && session.Status != SessionStatuses.Closed)
+                .OrderBy(session => session.StartTime)
+                .Take(5)
+                .ToList();
+            var computers = dbContext.Computers.AsNoTracking().ToDictionary(computer => computer.Id);
+            var users = dbContext.Users.AsNoTracking().ToDictionary(user => user.Id);
+
+            if (sessions.Count == 0)
+            {
+                AdminSessionsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                var emptyText = new TextBlock
+                {
+                    Text = "Нет активных сессий в базе данных.",
+                    Foreground = (Brush)FindResource("MutedBrush"),
+                    Margin = new Thickness(0, 14, 0, 0),
+                    TextWrapping = TextWrapping.Wrap
+                };
+                Grid.SetRow(emptyText, 1);
+                Grid.SetColumnSpan(emptyText, 5);
+                AdminSessionsGrid.Children.Add(emptyText);
+                return;
+            }
+
+            for (var i = 0; i < sessions.Count; i++)
+            {
+                var session = sessions[i];
+                var row = i + 1;
+                computers.TryGetValue(session.ComputerId, out var computer);
+                users.TryGetValue(session.UserId, out var user);
+
+                var computerName = computer?.Name ?? $"ПК-{session.ComputerId}";
+                var clientName = user?.FullName ?? $"User #{session.UserId}";
+                var endText = session.EndTime?.ToString("HH:mm") ?? "открыта";
+                var statusText = FormatAdminSessionStatus(session.Status);
+                var statusBrush = ResolveAdminSessionStatusBrush(session.Status);
+
+                AdminSessionsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                AddAdminSessionCell(row, 0, computerName, "TextBrush", FontWeights.Bold);
+                AddAdminSessionCell(row, 1, clientName, "MutedBrush", FontWeights.Normal);
+                AddAdminSessionCell(row, 2, endText, "TextBrush", FontWeights.Normal);
+                AddAdminSessionCell(row, 3, statusText, statusBrush, FontWeights.Bold);
+                AddAdminSessionButton(row, computerName, session.Status);
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowDatabaseError("Ошибка загрузки сессий", ex);
+        }
+    }
+
+    private void AddAdminSessionCell(int row, int column, string text, string brushKey, FontWeight weight)
+    {
+        var block = new TextBlock
+        {
+            Text = text,
+            Foreground = (Brush)FindResource(brushKey),
+            FontWeight = weight,
+            Margin = new Thickness(0, 14, 0, 0),
+            TextWrapping = TextWrapping.Wrap
+        };
+        Grid.SetRow(block, row);
+        Grid.SetColumn(block, column);
+        AdminSessionsGrid.Children.Add(block);
+    }
+
+    private void AddAdminSessionButton(int row, string computerName, string status)
+    {
+        var isAwaitingPayment = string.Equals(status, SessionStatuses.AwaitingPayment, StringComparison.OrdinalIgnoreCase);
+        var isTeamSession = string.Equals(status, SessionStatuses.Team, StringComparison.OrdinalIgnoreCase);
+        var button = new Button
+        {
+            Content = isAwaitingPayment ? "Оплата" : isTeamSession ? "Продлить" : "Закрыть",
+            Style = (Style)FindResource(isAwaitingPayment ? "PrimaryButtonStyle" : "GhostButtonStyle"),
+            Tag = isAwaitingPayment
+                ? $"admin-pay-session|{computerName}"
+                : isTeamSession
+                    ? $"admin-extend-session|{computerName}"
+                    : $"admin-close-session|{computerName}",
+            MinHeight = 30,
+            Padding = new Thickness(14, 0, 14, 0),
+            Margin = new Thickness(10, 8, 0, 0)
+        };
+        button.Click += AdminAction_Click;
+        Grid.SetRow(button, row);
+        Grid.SetColumn(button, 4);
+        AdminSessionsGrid.Children.Add(button);
+    }
+
+    private static string FormatAdminSessionStatus(string status)
+    {
+        return status switch
+        {
+            SessionStatuses.AwaitingPayment => "Ожидает",
+            SessionStatuses.Team => "Команда",
+            SessionStatuses.Active => "Оплачено",
+            _ => status
+        };
+    }
+
+    private static string ResolveAdminSessionStatusBrush(string status)
+    {
+        return status switch
+        {
+            SessionStatuses.AwaitingPayment => "WaitBrush",
+            SessionStatuses.Team => "GoldLightBrush",
+            SessionStatuses.Active => "OkBrush",
+            _ => "MutedBrush"
+        };
     }
 
     private void RecalculateOwnerMetrics()
@@ -3280,7 +3531,7 @@ public partial class MainWindow : Window
             }
 
             var nextBookingId = dbContext.Bookings.Any() ? dbContext.Bookings.Max(booking => booking.Id) + 1 : 1;
-            var isImminent = start.Date == DateTime.Today && start <= DateTime.Now.AddHours(1);
+            var isImminent = start.Date == DateTime.Today && start <= DateTime.Now.AddMinutes(15);
 
             foreach (var seat in seats)
             {

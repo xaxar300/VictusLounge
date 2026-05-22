@@ -708,7 +708,7 @@
                                                     <TextBlock Text="Gold" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Black" FontSize="12" />
                                                 </Border>
                                                 <TextBlock x:Name="CabinetUserNameText" Text="Client" FontSize="24" FontWeight="Black" TextWrapping="Wrap" />
-                                                <TextBlock x:Name="CabinetTierText" Text="Bronze ? Silver ? Gold ? Elite" Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,0" />
+                                                <TextBlock x:Name="CabinetTierText" Text="Bronze · Silver · Gold · Elite" Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,0" />
                                             </StackPanel>
                                         </Grid>
 
@@ -1081,16 +1081,13 @@
                                 <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,16,0">
                                     <StackPanel>
                                         <TextBlock Text="Текущие сессии" FontSize="26" FontWeight="Black" Margin="0,0,0,16" />
-                                        <Grid>
+                                        <Grid x:Name="AdminSessionsGrid">
                                             <Grid.ColumnDefinitions><ColumnDefinition Width="0.8*" /><ColumnDefinition Width="1.2*" /><ColumnDefinition Width="1*" /><ColumnDefinition Width="1*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                                            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                            <Grid.RowDefinitions><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                                             <TextBlock Text="ПК" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" />
                                             <TextBlock Grid.Column="1" Text="Клиент" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" />
                                             <TextBlock Grid.Column="2" Text="До" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" />
                                             <TextBlock Grid.Column="3" Text="Статус" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" />
-                                            <TextBlock Grid.Row="1" Text="VIP-03" FontWeight="Bold" Margin="0,14,0,0" /><TextBlock Grid.Row="1" Grid.Column="1" Text="Zakhar M." Foreground="{DynamicResource MutedBrush}" Margin="0,14,0,0" /><TextBlock Grid.Row="1" Grid.Column="2" Text="19:50" Margin="0,14,0,0" /><TextBlock Grid.Row="1" Grid.Column="3" x:Name="AdminVip03Status" Text="Оплачено" Foreground="{DynamicResource OkBrush}" FontWeight="Bold" Margin="0,14,0,0" /><Button Grid.Row="1" Grid.Column="4" x:Name="AdminVip03Button" Content="Закрыть" Style="{StaticResource GhostButtonStyle}" Tag="admin-close-vip03" Click="AdminAction_Click" MinHeight="30" Padding="14,0" Margin="10,8,0,0" />
-                                            <TextBlock Grid.Row="2" Text="STD-10" FontWeight="Bold" Margin="0,14,0,0" /><TextBlock Grid.Row="2" Grid.Column="1" Text="Guest" Foreground="{DynamicResource MutedBrush}" Margin="0,14,0,0" /><TextBlock Grid.Row="2" Grid.Column="2" Text="20:15" Margin="0,14,0,0" /><TextBlock Grid.Row="2" Grid.Column="3" x:Name="AdminStd10Status" Text="Ожидает" Foreground="{DynamicResource WaitBrush}" FontWeight="Bold" Margin="0,14,0,0" /><Button Grid.Row="2" Grid.Column="4" x:Name="AdminStd10Button" Content="Оплата" Style="{StaticResource PrimaryButtonStyle}" Tag="admin-pay-std10" Click="AdminAction_Click" MinHeight="30" Padding="14,0" Margin="10,8,0,0" />
-                                            <TextBlock Grid.Row="3" Text="BA-01" FontWeight="Bold" Margin="0,14,0,0" /><TextBlock Grid.Row="3" Grid.Column="1" Text="Team Alpha" Foreground="{DynamicResource MutedBrush}" Margin="0,14,0,0" /><TextBlock Grid.Row="3" Grid.Column="2" x:Name="AdminBa01Time" Text="21:00" Margin="0,14,0,0" /><TextBlock x:Name="AdminBa01Status" Grid.Row="3" Grid.Column="3" Text="Команда" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" Margin="0,14,0,0" /><Button Grid.Row="3" Grid.Column="4" x:Name="AdminBa01Button" Content="Продлить" Style="{StaticResource GhostButtonStyle}" Tag="admin-extend-ba01" Click="AdminAction_Click" MinHeight="30" Padding="14,0" Margin="10,8,0,0" />
                                         </Grid>
                                     </StackPanel>
                                 </Border>
@@ -1196,9 +1193,9 @@
                                 <Border Grid.Column="1" Style="{StaticResource PanelBorderStyle}">
                                     <StackPanel>
                                         <TextBlock Text="Сотрудники" FontSize="26" FontWeight="Black" Margin="0,0,0,16" />
-                                        <TextBlock Text="Ivan K. · смена 10:00-22:00" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,10" />
-                                        <TextBlock Text="Alina P. · касса 14:00-23:00" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,10" />
-                                        <TextBlock Text="Nikita S. · сервис по вызову" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,18" />
+                                        <StackPanel x:Name="OwnerStaffList" Margin="0,0,0,18">
+                                            <TextBlock Text="Смены загружаются из базы данных." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />
+                                        </StackPanel>
                                         <Button Content="Открыть расписание" Style="{StaticResource PrimaryButtonStyle}" Tag="owner-schedule" Click="AdminAction_Click" />
                                     </StackPanel>
                                 </Border>
