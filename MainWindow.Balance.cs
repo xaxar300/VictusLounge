@@ -16,9 +16,28 @@ public partial class MainWindow
             out amount) && amount > 0;
     }
 
-    private static decimal CalculateTopupBonus(decimal amount)
+    private decimal CalculateTopupBonus(decimal amount)
     {
-        return amount >= 50 ? Math.Round(amount * 0.1m, 2) : 0;
+        if (amount < 50)
+        {
+            return 0;
+        }
+
+        var rate = IsPromoApplied()
+            ? 0.2m
+            : GetTierTopupBonusRate(GetClientTier(_balanceAmount));
+        return Math.Round(amount * rate, 2);
+    }
+
+    private static decimal GetTierTopupBonusRate(string tier)
+    {
+        return tier switch
+        {
+            "Elite" => 0.15m,
+            "Gold" => 0.1m,
+            "Silver" => 0.05m,
+            _ => 0m
+        };
     }
 
     private static bool IsValidDemoCardNumber(string raw)

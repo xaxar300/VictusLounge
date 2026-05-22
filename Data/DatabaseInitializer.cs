@@ -51,9 +51,16 @@ public static class DatabaseInitializer
 
     private static void MigratePlainTextPasswords(AppDbContext dbContext)
     {
+        var changed = false;
         foreach (var user in dbContext.Users.Where(user => !PasswordHasher.IsHashed(user.PasswordHash)))
         {
             user.PasswordHash = PasswordHasher.HashPassword(user.PasswordHash);
+            changed = true;
+        }
+
+        if (changed)
+        {
+            dbContext.SaveChanges();
         }
     }
 
