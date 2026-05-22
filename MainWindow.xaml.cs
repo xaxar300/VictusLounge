@@ -108,7 +108,7 @@ public partial class MainWindow : Window
         ["Активная бронь"] = "Cabinet.ActiveBooking",
         ["Следующая выгода"] = "Cabinet.NextBenefit",
         ["Подсказка обновится после загрузки тарифов."] = "Cabinet.NextBenefitText",
-        ["Бонусы"] = "Cabinet.Bonuses",
+        ["Получено бонусов"] = "Cabinet.Bonuses",
         ["Наиграно"] = "Cabinet.Played",
         ["Любимая зона"] = "Cabinet.FavoriteZone",
         ["Пополнить баланс"] = "Cabinet.Topup",
@@ -124,6 +124,7 @@ public partial class MainWindow : Window
 
     private readonly DispatcherTimer _toastTimer;
     private readonly DispatcherTimer _announcementTimer;
+    private readonly DispatcherTimer _liveRefreshTimer;
     private readonly HashSet<string> _selectedSeats = [];
     private ResourceDictionary _languageStrings = new();
     private DateTime _lastAnnouncementTick;
@@ -189,6 +190,8 @@ public partial class MainWindow : Window
 
         _announcementTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
         _announcementTimer.Tick += AnnouncementTimer_Tick;
+        _liveRefreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
+        _liveRefreshTimer.Tick += (_, _) => LoadDatabaseState();
 
         ApplyLanguage(_currentLanguage, false);
         UpdateThemeButtons();
@@ -207,6 +210,7 @@ public partial class MainWindow : Window
             RebuildBookingSeatGrid();
             UpdateBookingSummary();
             RefreshAdminUx();
+            _liveRefreshTimer.Start();
         };
         AnnouncementBar.SizeChanged += (_, _) => ResetAnnouncementMarquee();
     }
@@ -243,7 +247,10 @@ public partial class MainWindow : Window
 
             RefreshEffectiveComputerStatuses(dbContext);
 
-            var activeSessions = dbContext.GameSessions.Count(session => session.EndTime == null && session.Status != SessionStatuses.Closed);
+            var now = DateTime.Now;
+            var activeSessions = dbContext.GameSessions.Count(session => session.Status != SessionStatuses.Closed
+                && session.StartTime <= now
+                && (session.EndTime == null || session.EndTime > now));
             var pendingBookings = dbContext.Bookings.Count(booking => booking.Status == BookingStatuses.PendingPayment);
             var pendingSessions = dbContext.GameSessions.Count(session => session.Status == SessionStatuses.AwaitingPayment);
             var freePcs = _computers.Count(computer => NormalizePcStatus(computer.Status) == PcStatuses.Free);
@@ -346,7 +353,9 @@ public partial class MainWindow : Window
         var now = DateTime.Now;
         var activeSessionComputerIds = dbContext.GameSessions
             .AsNoTracking()
-            .Where(session => session.EndTime == null && session.Status != SessionStatuses.Closed)
+            .Where(session => session.Status != SessionStatuses.Closed
+                && session.StartTime <= now
+                && (session.EndTime == null || session.EndTime > now))
             .Select(session => session.ComputerId)
             .ToHashSet();
         var imminentBookingComputerIds = dbContext.Bookings
@@ -531,7 +540,9 @@ public partial class MainWindow : Window
         {
             var activeSessions = dbContext.GameSessions
                 .AsNoTracking()
-                .Where(session => session.EndTime == null && session.Status != SessionStatuses.Closed)
+                .Where(session => session.Status != SessionStatuses.Closed
+                    && session.StartTime <= DateTime.Now
+                    && (session.EndTime == null || session.EndTime > DateTime.Now))
                 .OrderBy(session => session.StartTime)
                 .Take(3)
                 .ToList();
@@ -939,10 +950,12 @@ public partial class MainWindow : Window
             .Where(payment => payment.UserId == user.Id)
             .OrderByDescending(payment => payment.CreatedAt)
             .ToList();
+        var payableBookingCutoff = DateTime.Now.AddMinutes(-15);
         var activeBooking = dbContext.Bookings
             .AsNoTracking()
             .Where(booking => booking.UserId == user.Id
-                && booking.Status == BookingStatuses.PendingPayment)
+                && booking.Status == BookingStatuses.PendingPayment
+                && booking.StartTime >= payableBookingCutoff)
             .OrderByDescending(booking => booking.CreatedAt)
             .ThenByDescending(booking => booking.Id)
             .FirstOrDefault();
@@ -959,7 +972,7 @@ public partial class MainWindow : Window
             .OrderByDescending(group => group.Count())
             .Select(group => group.Key)
             .FirstOrDefault() ?? "-";
-        var progress = Math.Clamp((int)Math.Round((user.Balance + bonus) % 100), 0, 100);
+        var progress = Math.Clamp((int)Math.Round(user.Balance / 150m * 100), 0, 100);
 
         CabinetUserNameText.Text = user.FullName;
         CabinetTierText.Text = $"{GetClientTier(user.Balance)} · {user.Login}";
@@ -969,20 +982,22 @@ public partial class MainWindow : Window
         CabinetPlayedText.Text = $"{playedHours:0.#} ч";
         CabinetFavoriteZoneText.Text = favoriteZone;
         BalanceAmountText.Text = $"{user.Balance:0.##} BYN";
-        BalanceBonusText.Text = $"Бонусный баланс: {bonus:0.##}";
+        BalanceBonusText.Text = $"Получено бонусов: {bonus:0.##}";
         UpdateBalancePersonalOffer(user);
 
         if (activeBooking is not null && computers.TryGetValue(activeBooking.ComputerId, out var bookingComputer))
         {
             var price = CalculateBookingTotal(activeBooking, bookingComputer);
             var label = GetBookingPackageLabel(activeBooking);
+            var payablePrice = ApplyBookingPromo(price);
+            var promoSuffix = payablePrice < price ? $" · промокод −{price - payablePrice:0.##} BYN" : string.Empty;
             CabinetActiveBookingText.Text = $"{bookingComputer.Name} · {activeBooking.StartTime:dd.MM HH:mm}–{activeBooking.EndTime:HH:mm}";
-            CabinetActiveBookingPriceText.Text = $"{price:0.##} BYN";
+            CabinetActiveBookingPriceText.Text = $"{payablePrice:0.##} BYN";
             CabinetCancelBookingButton.Visibility = Visibility.Visible;
             _activeCabinetBookingId = activeBooking.Id;
             CabinetBookingCardPcText.Text = bookingComputer.Name;
             CabinetBookingCardTimeText.Text = $"{activeBooking.StartTime:dd.MM HH:mm}–{activeBooking.EndTime:HH:mm}";
-            CabinetBookingCardPriceText.Text = $"{bookingComputer.Zone} · {label} · {price:0.##} BYN";
+            CabinetBookingCardPriceText.Text = $"{bookingComputer.Zone} · {label} · {payablePrice:0.##} BYN{promoSuffix}";
             UpdateBalanceBookingOffer(activeBooking, bookingComputer, price, label);
         }
         else
@@ -1065,34 +1080,22 @@ public partial class MainWindow : Window
 
     private static decimal GetBookingDiscountFactor(Booking booking)
     {
-        var duration = (booking.EndTime - booking.StartTime).TotalHours;
-        if (duration >= 7.9 && booking.StartTime.Minute == 0 && IsNightPackHour(booking.StartTime.Hour))
+        return booking.Package switch
         {
-            return 0.75m;
-        }
-
-        if (duration >= 2.9 && duration <= 3.1 && booking.StartTime.Minute == 0 && IsMorningPackHour(booking.StartTime.Hour))
-        {
-            return 0.8m;
-        }
-
-        return 0.9m;
+            "night" => 0.75m,
+            "morning" => 0.8m,
+            _ => 0.9m
+        };
     }
 
     private static string GetBookingPackageLabel(Booking booking)
     {
-        var duration = (booking.EndTime - booking.StartTime).TotalHours;
-        if (duration >= 7.9 && booking.StartTime.Minute == 0 && IsNightPackHour(booking.StartTime.Hour))
+        return booking.Package switch
         {
-            return "Night Pack −25%";
-        }
-
-        if (duration >= 2.9 && duration <= 3.1 && booking.StartTime.Minute == 0 && IsMorningPackHour(booking.StartTime.Hour))
-        {
-            return "Morning Pack −20%";
-        }
-
-        return "Gold −10%";
+            "night" => "Night Pack −25%",
+            "morning" => "Morning Pack −20%",
+            _ => "Gold −10%"
+        };
     }
 
     private void CabinetCancelBooking_Click(object sender, RoutedEventArgs e)
@@ -1138,8 +1141,9 @@ public partial class MainWindow : Window
                 && item.EndTime > now);
             var hasOpenSession = dbContext.GameSessions.Any(item =>
                 item.ComputerId == booking.ComputerId
-                && item.EndTime == null
-                && item.Status != SessionStatuses.Closed);
+                && item.Status != SessionStatuses.Closed
+                && item.StartTime <= now
+                && (item.EndTime == null || item.EndTime > now));
 
             var computer = dbContext.Computers.FirstOrDefault(item => item.Id == booking.ComputerId);
             if (computer is not null && NormalizePcStatus(computer.Status) != PcStatuses.Service)
@@ -1831,7 +1835,7 @@ public partial class MainWindow : Window
         BalanceSubtitleText.Text = T("Balance.Subtitle");
         BalanceTopupCardButton.Content = T("Balance.Topup");
         BalanceCurrentLabelText.Text = T("Balance.Current");
-        BalanceBonusText.Text = T("Balance.Bonus");
+        BalanceBonusText.Text = "Получено бонусов: 0";
         BalancePromoLabelText.Text = T("Balance.Promo");
         BalanceApplyPromoButton.Content = T("Balance.Apply");
         BalancePackagesTitleText.Text = T("Balance.Packages");
@@ -2102,7 +2106,16 @@ public partial class MainWindow : Window
                 OpenTopupOverlay();
                 break;
             case "promo":
-                var promo = string.IsNullOrWhiteSpace(PromoCodeBox.Text) ? "ELITE-NIGHT" : PromoCodeBox.Text.Trim();
+                var promo = PromoCodeBox.Text.Trim();
+                if (string.IsNullOrWhiteSpace(promo))
+                {
+                    _appliedPromoCode = null;
+                    UpdateTopupSummary();
+                    LoadDatabaseState();
+                    ShowStatus("Промокод снят", "Скидка к оплате брони и бонус к пополнению отключены.");
+                    break;
+                }
+
                 if (promo.Equals("ELITE-NIGHT", StringComparison.OrdinalIgnoreCase))
                 {
                     _appliedPromoCode = promo;
@@ -2116,6 +2129,13 @@ public partial class MainWindow : Window
                 UpdateTopupSummary();
                 LoadDatabaseState();
                 ShowStatus("Промокод не найден", "Проверьте код. Для демо доступен ELITE-NIGHT.");
+                break;
+            case "promo-clear":
+                _appliedPromoCode = null;
+                PromoCodeBox.Text = string.Empty;
+                UpdateTopupSummary();
+                LoadDatabaseState();
+                ShowStatus("Промокод снят", "Скидка к оплате брони и бонус к пополнению отключены.");
                 break;
             case "offer":
                 ShowStatus("Персональная акция", "Бонус статуса применяется автоматически при пополнении и не требует активации.");
@@ -2195,9 +2215,8 @@ public partial class MainWindow : Window
             var booking = dbContext.Bookings
                 .Where(item => item.UserId == user.Id
                     && item.Status == BookingStatuses.PendingPayment
-                    && item.EndTime >= DateTime.Today)
-                .OrderBy(item => item.StartTime < DateTime.Now ? 1 : 0)
-                .ThenBy(item => item.StartTime)
+                    && item.StartTime >= DateTime.Now.AddMinutes(-15))
+                .OrderByDescending(item => item.CreatedAt)
                 .ThenByDescending(item => item.Id)
                 .FirstOrDefault();
             if (booking is null)
@@ -2223,41 +2242,27 @@ public partial class MainWindow : Window
                 return false;
             }
 
-            var durationHours = Math.Max(1, (booking.EndTime - booking.StartTime).TotalHours);
-            var startTime = DateTime.Now;
-            var endTime = startTime.AddHours(durationHours);
+            var now = DateTime.Now;
+            var startTime = booking.StartTime > now ? booking.StartTime : now;
+            var endTime = startTime == booking.StartTime ? booking.EndTime : startTime.Add(booking.EndTime - booking.StartTime);
             user.Balance -= amount;
 
             booking.Status = BookingStatuses.Confirmed;
-            computer.Status = PcStatuses.Busy;
+            if (startTime <= now.AddMinutes(15))
+            {
+                computer.Status = PcStatuses.Busy;
+            }
 
-            var activeSession = dbContext.GameSessions
-                .Where(item => item.UserId == user.Id && item.ComputerId == computer.Id && item.EndTime == null)
-                .OrderByDescending(item => item.StartTime)
-                .FirstOrDefault();
-            var sessionAmount = amount;
-            var sessionStart = startTime;
-            if (activeSession is null)
+            dbContext.GameSessions.Add(new GameSession
             {
-                dbContext.GameSessions.Add(new GameSession
-                {
-                    Id = GetNextId(dbContext.GameSessions, session => session.Id),
-                    UserId = user.Id,
-                    ComputerId = computer.Id,
-                    StartTime = startTime,
-                    EndTime = null,
-                    TotalPrice = amount,
-                    Status = SessionStatuses.Active
-                });
-            }
-            else
-            {
-                sessionAmount = activeSession.TotalPrice + amount;
-                sessionStart = activeSession.StartTime;
-                activeSession.TotalPrice += amount;
-                activeSession.EndTime = null;
-                activeSession.Status = SessionStatuses.Active;
-            }
+                Id = GetNextId(dbContext.GameSessions, session => session.Id),
+                UserId = user.Id,
+                ComputerId = computer.Id,
+                StartTime = startTime,
+                EndTime = endTime,
+                TotalPrice = amount,
+                Status = SessionStatuses.Active
+            });
 
             dbContext.Payments.Add(new Payment
             {
@@ -2279,13 +2284,15 @@ public partial class MainWindow : Window
                 {
                     UserId = user.Id,
                     ComputerId = computer.Id,
-                    StartTime = sessionStart,
-                    EndTime = null,
-                    TotalPrice = sessionAmount,
+                    StartTime = startTime,
+                    EndTime = endTime,
+                    TotalPrice = amount,
                     Status = SessionStatuses.Active
                 }
             }, new Dictionary<int, Computer> { [computer.Id] = computer });
-            message = $"{packageName}: списано {amount:0.##} BYN, начата сессия на {computer.Name} до {endTime:HH:mm}.";
+            message = startTime > now
+                ? $"{packageName}: списано {amount:0.##} BYN, бронь на {computer.Name} оплачена до {endTime:dd.MM HH:mm}."
+                : $"{packageName}: списано {amount:0.##} BYN, начата сессия на {computer.Name} до {endTime:HH:mm}.";
             return true;
         }
         catch (Exception ex)
@@ -2515,6 +2522,13 @@ public partial class MainWindow : Window
                 .ToList();
             foreach (var payment in pendingPayments)
             {
+                if (payment.Amount > 0
+                    && payment.Comment.StartsWith("Pending balance top-up", StringComparison.OrdinalIgnoreCase)
+                    && dbContext.Users.Find(payment.UserId) is { } paymentUser)
+                {
+                    paymentUser.Balance += payment.Amount;
+                }
+
                 payment.PaymentType = PaymentTypes.Cash;
                 payment.Comment = $"{payment.Comment}; confirmed by admin";
             }
@@ -3074,7 +3088,9 @@ public partial class MainWindow : Window
             using var dbContext = new AppDbContext();
             var sessions = dbContext.GameSessions
                 .AsNoTracking()
-                .Where(session => session.EndTime == null && session.Status != SessionStatuses.Closed)
+                .Where(session => session.Status != SessionStatuses.Closed
+                    && session.StartTime <= DateTime.Now
+                    && (session.EndTime == null || session.EndTime > DateTime.Now))
                 .OrderBy(session => session.StartTime)
                 .Take(5)
                 .ToList();
@@ -3384,8 +3400,8 @@ public partial class MainWindow : Window
                 return false;
             }
 
-            user.Balance += amount + bonus;
             var bonusSource = IsPromoApplied() ? $"promo {_appliedPromoCode}" : $"tier {GetClientTier(user.Balance)}";
+            user.Balance += amount + bonus;
             var nextPaymentId = GetNextId(dbContext.Payments, payment => payment.Id);
             dbContext.Payments.Add(new Payment
             {
@@ -3631,7 +3647,7 @@ public partial class MainWindow : Window
 
         _bookingZoneKey = parts[0];
         _bookingZoneName = parts[1];
-        _bookingTariff = tariff;
+        _bookingTariff = GetTariffPrice(parts[0], tariff);
         _selectedSeats.Clear();
         SetActiveButton(button, ZoneStandardButton, ZoneVipButton, ZoneBootcampButton, ZoneRoyalButton);
         RebuildBookingSeatGrid();
@@ -3882,6 +3898,13 @@ public partial class MainWindow : Window
                     return false;
                 }
 
+                if (NormalizePcStatus(computer.Status) == PcStatuses.Service)
+                {
+                    BookingErrorText.Text = $"ПК {seat} находится в обслуживании. Выберите другое место.";
+                    BookingErrorText.Visibility = Visibility.Visible;
+                    return false;
+                }
+
                 var hasConflict = dbContext.Bookings.Any(booking =>
                     booking.ComputerId == computer.Id
                     && booking.Status != BookingStatuses.Cancelled
@@ -3890,6 +3913,18 @@ public partial class MainWindow : Window
                 if (hasConflict)
                 {
                     BookingErrorText.Text = $"ПК {seat} уже занят на это время. Выберите другой интервал или место.";
+                    BookingErrorText.Visibility = Visibility.Visible;
+                    return false;
+                }
+
+                var hasSessionConflict = dbContext.GameSessions.Any(session =>
+                    session.ComputerId == computer.Id
+                    && session.Status != SessionStatuses.Closed
+                    && session.StartTime < end
+                    && (session.EndTime == null || session.EndTime > start));
+                if (hasSessionConflict)
+                {
+                    BookingErrorText.Text = $"ПК {seat} уже занят игровой сессией на это время. Выберите другой интервал или место.";
                     BookingErrorText.Visibility = Visibility.Visible;
                     return false;
                 }
@@ -3912,6 +3947,7 @@ public partial class MainWindow : Window
                     StartTime = start,
                     EndTime = end,
                     Status = BookingStatuses.PendingPayment,
+                    Package = _bookingPackage,
                     CreatedAt = DateTime.Now
                 });
 
@@ -4259,7 +4295,7 @@ public partial class MainWindow : Window
 
         _bookingZoneKey = parts[0];
         _bookingZoneName = parts[1];
-        _bookingTariff = tariff;
+        _bookingTariff = GetTariffPrice(parts[0], tariff);
         SetActiveButton(button, ZoneStandardButton, ZoneVipButton, ZoneBootcampButton, ZoneRoyalButton);
     }
 
@@ -4327,7 +4363,7 @@ public partial class MainWindow : Window
             "Standard" => "Standard: 18 свободных ПК, тариф 8 BYN/час.",
             "VIP" => "VIP: 4 свободных ПК, тариф 14 BYN/час.",
             "Bootcamp" => "Bootcamp: 1 свободная комната, тариф 50 BYN/час.",
-            "Royal VIP" => "Royal VIP: 3 свободных ПК, тариф 18 BYN/час.",
+            "Royal VIP" => "Royal VIP: 3 свободных ПК, тариф 24 BYN/час.",
             _ => "Зона выбрана."
         };
     }

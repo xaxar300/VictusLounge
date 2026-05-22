@@ -128,6 +128,7 @@ public class AppDbContext : DbContext
         {
             entity.Property(booking => booking.Id).ValueGeneratedNever();
             entity.Property(booking => booking.Status).HasMaxLength(30).IsRequired();
+            entity.Property(booking => booking.Package).HasMaxLength(30).IsRequired();
             entity.HasOne(booking => booking.User)
                 .WithMany()
                 .HasForeignKey(booking => booking.UserId)

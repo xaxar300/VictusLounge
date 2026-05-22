@@ -12,8 +12,21 @@ public static class DatabaseInitializer
     {
         using var dbContext = new AppDbContext();
         dbContext.Database.EnsureCreated();
+        EnsureBookingPackageColumn(dbContext);
 
         Seed(dbContext);
+    }
+
+    private static void EnsureBookingPackageColumn(AppDbContext dbContext)
+    {
+        dbContext.Database.ExecuteSqlRaw("""
+            IF COL_LENGTH('Bookings', 'Package') IS NULL
+            BEGIN
+                ALTER TABLE [Bookings]
+                ADD [Package] nvarchar(30) NOT NULL
+                    CONSTRAINT [DF_Bookings_Package] DEFAULT N'regular'
+            END
+            """);
     }
 
     private static void Seed(AppDbContext dbContext)

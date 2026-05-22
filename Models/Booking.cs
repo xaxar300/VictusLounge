@@ -12,5 +12,6 @@ public class Booking
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
     public string Status { get; set; } = string.Empty;
+    public string Package { get; set; } = "regular";
     public DateTime CreatedAt { get; set; }
 }
