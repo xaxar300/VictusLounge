@@ -365,7 +365,7 @@
                             <Border Grid.Row="1" Grid.ColumnSpan="2" Style="{StaticResource PanelBorderStyle}" Margin="0,0,16,0">
                                 <StackPanel>
                                     <DockPanel Margin="0,0,0,16">
-                                        <Button Content="Схема" DockPanel.Dock="Right" Style="{StaticResource GhostButtonStyle}" MinHeight="34" Padding="14,0" />
+                                        <Button Content="Схема" DockPanel.Dock="Right" Style="{StaticResource GhostButtonStyle}" MinHeight="34" Padding="14,0" Tag="map" Click="NavigationButton_Click" />
                                         <StackPanel>
                                             <TextBlock Text="ZONES" Style="{StaticResource KickerTextStyle}" />
                                             <TextBlock Text="Зоны клуба" FontSize="22" FontWeight="Bold" Margin="0,6,0,0" />
@@ -1146,6 +1146,8 @@
                                         <TextBlock Text="Быстрые операции" FontSize="26" FontWeight="Black" Margin="0,0,0,16" />
                                         <Button Content="Открыть карту клуба" Style="{StaticResource GhostButtonStyle}" Tag="map" Click="NavigationButton_Click" Margin="0,0,0,10" />
                                         <Button Content="Создать бронь" Style="{StaticResource GhostButtonStyle}" Tag="booking" Click="NavigationButton_Click" Margin="0,0,0,10" />
+                                        <Button Content="Перенести бронь" Style="{StaticResource GhostButtonStyle}" Tag="admin-reschedule-booking" Click="AdminAction_Click" Margin="0,0,0,10" />
+                                        <Button Content="Отменить бронь" Style="{StaticResource GhostButtonStyle}" Tag="admin-cancel-booking" Click="AdminAction_Click" Margin="0,0,0,10" />
                                         <Button Content="Отметить оплату" Style="{StaticResource PrimaryButtonStyle}" Tag="admin-payment" Click="AdminAction_Click" Margin="0,0,0,10" />
                                         <Button Content="Поставить ПК в сервис" Style="{StaticResource GhostButtonStyle}" Tag="admin-service" Click="AdminAction_Click" Margin="0,0,0,10" />
                                         <Button Content="Закрыть все оплаты" Style="{StaticResource GhostButtonStyle}" Tag="admin-settle-all" Click="AdminAction_Click" Margin="0,0,0,10" />

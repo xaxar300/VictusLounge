@@ -2996,6 +2996,340 @@ public partial class MainWindow : Window
         }
     }
 
+    private string? PromptText(string title, string prompt, string defaultValue = "")
+    {
+        var inputBox = new TextBox
+        {
+            Text = defaultValue,
+            MinWidth = 320,
+            Margin = new Thickness(0, 8, 0, 14),
+            Foreground = (Brush)FindResource("TextBrush"),
+            Background = (Brush)FindResource("SurfaceBrush"),
+            BorderBrush = (Brush)FindResource("LineBrush"),
+            Padding = new Thickness(10, 6, 10, 6)
+        };
+
+        var dialog = new Window
+        {
+            Title = title,
+            Owner = this,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            SizeToContent = SizeToContent.WidthAndHeight,
+            ResizeMode = ResizeMode.NoResize,
+            Background = (Brush)FindResource("PanelBrush"),
+            Foreground = (Brush)FindResource("TextBrush"),
+            Content = new StackPanel
+            {
+                Margin = new Thickness(18),
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = prompt,
+                        Foreground = (Brush)FindResource("TextBrush"),
+                        TextWrapping = TextWrapping.Wrap,
+                        MaxWidth = 420
+                    },
+                    inputBox,
+                    new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        HorizontalAlignment = HorizontalAlignment.Right,
+                        Children =
+                        {
+                            new Button
+                            {
+                                Content = "OK",
+                                IsDefault = true,
+                                MinWidth = 86,
+                                Margin = new Thickness(0, 0, 8, 0),
+                                Style = (Style)FindResource("PrimaryButtonStyle")
+                            },
+                            new Button
+                            {
+                                Content = "Отмена",
+                                IsCancel = true,
+                                MinWidth = 86,
+                                Style = (Style)FindResource("GhostButtonStyle")
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        if (dialog.Content is StackPanel panel
+            && panel.Children.OfType<StackPanel>().LastOrDefault() is { } buttons)
+        {
+            foreach (var button in buttons.Children.OfType<Button>())
+            {
+                if (button.IsDefault)
+                {
+                    button.Click += (_, _) => dialog.DialogResult = true;
+                }
+            }
+        }
+
+        inputBox.SelectAll();
+        return dialog.ShowDialog() == true ? inputBox.Text.Trim() : null;
+    }
+
+    private bool PromptMoney(string title, string prompt, string defaultValue, out decimal amount)
+    {
+        amount = 0m;
+        var raw = PromptText(title, prompt, defaultValue);
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return false;
+        }
+
+        if (TryParseMoney(raw, out amount))
+        {
+            return true;
+        }
+
+        ShowStatus("Некорректная сумма", "Введите положительное число, например 18 или 18,50.");
+        return false;
+    }
+
+    private string GetFirstFreeComputerName()
+    {
+        return _computers.FirstOrDefault(computer => NormalizePcStatus(computer.Status) == PcStatuses.Free)?.Name ?? "STD-01";
+    }
+
+    private string GetFirstServiceComputerName()
+    {
+        return _computers.FirstOrDefault(computer => NormalizePcStatus(computer.Status) == PcStatuses.Service)?.Name ?? "STD-07";
+    }
+
+    private string? GetFirstPendingPaymentComputerName()
+    {
+        try
+        {
+            using var dbContext = new AppDbContext();
+            return dbContext.GameSessions
+                .AsNoTracking()
+                .Where(session => session.Status == SessionStatuses.AwaitingPayment
+                    && (session.EndTime == null || session.EndTime > DateTime.Now))
+                .OrderBy(session => session.StartTime)
+                .Select(session => dbContext.Computers
+                    .Where(computer => computer.Id == session.ComputerId)
+                    .Select(computer => computer.Name)
+                    .FirstOrDefault())
+                .FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            ShowDatabaseError("Ошибка поиска оплаты", ex);
+            return null;
+        }
+    }
+
+    private void ChangeTariffManually(string tariffName, int currentRate)
+    {
+        if (!PromptMoney($"{tariffName}: тариф", "Введите новую цену BYN/час:", currentRate.ToString(System.Globalization.CultureInfo.InvariantCulture), out var price))
+        {
+            return;
+        }
+
+        var roundedPrice = Math.Round(price, 0);
+        SaveTariffRate(tariffName, roundedPrice);
+        RefreshAdminUx();
+        AddAdminLog($"{tariffName} rate changed to {roundedPrice:0} BYN/h");
+        ShowStatus($"{tariffName} обновлен", $"Новый тариф {tariffName}: {roundedPrice:0} BYN/час. Метрики пересчитаны.");
+    }
+
+    private void UpsertManualShift(string employeeName)
+    {
+        try
+        {
+            using var dbContext = new AppDbContext();
+            var now = DateTime.Now;
+            var shift = dbContext.Shifts
+                .OrderByDescending(item => item.StartTime)
+                .FirstOrDefault(item => item.EmployeeName == employeeName && item.EndTime == null);
+
+            if (shift is null)
+            {
+                shift = new Shift
+                {
+                    Id = GetNextId(dbContext.Shifts, item => item.Id),
+                    EmployeeName = employeeName,
+                    StartTime = now,
+                    CashTotal = _shiftCash
+                };
+                dbContext.Shifts.Add(shift);
+            }
+            else
+            {
+                shift.CashTotal = _shiftCash;
+            }
+
+            dbContext.SaveChanges();
+        }
+        catch (Exception ex)
+        {
+            ShowDatabaseError("Ошибка сохранения расписания", ex);
+        }
+    }
+
+    private string SaveShiftReport()
+    {
+        var reportsDir = System.IO.Path.Combine(AppContext.BaseDirectory, "Reports");
+        System.IO.Directory.CreateDirectory(reportsDir);
+        var path = System.IO.Path.Combine(reportsDir, $"shift-report-{DateTime.Now:yyyyMMdd-HHmmss}.txt");
+        var lines = new[]
+        {
+            $"Shift report: {DateTime.Now:yyyy-MM-dd HH:mm}",
+            $"Admin: {_currentUserFullName}",
+            $"Cash: {_shiftCash:0.##} BYN",
+            $"Online: {_shiftOnline:0.##} BYN",
+            $"Active sessions: {_adminActiveSessions}",
+            $"Pending payments: {_adminPaymentQueue}",
+            $"Support queue: {_adminSupportQueue}"
+        };
+        System.IO.File.WriteAllLines(path, lines);
+        return path;
+    }
+
+    private string SaveOwnerReport()
+    {
+        var reportsDir = System.IO.Path.Combine(AppContext.BaseDirectory, "Reports");
+        System.IO.Directory.CreateDirectory(reportsDir);
+        var path = System.IO.Path.Combine(reportsDir, $"owner-report-{DateTime.Now:yyyyMMdd-HHmmss}.txt");
+        var lines = new[]
+        {
+            $"Owner report: {DateTime.Now:yyyy-MM-dd HH:mm}",
+            $"Revenue: {_ownerRevenue} BYN",
+            $"Load: {_ownerLoad}%",
+            $"Average check: {_ownerAverageCheck} BYN",
+            $"Repeat rate: {_ownerRepeatRate}%",
+            $"Rates: Standard {_standardRate}, VIP {_vipRate}, Bootcamp {_bootcampRate}, Royal {_royalRate} BYN/h"
+        };
+        System.IO.File.WriteAllLines(path, lines);
+        return path;
+    }
+
+    private void RescheduleBookingManually()
+    {
+        var bookingIdText = PromptText("Перенести бронь", "Введите ID брони:", GetLatestActiveBookingId().ToString(System.Globalization.CultureInfo.InvariantCulture));
+        if (!int.TryParse(bookingIdText, out var bookingId))
+        {
+            ShowStatus("Бронь не изменена", "Введите числовой ID брони.");
+            return;
+        }
+
+        var startText = PromptText("Перенести бронь", "Новое начало в формате yyyy-MM-dd HH:mm:", DateTime.Now.AddHours(1).ToString("yyyy-MM-dd HH:00"));
+        if (!DateTime.TryParse(startText, out var newStart))
+        {
+            ShowStatus("Бронь не изменена", "Не удалось распознать дату и время начала.");
+            return;
+        }
+
+        var durationText = PromptText("Перенести бронь", "Длительность в часах:", "2");
+        if (!double.TryParse(
+                durationText?.Replace(',', '.'),
+                System.Globalization.NumberStyles.Number,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var durationHours)
+            || durationHours <= 0)
+        {
+            ShowStatus("Бронь не изменена", "Введите положительную длительность в часах.");
+            return;
+        }
+
+        try
+        {
+            using var dbContext = new AppDbContext();
+            var booking = dbContext.Bookings.FirstOrDefault(item => item.Id == bookingId);
+            if (booking is null || booking.Status == BookingStatuses.Cancelled)
+            {
+                ShowStatus("Бронь не найдена", $"Бронь #{bookingId} отсутствует или уже отменена.");
+                return;
+            }
+
+            var newEnd = newStart.AddHours(durationHours);
+            var hasConflict = dbContext.Bookings.Any(item =>
+                    item.Id != booking.Id
+                    && item.ComputerId == booking.ComputerId
+                    && item.Status != BookingStatuses.Cancelled
+                    && item.StartTime < newEnd
+                    && item.EndTime > newStart)
+                || dbContext.GameSessions.Any(session =>
+                    session.ComputerId == booking.ComputerId
+                    && session.Status != SessionStatuses.Closed
+                    && session.StartTime < newEnd
+                    && (session.EndTime == null || session.EndTime > newStart));
+
+            if (hasConflict)
+            {
+                ShowStatus("Конфликт расписания", "На выбранное время уже есть бронь или сессия на этом ПК.");
+                return;
+            }
+
+            booking.StartTime = newStart;
+            booking.EndTime = newEnd;
+            booking.CreatedAt = DateTime.Now;
+            dbContext.SaveChanges();
+            LoadDatabaseState();
+            AddAdminLog($"Booking #{bookingId} rescheduled");
+            ShowStatus("Бронь перенесена", $"Бронь #{bookingId}: {newStart:dd.MM HH:mm}-{newEnd:HH:mm}.");
+        }
+        catch (Exception ex)
+        {
+            ShowDatabaseError("Ошибка переноса брони", ex);
+        }
+    }
+
+    private void CancelBookingManually()
+    {
+        var bookingIdText = PromptText("Отменить бронь", "Введите ID брони:", GetLatestActiveBookingId().ToString(System.Globalization.CultureInfo.InvariantCulture));
+        if (!int.TryParse(bookingIdText, out var bookingId))
+        {
+            ShowStatus("Бронь не отменена", "Введите числовой ID брони.");
+            return;
+        }
+
+        try
+        {
+            using var dbContext = new AppDbContext();
+            var booking = dbContext.Bookings.FirstOrDefault(item => item.Id == bookingId);
+            if (booking is null || booking.Status == BookingStatuses.Cancelled)
+            {
+                ShowStatus("Бронь не найдена", $"Бронь #{bookingId} отсутствует или уже отменена.");
+                return;
+            }
+
+            booking.Status = BookingStatuses.Cancelled;
+            dbContext.SaveChanges();
+            LoadDatabaseState();
+            AddAdminLog($"Booking #{bookingId} cancelled");
+            ShowStatus("Бронь отменена", $"Бронь #{bookingId} отменена администратором.");
+        }
+        catch (Exception ex)
+        {
+            ShowDatabaseError("Ошибка отмены брони", ex);
+        }
+    }
+
+    private int GetLatestActiveBookingId()
+    {
+        try
+        {
+            using var dbContext = new AppDbContext();
+            return dbContext.Bookings
+                .AsNoTracking()
+                .Where(booking => booking.Status != BookingStatuses.Cancelled)
+                .OrderByDescending(booking => booking.CreatedAt)
+                .Select(booking => booking.Id)
+                .FirstOrDefault();
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
     private void AdminAction_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement element)
@@ -3012,55 +3346,79 @@ public partial class MainWindow : Window
         switch (action)
         {
             case "admin-new-session":
-                if (SaveGuestSession("STD-13", 8m))
+                var sessionComputer = PromptText("Новая сессия", "Введите имя ПК для запуска сессии:", GetFirstFreeComputerName());
+                if (string.IsNullOrWhiteSpace(sessionComputer))
                 {
-                    _shiftCash += 8;
-                    SetPcStatus("STD-13", PcStatuses.Busy);
+                    break;
+                }
+
+                if (!PromptMoney("Новая сессия", "Введите сумму оплаты:", "8", out var sessionAmount))
+                {
+                    break;
+                }
+
+                if (SaveGuestSession(sessionComputer, sessionAmount))
+                {
+                    _shiftCash += sessionAmount;
+                    SetPcStatus(sessionComputer, PcStatuses.Busy);
                     RefreshAdminUx();
-                    AddAdminLog("STD-13 started as guest session");
-                    ShowStatus("Новая сессия", "Запущена гостевая сессия на STD-13. Карта и бронь обновлены.");
+                    AddAdminLog($"{sessionComputer} started as guest session");
+                    ShowStatus("Новая сессия", $"Запущена гостевая сессия на {sessionComputer}. Карта и бронь обновлены.");
                 }
                 break;
 
             case "admin-payment":
             case "admin-pay-std10":
-                PayFirstPendingAdminSession();
+                var paymentComputer = PromptText("Отметить оплату", "Введите ПК ожидающей оплаты:", GetFirstPendingPaymentComputerName() ?? string.Empty);
+                if (!string.IsNullOrWhiteSpace(paymentComputer))
+                {
+                    PayAdminSession(paymentComputer);
+                }
                 break;
 
             case "admin-settle-all":
-                SaveAllPendingPaymentsAsCash(18m);
-                _shiftCash += _adminPaymentQueue * 18;
+                if (!PromptMoney("Закрыть все оплаты", "Сумма по умолчанию для платежей без цены:", "18", out var settlementAmount))
+                {
+                    break;
+                }
+
+                SaveAllPendingPaymentsAsCash(settlementAmount);
                 _adminPaymentQueue = 0;
                 RefreshAdminUx();
                 AddAdminLog("All pending payments settled");
                 ShowStatus("Оплаты закрыты", "Все ожидающие платежи отмечены как оплаченные, касса пересчитана.");
                 break;
 
-            case "admin-close-vip03":
-                CloseAdminSession("VIP-03");
+            case "admin-reschedule-booking":
+                RescheduleBookingManually();
                 break;
 
-            case "admin-extend-ba01":
-                ExtendAdminSession("BA-01");
+            case "admin-cancel-booking":
+                CancelBookingManually();
                 break;
 
             case "admin-service":
-                _adminSupportQueue++;
-                _adminFreePcs = Math.Max(0, _adminFreePcs - 1);
-                SetPcStatus("STD-06", PcStatuses.Service);
-                RefreshAdminUx();
-                AddAdminLog("STD-06 moved to service");
-                ShowStatus("Сервис", "STD-06 переведен в обслуживание. Карта и выбор брони обновлены.");
+                var serviceComputer = PromptText("Поставить ПК в сервис", "Введите имя ПК:", _selectedMapPc ?? GetFirstFreeComputerName());
+                if (!string.IsNullOrWhiteSpace(serviceComputer))
+                {
+                    SetPcStatus(serviceComputer, PcStatuses.Service);
+                    LoadDatabaseState();
+                    RefreshAdminUx();
+                    AddAdminLog($"{serviceComputer} moved to service");
+                    ShowStatus("Сервис", $"{serviceComputer} переведен в обслуживание. Карта и выбор брони обновлены.");
+                }
                 break;
 
             case "admin-clear-service":
-                _adminSupportQueue = Math.Max(0, _adminSupportQueue - 1);
-                _adminFreePcs++;
-                SetPcStatus("STD-07", PcStatuses.Free);
-                SetPcStatus("STD-06", PcStatuses.Free);
-                RefreshAdminUx();
-                AddAdminLog("Service released STD-06/STD-07");
-                ShowStatus("Сервис снят", "ПК вернулся из обслуживания и доступен для брони.");
+                var clearServiceComputer = PromptText("Снять сервис с ПК", "Введите имя ПК:", GetFirstServiceComputerName());
+                if (!string.IsNullOrWhiteSpace(clearServiceComputer))
+                {
+                    SetPcStatus(clearServiceComputer, PcStatuses.Free);
+                    LoadDatabaseState();
+                    RefreshAdminUx();
+                    AddAdminLog($"Service released {clearServiceComputer}");
+                    ShowStatus("Сервис снят", $"{clearServiceComputer} вернулся из обслуживания и доступен для брони.");
+                }
                 break;
 
             case "shift-close":
@@ -3077,20 +3435,38 @@ public partial class MainWindow : Window
                     ShowStatus("Смена закрыта", "Нельзя внести расход после закрытия смены.");
                     break;
                 }
-                _shiftCash = Math.Max(0, _shiftCash - 35);
-                SaveShiftExpense(35m, "Shift expense: расходники");
+                if (!PromptMoney("Внести расход", "Введите сумму расхода:", "35", out var expenseAmount))
+                {
+                    break;
+                }
+
+                var expenseComment = PromptText("Внести расход", "Комментарий к расходу:", "Shift expense: расходники");
+                if (string.IsNullOrWhiteSpace(expenseComment))
+                {
+                    break;
+                }
+
+                _shiftCash = Math.Max(0, _shiftCash - expenseAmount);
+                SaveShiftExpense(expenseAmount, expenseComment);
                 RefreshAdminUx();
-                AddAdminLog("Expense added: -35 BYN");
-                ShowStatus("Расход внесен", "В кассу добавлен расход на расходники: -35 BYN.");
+                AddAdminLog($"Expense added: -{expenseAmount:0.##} BYN");
+                ShowStatus("Расход внесен", $"В кассу добавлен расход: -{expenseAmount:0.##} BYN.");
                 break;
 
             case "shift-report":
+                var shiftReportPath = SaveShiftReport();
                 AddAdminLog("Shift report generated");
-                ShowStatus("Отчет смены", $"Касса: {_shiftCash:0} BYN, онлайн: {_shiftOnline:0} BYN, ожидают оплату: {_adminPaymentQueue}.");
+                ShowStatus("Отчет смены", $"Касса: {_shiftCash:0} BYN, онлайн: {_shiftOnline:0} BYN. Файл: {shiftReportPath}");
                 break;
 
             case "shift-incident":
-                AddIncident($"{DateTime.Now:HH:mm} · Ручная запись смены добавлена администратором");
+                var incidentText = PromptText("Добавить инцидент", "Введите текст записи:", "Ручная запись смены добавлена администратором");
+                if (string.IsNullOrWhiteSpace(incidentText))
+                {
+                    break;
+                }
+
+                AddIncident($"{DateTime.Now:HH:mm} · {incidentText}");
                 _adminSupportQueue++;
                 RefreshAdminUx();
                 AddAdminLog("Incident added to shift journal");
@@ -3124,51 +3500,44 @@ public partial class MainWindow : Window
                 break;
 
             case "owner-export":
+                var ownerReportPath = SaveOwnerReport();
                 AddAdminLog("Owner report exported");
-                ShowStatus("Отчет владельца", $"Сводка: выручка {_ownerRevenue} BYN, загрузка {_ownerLoad}%, средний чек {_ownerAverageCheck} BYN.");
+                ShowStatus("Отчет владельца", $"Сводка: выручка {_ownerRevenue} BYN, загрузка {_ownerLoad}%. Файл: {ownerReportPath}");
                 break;
 
             case "owner-schedule":
+                var employeeName = PromptText("Расписание смен", "Введите сотрудника для новой/обновленной смены:", _currentUserFullName);
+                if (string.IsNullOrWhiteSpace(employeeName))
+                {
+                    break;
+                }
+
+                UpsertManualShift(employeeName);
                 _ownerDemandMode = "loyalty";
+                LoadDatabaseState();
                 RefreshAdminUx();
-                AddAdminLog("Staff schedule reviewed");
-                ShowStatus("Расписание открыто", "Включен сценарий лояльности: повторы растут, но выручка считается по текущим тарифам.");
+                AddAdminLog($"Staff schedule updated for {employeeName}");
+                ShowStatus("Расписание обновлено", $"Смена для {employeeName} сохранена в базе данных.");
                 break;
 
             case "owner-standard":
-                _standardRate = _standardRate == 7 ? 8 : ToggleRate(_standardRate, 8, 9);
-                SaveTariffRate("Standard", _standardRate);
-                RefreshAdminUx();
-                AddAdminLog($"Standard rate changed to {_standardRate} BYN/h");
-                ShowStatus("Standard обновлен", $"Новый тариф Standard: {_standardRate} BYN/час. Метрики пересчитаны.");
+                ChangeTariffManually("Standard", _standardRate);
                 break;
 
             case "owner-vip":
-                _vipRate = ToggleRate(_vipRate, 14, 16);
-                SaveTariffRate("VIP", _vipRate);
-                RefreshAdminUx();
-                AddAdminLog($"VIP rate changed to {_vipRate} BYN/h");
-                ShowStatus("VIP обновлен", $"Новый тариф VIP: {_vipRate} BYN/час. Метрики пересчитаны.");
+                ChangeTariffManually("VIP", _vipRate);
                 break;
 
             case "owner-bootcamp":
-                _bootcampRate = ToggleRate(_bootcampRate, 50, 60);
-                SaveTariffRate("Bootcamp", _bootcampRate);
-                RefreshAdminUx();
-                AddAdminLog($"Bootcamp hourly rate changed to {_bootcampRate} BYN/h");
-                ShowStatus("Bootcamp обновлен", $"Новый тариф Bootcamp: {_bootcampRate} BYN/час. Метрики пересчитаны.");
+                ChangeTariffManually("Bootcamp", _bootcampRate);
                 break;
 
             case "owner-royal":
-                _royalRate = ToggleRate(_royalRate, 24, 28);
-                SaveTariffRate("Royal", _royalRate);
-                RefreshAdminUx();
-                AddAdminLog($"Royal VIP rate changed to {_royalRate} BYN/h");
-                ShowStatus("Royal VIP обновлен", $"Новый тариф Royal VIP: {_royalRate} BYN/час. Метрики пересчитаны.");
+                ChangeTariffManually("Royal", _royalRate);
                 break;
 
             default:
-                ShowStatus("Действие", "Команда выполнена в локальном UX-прототипе.");
+                ShowStatus("Действие недоступно", $"Для команды {action} нет обработчика.");
                 break;
         }
     }
@@ -4761,26 +5130,54 @@ public partial class MainWindow : Window
         }
 
         var freePcs = _computers.Count(computer => NormalizePcStatus(computer.Status) == PcStatuses.Free);
-        var activeBookings = 0;
+        var result = string.Empty;
         try
         {
             using var dbContext = new AppDbContext();
-            activeBookings = dbContext.Bookings.Count(booking => booking.Status != BookingStatuses.Cancelled);
+            var now = DateTime.Now;
+            var normalizedQuery = query.ToLowerInvariant();
+            var matchingUsers = dbContext.Users
+                .AsNoTracking()
+                .Count(user => user.FullName.ToLower().Contains(normalizedQuery)
+                    || user.Login.ToLower().Contains(normalizedQuery));
+            var matchingComputers = dbContext.Computers
+                .AsNoTracking()
+                .Count(computer => computer.Name.ToLower().Contains(normalizedQuery)
+                    || computer.Zone.ToLower().Contains(normalizedQuery));
+            var activeBookings = dbContext.Bookings.Count(booking =>
+                booking.Status != BookingStatuses.Cancelled
+                && booking.EndTime > now);
+            var activeSessions = dbContext.GameSessions.Count(session =>
+                session.Status != SessionStatuses.Closed
+                && session.StartTime <= now
+                && (session.EndTime == null || session.EndTime > now));
+            var pendingPayments = dbContext.Bookings.Count(booking =>
+                    booking.Status == BookingStatuses.PendingPayment
+                    && booking.EndTime > now)
+                + dbContext.GameSessions.Count(session =>
+                    session.Status == SessionStatuses.AwaitingPayment
+                    && (session.EndTime == null || session.EndTime > now));
+
+            result = normalizedQuery switch
+            {
+                var text when text.Contains("pc") || text.Contains("пк") || text.Contains("vip") || matchingComputers > 0 =>
+                    $"Найдено ПК/зон: {matchingComputers}. Свободных ПК сейчас: {freePcs}.",
+                var text when text.Contains("брон") || text.Contains("booking") =>
+                    $"Активных будущих броней: {activeBookings}. Ожидают оплату: {pendingPayments}.",
+                var text when text.Contains("сесс") || text.Contains("session") =>
+                    $"Активных сессий сейчас: {activeSessions}. Ожидают оплату: {pendingPayments}.",
+                var text when text.Contains("клиент") || text.Contains("client") || matchingUsers > 0 =>
+                    $"Найдено клиентов: {matchingUsers}. Активных сессий сейчас: {activeSessions}.",
+                var text when text.Contains("плат") || text.Contains("баланс") || text.Contains("payment") =>
+                    $"Ожидают оплату: {pendingPayments}. Активных броней: {activeBookings}.",
+                _ => $"Найдено клиентов: {matchingUsers}, ПК/зон: {matchingComputers}, активных броней: {activeBookings}, сессий: {activeSessions}."
+            };
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Search database lookup failed: {ex}");
-            activeBookings = _adminPaymentQueue;
+            result = $"Поиск по локальному состоянию: свободных ПК {freePcs}, очередь оплат {_adminPaymentQueue}.";
         }
-
-        var result = query.ToLowerInvariant() switch
-        {
-            var text when text.Contains("pc") || text.Contains("пк") || text.Contains("vip") =>
-                $"Демо-поиск: найдено свободных ПК: {freePcs}. Открой схему клуба для выбора места.",
-            var text when text.Contains("брон") || text.Contains("плат") || text.Contains("баланс") =>
-                $"Демо-поиск: активных броней в БД: {activeBookings}, очередь оплат: {_adminPaymentQueue}.",
-            _ => $"Демо-поиск обработал \"{query}\". Для курсовой подключены быстрые ветки по ПК, броням и платежам."
-        };
 
         _suppressNotificationWrite = true;
         ShowStatus("Результат поиска", result);
