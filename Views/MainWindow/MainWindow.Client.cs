@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -12,31 +12,32 @@ using Microsoft.EntityFrameworkCore;
 using VictusLounge.Data;
 using VictusLounge.Helpers;
 using VictusLounge.Models;
+using VictusLounge.Repositories;
 
 namespace VictusLounge;
 
 public partial class MainWindow
 {
-    private void RefreshClientUx(AppDbContext dbContext, User user)
+    private void RefreshClientUx(IUnitOfWork unitOfWork, User user)
     {
         if (!IsLoaded)
         {
             return;
         }
 
-        var userSessions = dbContext.GameSessions
-            .AsNoTracking()
+        var userSessions = unitOfWork.GameSessions
+            .QueryNoTracking()
             .Where(session => session.UserId == user.Id)
             .ToList();
-        var computers = dbContext.Computers.AsNoTracking().ToDictionary(computer => computer.Id);
-        var userPayments = dbContext.Payments
-            .AsNoTracking()
+        var computers = unitOfWork.Computers.GetDictionaryNoTracking();
+        var userPayments = unitOfWork.Payments
+            .QueryNoTracking()
             .Where(payment => payment.UserId == user.Id)
             .OrderByDescending(payment => payment.CreatedAt)
             .ToList();
         var payableBookingCutoff = DateTime.Now.AddMinutes(-15);
-        var activeBooking = dbContext.Bookings
-            .AsNoTracking()
+        var activeBooking = unitOfWork.Bookings
+            .QueryNoTracking()
             .Where(booking => booking.UserId == user.Id
                 && booking.Status == BookingStatuses.PendingPayment
                 && booking.StartTime >= payableBookingCutoff)
@@ -59,15 +60,15 @@ public partial class MainWindow
         var progress = Math.Clamp((int)Math.Round(user.Balance / 150m * 100), 0, 100);
 
         CabinetUserNameText.Text = user.FullName;
-        CabinetTierText.Text = $"{GetClientTier(user)} · {user.Login}";
-        CabinetProgressText.Text = $"{progress}% · бонусов: {bonus:0.##}";
+        CabinetTierText.Text = $"{GetClientTier(user)} В· {user.Login}";
+        CabinetProgressText.Text = $"{progress}% В· Р±РѕРЅСѓСЃРѕРІ: {bonus:0.##}";
         CabinetBalanceText.Text = $"{user.Balance:0.##} BYN";
         CabinetBonusText.Text = $"{bonus:0.##}";
-        CabinetPlayedText.Text = $"{playedHours:0.#} ч";
+        CabinetPlayedText.Text = $"{playedHours:0.#} С‡";
         CabinetFavoriteZoneText.Text = favoriteZone;
         _balanceAmount = user.Balance;
         UpdateCurrentBalanceText();
-        BalanceBonusText.Text = $"Получено бонусов: {bonus:0.##}";
+        BalanceBonusText.Text = $"РџРѕР»СѓС‡РµРЅРѕ Р±РѕРЅСѓСЃРѕРІ: {bonus:0.##}";
         UpdateBalancePersonalOffer(user);
 
         if (activeBooking is not null && computers.TryGetValue(activeBooking.ComputerId, out var bookingComputer))
@@ -75,23 +76,23 @@ public partial class MainWindow
             var price = CalculateBookingTotal(activeBooking, bookingComputer);
             var label = GetBookingPackageLabel(activeBooking);
             var payablePrice = ApplyBookingPromo(price);
-            var promoSuffix = payablePrice < price ? $" · промокод -{price - payablePrice:0.##} BYN" : string.Empty;
-            CabinetActiveBookingText.Text = $"{bookingComputer.Name} · {activeBooking.StartTime:dd.MM HH:mm}–{activeBooking.EndTime:HH:mm}";
+            var promoSuffix = payablePrice < price ? $" В· РїСЂРѕРјРѕРєРѕРґ -{price - payablePrice:0.##} BYN" : string.Empty;
+            CabinetActiveBookingText.Text = $"{bookingComputer.Name} В· {activeBooking.StartTime:dd.MM HH:mm}вЂ“{activeBooking.EndTime:HH:mm}";
             CabinetActiveBookingPriceText.Text = $"{payablePrice:0.##} BYN";
             CabinetCancelBookingButton.Visibility = Visibility.Visible;
             _activeCabinetBookingId = activeBooking.Id;
             CabinetBookingCardPcText.Text = bookingComputer.Name;
-            CabinetBookingCardTimeText.Text = $"{activeBooking.StartTime:dd.MM HH:mm}–{activeBooking.EndTime:HH:mm}";
-            CabinetBookingCardPriceText.Text = $"{bookingComputer.Zone} · {label} · {payablePrice:0.##} BYN{promoSuffix}";
+            CabinetBookingCardTimeText.Text = $"{activeBooking.StartTime:dd.MM HH:mm}вЂ“{activeBooking.EndTime:HH:mm}";
+            CabinetBookingCardPriceText.Text = $"{bookingComputer.Zone} В· {label} В· {payablePrice:0.##} BYN{promoSuffix}";
             UpdateBalanceBookingOffer(activeBooking, bookingComputer, price, label);
         }
         else
         {
-            CabinetActiveBookingText.Text = "Нет активной брони";
+            CabinetActiveBookingText.Text = "РќРµС‚ Р°РєС‚РёРІРЅРѕР№ Р±СЂРѕРЅРё";
             CabinetActiveBookingPriceText.Text = "0 BYN";
             CabinetCancelBookingButton.Visibility = Visibility.Collapsed;
             _activeCabinetBookingId = null;
-            CabinetBookingCardPcText.Text = "Нет брони";
+            CabinetBookingCardPcText.Text = "РќРµС‚ Р±СЂРѕРЅРё";
             CabinetBookingCardTimeText.Text = string.Empty;
             CabinetBookingCardPriceText.Text = string.Empty;
             UpdateBalanceBookingOffer(null, null, 0m, string.Empty);
@@ -111,10 +112,10 @@ public partial class MainWindow
 
         if (booking is null || computer is null)
         {
-            BalancePackagesTitleText.Text = "Оплата брони";
-            QuickGameTitleText.Text = "Нет активной брони";
-            QuickGamePackageText.Text = "Сначала забронируйте ПК";
-            QuickGameBuyButton.Content = "Перейти к брони";
+            BalancePackagesTitleText.Text = "РћРїР»Р°С‚Р° Р±СЂРѕРЅРё";
+            QuickGameTitleText.Text = "РќРµС‚ Р°РєС‚РёРІРЅРѕР№ Р±СЂРѕРЅРё";
+            QuickGamePackageText.Text = "РЎРЅР°С‡Р°Р»Р° Р·Р°Р±СЂРѕРЅРёСЂСѓР№С‚Рµ РџРљ";
+            QuickGameBuyButton.Content = "РџРµСЂРµР№С‚Рё Рє Р±СЂРѕРЅРё";
             QuickGameBuyButton.Tag = "booking";
             QuickGamePackageCard.Tag = "booking";
             return;
@@ -122,12 +123,12 @@ public partial class MainWindow
 
         var duration = Math.Max(1, (booking.EndTime - booking.StartTime).TotalHours);
         var payableTotal = ApplyBookingPromo(total);
-        var promoSuffix = payableTotal < total ? $" · промокод -{total - payableTotal:0.##} BYN" : string.Empty;
+        var promoSuffix = payableTotal < total ? $" В· РїСЂРѕРјРѕРєРѕРґ -{total - payableTotal:0.##} BYN" : string.Empty;
         var tag = $"{packageLabel}|{payableTotal:0.##} BYN";
-        BalancePackagesTitleText.Text = "Оплата активной брони";
-        QuickGameTitleText.Text = $"{computer.Name} · {computer.Zone}";
-        QuickGamePackageText.Text = $"{packageLabel} · {duration:0.#} ч · {payableTotal:0.##} BYN{promoSuffix}";
-        QuickGameBuyButton.Content = $"Оплатить {payableTotal:0.##} BYN";
+        BalancePackagesTitleText.Text = "РћРїР»Р°С‚Р° Р°РєС‚РёРІРЅРѕР№ Р±СЂРѕРЅРё";
+        QuickGameTitleText.Text = $"{computer.Name} В· {computer.Zone}";
+        QuickGamePackageText.Text = $"{packageLabel} В· {duration:0.#} С‡ В· {payableTotal:0.##} BYN{promoSuffix}";
+        QuickGameBuyButton.Content = $"РћРїР»Р°С‚РёС‚СЊ {payableTotal:0.##} BYN";
         QuickGameBuyButton.Tag = tag;
         QuickGamePackageCard.Tag = tag;
     }
@@ -152,10 +153,8 @@ public partial class MainWindow
 
         try
         {
-            using var dbContext = new AppDbContext();
-            return dbContext.PromoCodes
-                .AsNoTracking()
-                .FirstOrDefault(promoCode => promoCode.IsActive && promoCode.Code == _appliedPromoCode);
+            using var unitOfWork = new UnitOfWork();
+            return unitOfWork.PromoCodes.GetActiveByCode(_appliedPromoCode);
         }
         catch
         {
@@ -168,10 +167,10 @@ public partial class MainWindow
         var tier = GetClientTier(user);
         var rate = GetTierTopupBonusRate(tier);
         var promoText = IsPromoApplied()
-            ? "Промокод активен: +20% бонусов к пополнению от 50 BYN и −10% к оплате брони. Персональный бонус статуса не суммируется."
+            ? "РџСЂРѕРјРѕРєРѕРґ Р°РєС‚РёРІРµРЅ: +20% Р±РѕРЅСѓСЃРѕРІ Рє РїРѕРїРѕР»РЅРµРЅРёСЋ РѕС‚ 50 BYN Рё в€’10% Рє РѕРїР»Р°С‚Рµ Р±СЂРѕРЅРё. РџРµСЂСЃРѕРЅР°Р»СЊРЅС‹Р№ Р±РѕРЅСѓСЃ СЃС‚Р°С‚СѓСЃР° РЅРµ СЃСѓРјРјРёСЂСѓРµС‚СЃСЏ."
             : rate > 0
-                ? $"{tier}: +{rate * 100:0}% бонусов к пополнению от 50 BYN. Если применить промокод, он заменит этот бонус."
-                : $"{tier}: бонусов к пополнению пока нет. Silver откроет +5% от 50 BYN.";
+                ? $"{tier}: +{rate * 100:0}% Р±РѕРЅСѓСЃРѕРІ Рє РїРѕРїРѕР»РЅРµРЅРёСЋ РѕС‚ 50 BYN. Р•СЃР»Рё РїСЂРёРјРµРЅРёС‚СЊ РїСЂРѕРјРѕРєРѕРґ, РѕРЅ Р·Р°РјРµРЅРёС‚ СЌС‚РѕС‚ Р±РѕРЅСѓСЃ."
+                : $"{tier}: Р±РѕРЅСѓСЃРѕРІ Рє РїРѕРїРѕР»РЅРµРЅРёСЋ РїРѕРєР° РЅРµС‚. Silver РѕС‚РєСЂРѕРµС‚ +5% РѕС‚ 50 BYN.";
 
         BalancePersonalOfferText.Text = promoText;
         BalanceOfferButton.Visibility = Visibility.Collapsed;
@@ -213,7 +212,7 @@ public partial class MainWindow
     {
         if (_activeCabinetBookingId is null)
         {
-            ShowStatus("Бронь не выбрана", "В кабинете нет активной брони для отмены.");
+            ShowStatus("Р‘СЂРѕРЅСЊ РЅРµ РІС‹Р±СЂР°РЅР°", "Р’ РєР°Р±РёРЅРµС‚Рµ РЅРµС‚ Р°РєС‚РёРІРЅРѕР№ Р±СЂРѕРЅРё РґР»СЏ РѕС‚РјРµРЅС‹.");
             return;
         }
 
@@ -223,19 +222,19 @@ public partial class MainWindow
             ApplyMapPcButtonStatuses();
             RebuildBookingSeatGrid();
             RefreshAdminUx();
-            ShowImportantStatus("Бронь отменена", "Статус брони обновлен в базе данных.");
+            ShowImportantStatus("Р‘СЂРѕРЅСЊ РѕС‚РјРµРЅРµРЅР°", "РЎС‚Р°С‚СѓСЃ Р±СЂРѕРЅРё РѕР±РЅРѕРІР»РµРЅ РІ Р±Р°Р·Рµ РґР°РЅРЅС‹С….");
             return;
         }
 
-        ShowStatus("Бронь не отменена", "Не удалось обновить статус брони в базе данных.");
+        ShowStatus("Р‘СЂРѕРЅСЊ РЅРµ РѕС‚РјРµРЅРµРЅР°", "РќРµ СѓРґР°Р»РѕСЃСЊ РѕР±РЅРѕРІРёС‚СЊ СЃС‚Р°С‚СѓСЃ Р±СЂРѕРЅРё РІ Р±Р°Р·Рµ РґР°РЅРЅС‹С….");
     }
 
     private bool CancelBooking(int bookingId)
     {
         try
         {
-            using var dbContext = new AppDbContext();
-            var booking = dbContext.Bookings.FirstOrDefault(item => item.Id == bookingId && item.UserId == _currentUserId);
+            using var unitOfWork = new UnitOfWork();
+            var booking = unitOfWork.Bookings.FirstOrDefault(item => item.Id == bookingId && item.UserId == _currentUserId);
             if (booking is null || booking.Status == BookingStatuses.Cancelled)
             {
                 return false;
@@ -244,19 +243,10 @@ public partial class MainWindow
             booking.Status = BookingStatuses.Cancelled;
 
             var now = DateTime.Now;
-            var hasOtherImminentBooking = dbContext.Bookings.Any(item =>
-                item.Id != booking.Id
-                && item.ComputerId == booking.ComputerId
-                && item.Status != BookingStatuses.Cancelled
-                && item.StartTime <= now.AddMinutes(15)
-                && item.EndTime > now);
-            var hasOpenSession = dbContext.GameSessions.Any(item =>
-                item.ComputerId == booking.ComputerId
-                && item.Status != SessionStatuses.Closed
-                && item.StartTime <= now
-                && (item.EndTime == null || item.EndTime > now));
+            var hasOtherImminentBooking = unitOfWork.Bookings.HasImminentBooking(booking.ComputerId, now, booking.Id);
+            var hasOpenSession = unitOfWork.GameSessions.HasOpenSession(booking.ComputerId, now);
 
-            var computer = dbContext.Computers.FirstOrDefault(item => item.Id == booking.ComputerId);
+            var computer = unitOfWork.Computers.GetById(booking.ComputerId);
             if (computer is not null && NormalizePcStatus(computer.Status) != PcStatuses.Service)
             {
                 computer.Status = hasOpenSession
@@ -266,12 +256,12 @@ public partial class MainWindow
                         : PcStatuses.Free;
             }
 
-            dbContext.SaveChanges();
+            unitOfWork.SaveChanges();
             return true;
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("Ошибка отмены брони", ex);
+            ShowDatabaseError("РћС€РёР±РєР° РѕС‚РјРµРЅС‹ Р±СЂРѕРЅРё", ex);
             return false;
         }
     }
@@ -280,7 +270,7 @@ public partial class MainWindow
     {
         if (_activeCabinetSessionId is null)
         {
-            ShowStatus("Сессия не выбрана", "В кабинете нет индивидуальной сессии для завершения.");
+            ShowStatus("РЎРµСЃСЃРёСЏ РЅРµ РІС‹Р±СЂР°РЅР°", "Р’ РєР°Р±РёРЅРµС‚Рµ РЅРµС‚ РёРЅРґРёРІРёРґСѓР°Р»СЊРЅРѕР№ СЃРµСЃСЃРёРё РґР»СЏ Р·Р°РІРµСЂС€РµРЅРёСЏ.");
             return;
         }
 
@@ -290,22 +280,22 @@ public partial class MainWindow
             ApplyMapPcButtonStatuses();
             RebuildBookingSeatGrid();
             RefreshAdminUx();
-            ShowImportantStatus("Сессия завершена", $"{computerName} освобожден, сессия закрыта в базе данных.");
+            ShowImportantStatus("РЎРµСЃСЃРёСЏ Р·Р°РІРµСЂС€РµРЅР°", $"{computerName} РѕСЃРІРѕР±РѕР¶РґРµРЅ, СЃРµСЃСЃРёСЏ Р·Р°РєСЂС‹С‚Р° РІ Р±Р°Р·Рµ РґР°РЅРЅС‹С….");
             return;
         }
 
-        ShowStatus("Сессия не завершена", "Не удалось закрыть текущую индивидуальную сессию.");
+        ShowStatus("РЎРµСЃСЃРёСЏ РЅРµ Р·Р°РІРµСЂС€РµРЅР°", "РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РєСЂС‹С‚СЊ С‚РµРєСѓС‰СѓСЋ РёРЅРґРёРІРёРґСѓР°Р»СЊРЅСѓСЋ СЃРµСЃСЃРёСЋ.");
     }
 
     private bool EndCurrentClientSession(int sessionId, out string computerName)
     {
-        computerName = "ПК";
+        computerName = "РџРљ";
 
         try
         {
-            using var dbContext = new AppDbContext();
+            using var unitOfWork = new UnitOfWork();
             var now = DateTime.Now;
-            var session = dbContext.GameSessions.FirstOrDefault(item =>
+            var session = unitOfWork.GameSessions.FirstOrDefault(item =>
                 item.Id == sessionId
                 && item.UserId == _currentUserId
                 && item.Status != SessionStatuses.Closed
@@ -321,21 +311,12 @@ public partial class MainWindow
             session.EndTime = now;
             session.Status = SessionStatuses.Closed;
 
-            var computer = dbContext.Computers.FirstOrDefault(item => item.Id == session.ComputerId);
+            var computer = unitOfWork.Computers.GetById(session.ComputerId);
             if (computer is not null)
             {
                 computerName = computer.Name;
-                var hasOtherOpenSession = dbContext.GameSessions.Any(item =>
-                    item.Id != session.Id
-                    && item.ComputerId == session.ComputerId
-                    && item.Status != SessionStatuses.Closed
-                    && item.StartTime <= now
-                    && (item.EndTime == null || item.EndTime > now));
-                var hasImminentBooking = dbContext.Bookings.Any(item =>
-                    item.ComputerId == session.ComputerId
-                    && item.Status != BookingStatuses.Cancelled
-                    && item.StartTime <= now.AddMinutes(15)
-                    && item.EndTime > now);
+                var hasOtherOpenSession = unitOfWork.GameSessions.HasOpenSession(session.ComputerId, now, session.Id);
+                var hasImminentBooking = unitOfWork.Bookings.HasImminentBooking(session.ComputerId, now);
 
                 if (NormalizePcStatus(computer.Status) != PcStatuses.Service)
                 {
@@ -347,37 +328,19 @@ public partial class MainWindow
                 }
             }
 
-            dbContext.SaveChanges();
+            unitOfWork.SaveChanges();
             return true;
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("Ошибка завершения сессии", ex);
+            ShowDatabaseError("РћС€РёР±РєР° Р·Р°РІРµСЂС€РµРЅРёСЏ СЃРµСЃСЃРёРё", ex);
             return false;
         }
     }
 
-    private static bool HasActiveIndividualSession(AppDbContext dbContext, int userId, out string computerName)
+    private static bool HasActiveIndividualSession(IUnitOfWork unitOfWork, int userId, out string computerName)
     {
-        var now = DateTime.Now;
-        var sessionInfo = dbContext.GameSessions
-            .AsNoTracking()
-            .Where(session => session.UserId == userId
-                && session.Status != SessionStatuses.Closed
-                && session.Status != SessionStatuses.Team
-                && (session.EndTime == null || session.EndTime > now))
-            .OrderByDescending(session => session.StartTime)
-            .Select(session => new
-            {
-                ComputerName = dbContext.Computers
-                    .Where(computer => computer.Id == session.ComputerId)
-                    .Select(computer => computer.Name)
-                    .FirstOrDefault()
-            })
-            .FirstOrDefault();
-
-        computerName = sessionInfo?.ComputerName ?? "другом ПК";
-        return sessionInfo is not null;
+        return unitOfWork.GameSessions.TryGetActiveIndividualSession(userId, out computerName);
     }
 
     private void RebuildCabinetSessionsGrid(IReadOnlyCollection<GameSession> sessions, IReadOnlyDictionary<int, Computer> computers)
@@ -402,23 +365,23 @@ public partial class MainWindow
         {
             _activeCabinetSessionId = null;
             CabinetEndSessionButton.Visibility = Visibility.Collapsed;
-            AddCabinetSessionRow(0, "Статус", "Нет текущей сессии", true);
-            AddCabinetSessionRow(1, "Действие", "Оплатите активную бронь или начните сессию у администратора.", false);
+            AddCabinetSessionRow(0, "РЎС‚Р°С‚СѓСЃ", "РќРµС‚ С‚РµРєСѓС‰РµР№ СЃРµСЃСЃРёРё", true);
+            AddCabinetSessionRow(1, "Р”РµР№СЃС‚РІРёРµ", "РћРїР»Р°С‚РёС‚Рµ Р°РєС‚РёРІРЅСѓСЋ Р±СЂРѕРЅСЊ РёР»Рё РЅР°С‡РЅРёС‚Рµ СЃРµСЃСЃРёСЋ Сѓ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР°.", false);
             return;
         }
 
         computers.TryGetValue(currentSession.ComputerId, out var computer);
-        var finishText = currentSession.EndTime is null ? "открытая сессия" : currentSession.EndTime.Value.ToString("dd.MM HH:mm");
+        var finishText = currentSession.EndTime is null ? "РѕС‚РєСЂС‹С‚Р°СЏ СЃРµСЃСЃРёСЏ" : currentSession.EndTime.Value.ToString("dd.MM HH:mm");
         var durationEnd = currentSession.EndTime ?? now;
         var duration = Math.Max(0, (durationEnd - currentSession.StartTime).TotalHours);
 
-        AddCabinetSessionRow(0, "Статус", "Активна", true);
-        AddCabinetSessionRow(1, "ПК", computer?.Name ?? "-", false);
-        AddCabinetSessionRow(2, "Зона", computer?.Zone ?? "-", false);
-        AddCabinetSessionRow(3, "Начало", currentSession.StartTime.ToString("dd.MM HH:mm"), false);
-        AddCabinetSessionRow(4, "Окончание", finishText, false);
-        AddCabinetSessionRow(5, "Длительность", $"{duration:0.#} ч", false);
-        AddCabinetSessionRow(6, "Сумма", $"{currentSession.TotalPrice:0.##} BYN", false);
+        AddCabinetSessionRow(0, "РЎС‚Р°С‚СѓСЃ", "РђРєС‚РёРІРЅР°", true);
+        AddCabinetSessionRow(1, "РџРљ", computer?.Name ?? "-", false);
+        AddCabinetSessionRow(2, "Р—РѕРЅР°", computer?.Zone ?? "-", false);
+        AddCabinetSessionRow(3, "РќР°С‡Р°Р»Рѕ", currentSession.StartTime.ToString("dd.MM HH:mm"), false);
+        AddCabinetSessionRow(4, "РћРєРѕРЅС‡Р°РЅРёРµ", finishText, false);
+        AddCabinetSessionRow(5, "Р”Р»РёС‚РµР»СЊРЅРѕСЃС‚СЊ", $"{duration:0.#} С‡", false);
+        AddCabinetSessionRow(6, "РЎСѓРјРјР°", $"{currentSession.TotalPrice:0.##} BYN", false);
         _activeCabinetSessionId = currentSession.Id;
         CabinetEndSessionButton.Visibility = string.Equals(currentSession.Status, SessionStatuses.Team, StringComparison.OrdinalIgnoreCase)
             ? Visibility.Collapsed
@@ -465,18 +428,13 @@ public partial class MainWindow
 
         try
         {
-            using var dbContext = new AppDbContext();
-            var payments = dbContext.Payments
-                .AsNoTracking()
-                .Where(payment => payment.UserId == _currentUserId)
-                .OrderByDescending(payment => payment.CreatedAt)
-                .Take(8)
-                .ToList();
+            using var unitOfWork = new UnitOfWork();
+            var payments = unitOfWork.Payments.GetRecentForUser(_currentUserId, 8);
             RebuildBalanceHistoryGrid(payments);
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("Ошибка истории баланса", ex);
+            ShowDatabaseError("РћС€РёР±РєР° РёСЃС‚РѕСЂРёРё Р±Р°Р»Р°РЅСЃР°", ex);
         }
     }
 
@@ -500,18 +458,18 @@ public partial class MainWindow
         }
 
         BalanceHistoryGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        AddBalanceHistoryCell(0, 0, "Дата", "GoldLightBrush", FontWeights.Bold);
-        AddBalanceHistoryCell(0, 1, "Операция", "GoldLightBrush", FontWeights.Bold);
-        AddBalanceHistoryCell(0, 2, "Метод", "GoldLightBrush", FontWeights.Bold);
-        AddBalanceHistoryCell(0, 3, "Сумма", "GoldLightBrush", FontWeights.Bold);
-        AddBalanceHistoryCell(0, 4, "Статус", "GoldLightBrush", FontWeights.Bold, alignRight: true);
+        AddBalanceHistoryCell(0, 0, "Р”Р°С‚Р°", "GoldLightBrush", FontWeights.Bold);
+        AddBalanceHistoryCell(0, 1, "РћРїРµСЂР°С†РёСЏ", "GoldLightBrush", FontWeights.Bold);
+        AddBalanceHistoryCell(0, 2, "РњРµС‚РѕРґ", "GoldLightBrush", FontWeights.Bold);
+        AddBalanceHistoryCell(0, 3, "РЎСѓРјРјР°", "GoldLightBrush", FontWeights.Bold);
+        AddBalanceHistoryCell(0, 4, "РЎС‚Р°С‚СѓСЃ", "GoldLightBrush", FontWeights.Bold, alignRight: true);
 
         if (payments.Count == 0)
         {
             BalanceHistoryGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             var emptyText = new TextBlock
             {
-                Text = "Пока нет операций по балансу.",
+                Text = "РџРѕРєР° РЅРµС‚ РѕРїРµСЂР°С†РёР№ РїРѕ Р±Р°Р»Р°РЅСЃСѓ.",
                 Foreground = (Brush)FindResource("MutedBrush"),
                 Margin = new Thickness(0, 13, 0, 0),
                 TextWrapping = TextWrapping.Wrap
@@ -584,8 +542,8 @@ public partial class MainWindow
                 : "OkBrush";
         var statusBrush = status switch
         {
-            "Ожидает" => "WaitBrush",
-            "Начислено" => "GoldLightBrush",
+            "РћР¶РёРґР°РµС‚" => "WaitBrush",
+            "РќР°С‡РёСЃР»РµРЅРѕ" => "GoldLightBrush",
             _ => "OkBrush"
         };
         return (amountBrush, statusBrush);
@@ -597,54 +555,54 @@ public partial class MainWindow
         if (string.IsNullOrWhiteSpace(comment))
         {
             return string.Equals(payment.PaymentType, "Bonus", StringComparison.OrdinalIgnoreCase)
-                ? "Бонус"
-                : "Операция";
+                ? "Р‘РѕРЅСѓСЃ"
+                : "РћРїРµСЂР°С†РёСЏ";
         }
         if (comment.StartsWith("Pending balance top-up", StringComparison.OrdinalIgnoreCase))
         {
-            return "Ожидание пополнения";
+            return "РћР¶РёРґР°РЅРёРµ РїРѕРїРѕР»РЅРµРЅРёСЏ";
         }
         if (comment.Contains("Balance top-up", StringComparison.OrdinalIgnoreCase))
         {
-            return "Пополнение баланса";
+            return "РџРѕРїРѕР»РЅРµРЅРёРµ Р±Р°Р»Р°РЅСЃР°";
         }
         if (comment.StartsWith("Package purchase", StringComparison.OrdinalIgnoreCase))
         {
             var separator = comment.IndexOf(';');
             var head = separator > 0 ? comment[..separator] : comment;
-            return head.Replace("Package purchase", "Покупка пакета", StringComparison.OrdinalIgnoreCase);
+            return head.Replace("Package purchase", "РџРѕРєСѓРїРєР° РїР°РєРµС‚Р°", StringComparison.OrdinalIgnoreCase);
         }
         if (comment.StartsWith("Guest session", StringComparison.OrdinalIgnoreCase))
         {
-            return comment.Replace("Guest session", "Гостевая сессия", StringComparison.OrdinalIgnoreCase);
+            return comment.Replace("Guest session", "Р“РѕСЃС‚РµРІР°СЏ СЃРµСЃСЃРёСЏ", StringComparison.OrdinalIgnoreCase);
         }
         if (comment.StartsWith("Session extension", StringComparison.OrdinalIgnoreCase))
         {
-            return comment.Replace("Session extension", "Продление сессии", StringComparison.OrdinalIgnoreCase);
+            return comment.Replace("Session extension", "РџСЂРѕРґР»РµРЅРёРµ СЃРµСЃСЃРёРё", StringComparison.OrdinalIgnoreCase);
         }
         if (comment.StartsWith("Payment confirmed", StringComparison.OrdinalIgnoreCase))
         {
-            return comment.Replace("Payment confirmed", "Оплата сессии", StringComparison.OrdinalIgnoreCase);
+            return comment.Replace("Payment confirmed", "РћРїР»Р°С‚Р° СЃРµСЃСЃРёРё", StringComparison.OrdinalIgnoreCase);
         }
         if (comment.StartsWith("Shift expense", StringComparison.OrdinalIgnoreCase))
         {
-            return "Расход смены";
+            return "Р Р°СЃС…РѕРґ СЃРјРµРЅС‹";
         }
         if (comment.StartsWith("Bulk payment", StringComparison.OrdinalIgnoreCase))
         {
-            return "Подтверждение очереди оплат";
+            return "РџРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ РѕС‡РµСЂРµРґРё РѕРїР»Р°С‚";
         }
         if (comment.StartsWith("Event registration", StringComparison.OrdinalIgnoreCase))
         {
             var separator = comment.IndexOf(';');
             var head = separator > 0 ? comment[..separator] : comment;
-            return head.Replace("Event registration", "Запись на событие", StringComparison.OrdinalIgnoreCase);
+            return head.Replace("Event registration", "Р—Р°РїРёСЃСЊ РЅР° СЃРѕР±С‹С‚РёРµ", StringComparison.OrdinalIgnoreCase);
         }
         if (comment.StartsWith("Admin log", StringComparison.OrdinalIgnoreCase))
         {
-            return "Журнал администратора";
+            return "Р–СѓСЂРЅР°Р» Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР°";
         }
-        return comment.Length > 60 ? comment[..60] + "…" : comment;
+        return comment.Length > 60 ? comment[..60] + "вЂ¦" : comment;
     }
 
     private static string FormatPaymentMethod(Payment payment)
@@ -652,15 +610,15 @@ public partial class MainWindow
         var paymentType = payment.PaymentType ?? string.Empty;
         return paymentType switch
         {
-            "Card" => "Карта",
-            "Cash" => "Наличные",
-            "Online" => "Онлайн",
-            "Bonus" => "Бонусы",
-            "EventRegistration" => "Событие",
-            "AdminLog" => "Журнал",
-            "PendingErip" => "ЕРИП",
-            "PendingCash" => "Наличные",
-            _ when paymentType.StartsWith("Pending", StringComparison.OrdinalIgnoreCase) => "Ожидание",
+            "Card" => "РљР°СЂС‚Р°",
+            "Cash" => "РќР°Р»РёС‡РЅС‹Рµ",
+            "Online" => "РћРЅР»Р°Р№РЅ",
+            "Bonus" => "Р‘РѕРЅСѓСЃС‹",
+            "EventRegistration" => "РЎРѕР±С‹С‚РёРµ",
+            "AdminLog" => "Р–СѓСЂРЅР°Р»",
+            "PendingErip" => "Р•Р РРџ",
+            "PendingCash" => "РќР°Р»РёС‡РЅС‹Рµ",
+            _ when paymentType.StartsWith("Pending", StringComparison.OrdinalIgnoreCase) => "РћР¶РёРґР°РЅРёРµ",
             _ => paymentType
         };
     }
@@ -670,13 +628,13 @@ public partial class MainWindow
         var paymentType = payment.PaymentType ?? string.Empty;
         if (paymentType.StartsWith("Pending", StringComparison.OrdinalIgnoreCase))
         {
-            return "Ожидает";
+            return "РћР¶РёРґР°РµС‚";
         }
         if (string.Equals(paymentType, "Bonus", StringComparison.OrdinalIgnoreCase))
         {
-            return "Начислено";
+            return "РќР°С‡РёСЃР»РµРЅРѕ";
         }
-        return IsDebitPayment(payment) ? "Списано" : "Успешно";
+        return IsDebitPayment(payment) ? "РЎРїРёСЃР°РЅРѕ" : "РЈСЃРїРµС€РЅРѕ";
     }
 
     private static bool IsDebitPayment(Payment payment)

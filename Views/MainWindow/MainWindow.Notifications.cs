@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using VictusLounge.Data;
 using VictusLounge.Helpers;
 using VictusLounge.Models;
+using VictusLounge.Repositories;
 
 namespace VictusLounge;
 
@@ -36,7 +37,7 @@ public partial class MainWindow
 
         NotificationEmptyText.Visibility = NotificationList.Children.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
-        ShowStatus("Уведомления прочитаны", "Новых уведомлений нет, список остался как история действий.");
+        ShowStatus("РЈРІРµРґРѕРјР»РµРЅРёСЏ РїСЂРѕС‡РёС‚Р°РЅС‹", "РќРѕРІС‹С… СѓРІРµРґРѕРјР»РµРЅРёР№ РЅРµС‚, СЃРїРёСЃРѕРє РѕСЃС‚Р°Р»СЃСЏ РєР°Рє РёСЃС‚РѕСЂРёСЏ РґРµР№СЃС‚РІРёР№.");
         e.Handled = true;
     }
     private void RootGrid_PreviewMouseDown(object sender, MouseButtonEventArgs e)
@@ -121,53 +122,53 @@ public partial class MainWindow
         var result = string.Empty;
         try
         {
-            using var dbContext = new AppDbContext();
+            using var unitOfWork = new UnitOfWork();
             var now = DateTime.Now;
             var normalizedQuery = query.ToLowerInvariant();
-            var matchingUsers = dbContext.Users
-                .AsNoTracking()
+            var matchingUsers = unitOfWork.Users
+                .QueryNoTracking()
                 .Count(user => user.FullName.ToLower().Contains(normalizedQuery)
                     || user.Login.ToLower().Contains(normalizedQuery));
-            var matchingComputers = dbContext.Computers
-                .AsNoTracking()
+            var matchingComputers = unitOfWork.Computers
+                .QueryNoTracking()
                 .Count(computer => computer.Name.ToLower().Contains(normalizedQuery)
                     || computer.Zone.ToLower().Contains(normalizedQuery));
-            var activeBookings = dbContext.Bookings.Count(booking =>
+            var activeBookings = unitOfWork.Bookings.Count(booking =>
                 booking.Status != BookingStatuses.Cancelled
                 && booking.EndTime > now);
-            var activeSessions = dbContext.GameSessions.Count(session =>
+            var activeSessions = unitOfWork.GameSessions.Count(session =>
                 session.Status != SessionStatuses.Closed
                 && session.StartTime <= now
                 && (session.EndTime == null || session.EndTime > now));
-            var pendingPayments = dbContext.Bookings.Count(booking =>
+            var pendingPayments = unitOfWork.Bookings.Count(booking =>
                     booking.Status == BookingStatuses.PendingPayment
                     && booking.EndTime > now)
-                + dbContext.GameSessions.Count(session =>
+                + unitOfWork.GameSessions.Count(session =>
                     session.Status == SessionStatuses.AwaitingPayment
                     && (session.EndTime == null || session.EndTime > now));
 
             result = normalizedQuery switch
             {
-                var text when text.Contains("pc") || text.Contains("пк") || text.Contains("vip") || matchingComputers > 0 =>
-                    $"Найдено ПК/зон: {matchingComputers}. Свободных ПК сейчас: {freePcs}.",
-                var text when text.Contains("брон") || text.Contains("booking") =>
-                    $"Активных будущих броней: {activeBookings}. Ожидают оплату: {pendingPayments}.",
-                var text when text.Contains("сесс") || text.Contains("session") =>
-                    $"Активных сессий сейчас: {activeSessions}. Ожидают оплату: {pendingPayments}.",
-                var text when text.Contains("клиент") || text.Contains("client") || matchingUsers > 0 =>
-                    $"Найдено клиентов: {matchingUsers}. Активных сессий сейчас: {activeSessions}.",
-                var text when text.Contains("плат") || text.Contains("баланс") || text.Contains("payment") =>
-                    $"Ожидают оплату: {pendingPayments}. Активных броней: {activeBookings}.",
-                _ => $"Найдено клиентов: {matchingUsers}, ПК/зон: {matchingComputers}, активных броней: {activeBookings}, сессий: {activeSessions}."
+                var text when text.Contains("pc") || text.Contains("РїРє") || text.Contains("vip") || matchingComputers > 0 =>
+                    $"РќР°Р№РґРµРЅРѕ РџРљ/Р·РѕРЅ: {matchingComputers}. РЎРІРѕР±РѕРґРЅС‹С… РџРљ СЃРµР№С‡Р°СЃ: {freePcs}.",
+                var text when text.Contains("Р±СЂРѕРЅ") || text.Contains("booking") =>
+                    $"РђРєС‚РёРІРЅС‹С… Р±СѓРґСѓС‰РёС… Р±СЂРѕРЅРµР№: {activeBookings}. РћР¶РёРґР°СЋС‚ РѕРїР»Р°С‚Сѓ: {pendingPayments}.",
+                var text when text.Contains("СЃРµСЃСЃ") || text.Contains("session") =>
+                    $"РђРєС‚РёРІРЅС‹С… СЃРµСЃСЃРёР№ СЃРµР№С‡Р°СЃ: {activeSessions}. РћР¶РёРґР°СЋС‚ РѕРїР»Р°С‚Сѓ: {pendingPayments}.",
+                var text when text.Contains("РєР»РёРµРЅС‚") || text.Contains("client") || matchingUsers > 0 =>
+                    $"РќР°Р№РґРµРЅРѕ РєР»РёРµРЅС‚РѕРІ: {matchingUsers}. РђРєС‚РёРІРЅС‹С… СЃРµСЃСЃРёР№ СЃРµР№С‡Р°СЃ: {activeSessions}.",
+                var text when text.Contains("РїР»Р°С‚") || text.Contains("Р±Р°Р»Р°РЅСЃ") || text.Contains("payment") =>
+                    $"РћР¶РёРґР°СЋС‚ РѕРїР»Р°С‚Сѓ: {pendingPayments}. РђРєС‚РёРІРЅС‹С… Р±СЂРѕРЅРµР№: {activeBookings}.",
+                _ => $"РќР°Р№РґРµРЅРѕ РєР»РёРµРЅС‚РѕРІ: {matchingUsers}, РџРљ/Р·РѕРЅ: {matchingComputers}, Р°РєС‚РёРІРЅС‹С… Р±СЂРѕРЅРµР№: {activeBookings}, СЃРµСЃСЃРёР№: {activeSessions}."
             };
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Search database lookup failed: {ex}");
-            result = $"Поиск по локальному состоянию: свободных ПК {freePcs}, очередь оплат {_adminPaymentQueue}.";
+            result = $"РџРѕРёСЃРє РїРѕ Р»РѕРєР°Р»СЊРЅРѕРјСѓ СЃРѕСЃС‚РѕСЏРЅРёСЋ: СЃРІРѕР±РѕРґРЅС‹С… РџРљ {freePcs}, РѕС‡РµСЂРµРґСЊ РѕРїР»Р°С‚ {_adminPaymentQueue}.";
         }
 
-        ShowStatus("Результат поиска", result);
+        ShowStatus("Р РµР·СѓР»СЊС‚Р°С‚ РїРѕРёСЃРєР°", result);
     }
 
     private void ShowStatus(string title, string body)

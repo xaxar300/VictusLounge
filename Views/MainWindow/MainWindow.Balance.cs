@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using VictusLounge.Data;
 using VictusLounge.Helpers;
+using VictusLounge.Repositories;
 
 namespace VictusLounge;
 
@@ -34,8 +35,8 @@ public partial class MainWindow
     {
         try
         {
-            using var dbContext = new AppDbContext();
-            var user = dbContext.Users.AsNoTracking().FirstOrDefault(item => item.Id == _currentUserId);
+            using var unitOfWork = new UnitOfWork();
+            var user = unitOfWork.Users.GetByIdNoTracking(_currentUserId);
             return user is null ? GetClientTier(_balanceAmount) : GetClientTier(user);
         }
         catch

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using VictusLounge.Data;
 using VictusLounge.Helpers;
 using VictusLounge.Models;
+using VictusLounge.Repositories;
 
 namespace VictusLounge;
 
@@ -33,11 +34,11 @@ public partial class MainWindow
                 break;
             case "package":
                 NavigateTo("balance");
-                ShowStatus("Оплата пакета", "Открыта страница баланса с пакетами времени.");
+                ShowStatus("РћРїР»Р°С‚Р° РїР°РєРµС‚Р°", "РћС‚РєСЂС‹С‚Р° СЃС‚СЂР°РЅРёС†Р° Р±Р°Р»Р°РЅСЃР° СЃ РїР°РєРµС‚Р°РјРё РІСЂРµРјРµРЅРё.");
                 break;
             case "profile":
                 NavigateTo("cabinet");
-                ShowStatus("Профиль клиента", $"Открыт кабинет {_currentUserFullName}.");
+                ShowStatus("РџСЂРѕС„РёР»СЊ РєР»РёРµРЅС‚Р°", $"РћС‚РєСЂС‹С‚ РєР°Р±РёРЅРµС‚ {_currentUserFullName}.");
                 break;
             default:
                 NavigateTo(action ?? "dashboard");
@@ -57,11 +58,11 @@ public partial class MainWindow
             case "topup":
                 NavigateTo("balance");
                 OpenTopupOverlay();
-                ShowStatus("Пополнение баланса", "Открыта страница баланса и форма оплаты.");
+                ShowStatus("РџРѕРїРѕР»РЅРµРЅРёРµ Р±Р°Р»Р°РЅСЃР°", "РћС‚РєСЂС‹С‚Р° СЃС‚СЂР°РЅРёС†Р° Р±Р°Р»Р°РЅСЃР° Рё С„РѕСЂРјР° РѕРїР»Р°С‚С‹.");
                 break;
             case "package":
                 NavigateTo("balance");
-                ShowStatus("Оплата брони", "На странице баланса доступен только счет по активной брони.");
+                ShowStatus("РћРїР»Р°С‚Р° Р±СЂРѕРЅРё", "РќР° СЃС‚СЂР°РЅРёС†Рµ Р±Р°Р»Р°РЅСЃР° РґРѕСЃС‚СѓРїРµРЅ С‚РѕР»СЊРєРѕ СЃС‡РµС‚ РїРѕ Р°РєС‚РёРІРЅРѕР№ Р±СЂРѕРЅРё.");
                 break;
             case "events":
                 NavigateTo("events");
@@ -97,7 +98,7 @@ public partial class MainWindow
         }
 
         var parts = raw.Split('|');
-        var eventName = parts.ElementAtOrDefault(0) ?? "Событие";
+        var eventName = parts.ElementAtOrDefault(0) ?? "РЎРѕР±С‹С‚РёРµ";
         var category = parts.ElementAtOrDefault(1) ?? "Event";
         var time = parts.ElementAtOrDefault(2) ?? "--:--";
 
@@ -113,46 +114,46 @@ public partial class MainWindow
 
         try
         {
-            using var dbContext = new AppDbContext();
-            var existing = dbContext.Payments.Any(payment =>
+            using var unitOfWork = new UnitOfWork();
+            var existing = unitOfWork.Payments.Any(payment =>
                 payment.UserId == _currentUserId
                 && payment.PaymentType == PaymentTypes.EventRegistration
                 && payment.Comment.Contains(eventName));
             if (!existing)
             {
-                dbContext.Payments.Add(new Payment
+                unitOfWork.Payments.Add(new Payment
                 {
-                    Id = dbContext.Payments.GetNextId(payment => payment.Id),
+                    Id = unitOfWork.Payments.GetNextId(payment => payment.Id),
                     UserId = _currentUserId,
                     Amount = 0,
                     PaymentType = PaymentTypes.EventRegistration,
                     CreatedAt = DateTime.Now,
                     Comment = $"Event registration: {eventName}; category {category}; time {time}"
                 });
-                dbContext.SaveChanges();
+                unitOfWork.SaveChanges();
             }
 
             if (sourceButton is not null)
             {
-                sourceButton.Content = existing ? "Уже записан" : "Заявка отправлена";
+                sourceButton.Content = existing ? "РЈР¶Рµ Р·Р°РїРёСЃР°РЅ" : "Р—Р°СЏРІРєР° РѕС‚РїСЂР°РІР»РµРЅР°";
                 sourceButton.IsEnabled = false;
                 sourceButton.Opacity = 0.65;
             }
 
-            EventApplicationsText.Text = $"{category}: {eventName} · {time}";
+            EventApplicationsText.Text = $"{category}: {eventName} В· {time}";
             LoadDatabaseState();
             if (existing)
             {
-                ShowStatus("Заявка уже есть", $"{eventName}: запись уже сохранена в истории клиента.");
+                ShowStatus("Р—Р°СЏРІРєР° СѓР¶Рµ РµСЃС‚СЊ", $"{eventName}: Р·Р°РїРёСЃСЊ СѓР¶Рµ СЃРѕС…СЂР°РЅРµРЅР° РІ РёСЃС‚РѕСЂРёРё РєР»РёРµРЅС‚Р°.");
             }
             else
             {
-                ShowImportantStatus("Заявка отправлена", $"{eventName}: запись сохранена в истории клиента.");
+                ShowImportantStatus("Р—Р°СЏРІРєР° РѕС‚РїСЂР°РІР»РµРЅР°", $"{eventName}: Р·Р°РїРёСЃСЊ СЃРѕС…СЂР°РЅРµРЅР° РІ РёСЃС‚РѕСЂРёРё РєР»РёРµРЅС‚Р°.");
             }
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("Ошибка записи на событие", ex);
+            ShowDatabaseError("РћС€РёР±РєР° Р·Р°РїРёСЃРё РЅР° СЃРѕР±С‹С‚РёРµ", ex);
         }
     }
 
@@ -175,21 +176,19 @@ public partial class MainWindow
                     _appliedPromoCode = null;
                     UpdateTopupSummary();
                     LoadDatabaseState();
-                    ShowStatus("Промокод снят", "Скидка к оплате брони и бонус к пополнению отключены.");
+                    ShowStatus("РџСЂРѕРјРѕРєРѕРґ СЃРЅСЏС‚", "РЎРєРёРґРєР° Рє РѕРїР»Р°С‚Рµ Р±СЂРѕРЅРё Рё Р±РѕРЅСѓСЃ Рє РїРѕРїРѕР»РЅРµРЅРёСЋ РѕС‚РєР»СЋС‡РµРЅС‹.");
                     break;
                 }
 
-                using (var dbContext = new AppDbContext())
+                using (var unitOfWork = new UnitOfWork())
                 {
-                    var promoCode = dbContext.PromoCodes
-                        .AsNoTracking()
-                        .FirstOrDefault(item => item.IsActive && item.Code == promo);
+                    var promoCode = unitOfWork.PromoCodes.GetActiveByCode(promo);
                     if (promoCode is not null)
                     {
                         _appliedPromoCode = promoCode.Code;
                         UpdateTopupSummary();
                         LoadDatabaseState();
-                        ShowStatus("Промокод применен", $"{promoCode.Code}: −{promoCode.BookingDiscountRate * 100:0}% к оплате брони или +{promoCode.TopupBonusRate * 100:0}% к пополнению от {promoCode.MinTopupAmount:0.##} BYN.");
+                        ShowStatus("РџСЂРѕРјРѕРєРѕРґ РїСЂРёРјРµРЅРµРЅ", $"{promoCode.Code}: в€’{promoCode.BookingDiscountRate * 100:0}% Рє РѕРїР»Р°С‚Рµ Р±СЂРѕРЅРё РёР»Рё +{promoCode.TopupBonusRate * 100:0}% Рє РїРѕРїРѕР»РЅРµРЅРёСЋ РѕС‚ {promoCode.MinTopupAmount:0.##} BYN.");
                         break;
                     }
                 }
@@ -197,21 +196,21 @@ public partial class MainWindow
                 _appliedPromoCode = null;
                 UpdateTopupSummary();
                 LoadDatabaseState();
-                ShowStatus("Промокод не найден", "Проверьте код или активность промокода в базе.");
+                ShowStatus("РџСЂРѕРјРѕРєРѕРґ РЅРµ РЅР°Р№РґРµРЅ", "РџСЂРѕРІРµСЂСЊС‚Рµ РєРѕРґ РёР»Рё Р°РєС‚РёРІРЅРѕСЃС‚СЊ РїСЂРѕРјРѕРєРѕРґР° РІ Р±Р°Р·Рµ.");
                 break;
             case "promo-clear":
                 _appliedPromoCode = null;
                 PromoCodeBox.Text = string.Empty;
                 UpdateTopupSummary();
                 LoadDatabaseState();
-                ShowStatus("Промокод снят", "Скидка к оплате брони и бонус к пополнению отключены.");
+                ShowStatus("РџСЂРѕРјРѕРєРѕРґ СЃРЅСЏС‚", "РЎРєРёРґРєР° Рє РѕРїР»Р°С‚Рµ Р±СЂРѕРЅРё Рё Р±РѕРЅСѓСЃ Рє РїРѕРїРѕР»РЅРµРЅРёСЋ РѕС‚РєР»СЋС‡РµРЅС‹.");
                 break;
             case "offer":
-                ShowStatus("Персональная акция", "Бонус статуса применяется автоматически при пополнении и не требует активации.");
+                ShowStatus("РџРµСЂСЃРѕРЅР°Р»СЊРЅР°СЏ Р°РєС†РёСЏ", "Р‘РѕРЅСѓСЃ СЃС‚Р°С‚СѓСЃР° РїСЂРёРјРµРЅСЏРµС‚СЃСЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РїСЂРё РїРѕРїРѕР»РЅРµРЅРёРё Рё РЅРµ С‚СЂРµР±СѓРµС‚ Р°РєС‚РёРІР°С†РёРё.");
                 break;
             case "export":
                 var exportPath = ExportBalanceHistory();
-                ShowImportantStatus(T("Balance.Export"), $"История операций выгружена: {exportPath}");
+                ShowImportantStatus(T("Balance.Export"), $"РСЃС‚РѕСЂРёСЏ РѕРїРµСЂР°С†РёР№ РІС‹РіСЂСѓР¶РµРЅР°: {exportPath}");
                 break;
             default:
                 LoadDatabaseState();
@@ -223,10 +222,9 @@ public partial class MainWindow
     {
         try
         {
-            using var dbContext = new AppDbContext();
-            var user = dbContext.Users.AsNoTracking().FirstOrDefault(item => item.Id == _currentUserId);
-            var payments = dbContext.Payments
-                .AsNoTracking()
+            using var unitOfWork = new UnitOfWork();
+            var user = unitOfWork.Users.GetByIdNoTracking(_currentUserId);
+            var payments = unitOfWork.Payments.QueryNoTracking()
                 .Where(payment => payment.UserId == _currentUserId)
                 .OrderByDescending(payment => payment.CreatedAt)
                 .ToList();
@@ -243,8 +241,8 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("Ошибка экспорта баланса", ex);
-            return "экспорт не выполнен";
+            ShowDatabaseError("РћС€РёР±РєР° СЌРєСЃРїРѕСЂС‚Р° Р±Р°Р»Р°РЅСЃР°", ex);
+            return "СЌРєСЃРїРѕСЂС‚ РЅРµ РІС‹РїРѕР»РЅРµРЅ";
         }
     }
 
@@ -267,25 +265,25 @@ public partial class MainWindow
         if (packageName.Equals("booking", StringComparison.OrdinalIgnoreCase))
         {
             NavigateTo("booking");
-            ShowStatus("Бронь не выбрана", "Сначала создайте бронь, затем вернитесь к оплате.");
+            ShowStatus("Р‘СЂРѕРЅСЊ РЅРµ РІС‹Р±СЂР°РЅР°", "РЎРЅР°С‡Р°Р»Р° СЃРѕР·РґР°Р№С‚Рµ Р±СЂРѕРЅСЊ, Р·Р°С‚РµРј РІРµСЂРЅРёС‚РµСЃСЊ Рє РѕРїР»Р°С‚Рµ.");
             return;
         }
 
         var price = parts.ElementAtOrDefault(1) ?? string.Empty;
         if (!TryParseMoney(price, out var amount))
         {
-            ShowStatus("Оплата пакета", "Не удалось определить стоимость пакета.");
+            ShowStatus("РћРїР»Р°С‚Р° РїР°РєРµС‚Р°", "РќРµ СѓРґР°Р»РѕСЃСЊ РѕРїСЂРµРґРµР»РёС‚СЊ СЃС‚РѕРёРјРѕСЃС‚СЊ РїР°РєРµС‚Р°.");
             return;
         }
 
         var confirmation = MessageBox.Show(
-            "Оплата активной брони сразу запускает игровую сессию на выбранном ПК. Продолжить?",
-            "Подтверждение оплаты",
+            "РћРїР»Р°С‚Р° Р°РєС‚РёРІРЅРѕР№ Р±СЂРѕРЅРё СЃСЂР°Р·Сѓ Р·Р°РїСѓСЃРєР°РµС‚ РёРіСЂРѕРІСѓСЋ СЃРµСЃСЃРёСЋ РЅР° РІС‹Р±СЂР°РЅРЅРѕРј РџРљ. РџСЂРѕРґРѕР»Р¶РёС‚СЊ?",
+            "РџРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ РѕРїР»Р°С‚С‹",
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning);
         if (confirmation != MessageBoxResult.Yes)
         {
-            ShowStatus("Оплата отменена", "Бронь осталась активной и ожидает оплаты.");
+            ShowStatus("РћРїР»Р°С‚Р° РѕС‚РјРµРЅРµРЅР°", "Р‘СЂРѕРЅСЊ РѕСЃС‚Р°Р»Р°СЃСЊ Р°РєС‚РёРІРЅРѕР№ Рё РѕР¶РёРґР°РµС‚ РѕРїР»Р°С‚С‹.");
             return;
         }
 
@@ -300,12 +298,12 @@ public partial class MainWindow
                 RefreshLiveViewsAfterDatabaseChange();
             }, DispatcherPriority.Background);
             RefreshAdminUx();
-            ShowImportantStatus("Пакет оплачен", resultMessage);
+            ShowImportantStatus("РџР°РєРµС‚ РѕРїР»Р°С‡РµРЅ", resultMessage);
             return;
         }
 
-        ShowStatus("Оплата не выполнена", resultMessage);
-        if (resultMessage.Contains("Недостаточно", StringComparison.OrdinalIgnoreCase))
+        ShowStatus("РћРїР»Р°С‚Р° РЅРµ РІС‹РїРѕР»РЅРµРЅР°", resultMessage);
+        if (resultMessage.Contains("РќРµРґРѕСЃС‚Р°С‚РѕС‡РЅРѕ", StringComparison.OrdinalIgnoreCase))
         {
             TopupAmountBox.Text = Math.Max(1, amount - _balanceAmount).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
             OpenTopupOverlay();
@@ -316,37 +314,31 @@ public partial class MainWindow
     {
         try
         {
-            using var dbContext = new AppDbContext();
-            var user = dbContext.Users.FirstOrDefault(item => item.Id == _currentUserId);
+            using var unitOfWork = new UnitOfWork();
+            var user = unitOfWork.Users.GetById(_currentUserId);
             if (user is null)
             {
-                message = "Пользователь не найден в базе данных.";
+                message = "РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ РЅРµ РЅР°Р№РґРµРЅ РІ Р±Р°Р·Рµ РґР°РЅРЅС‹С….";
                 return false;
             }
 
-            var booking = dbContext.Bookings
-                .Where(item => item.UserId == user.Id
-                    && item.Status == BookingStatuses.PendingPayment
-                    && item.StartTime >= DateTime.Now.AddMinutes(-15))
-                .OrderByDescending(item => item.CreatedAt)
-                .ThenByDescending(item => item.Id)
-                .FirstOrDefault();
+            var booking = unitOfWork.Bookings.GetPendingForUser(user.Id, DateTime.Now.AddMinutes(-15));
             if (booking is null)
             {
-                message = "Сначала забронируй ПК, потом оплачивай пакет.";
+                message = "РЎРЅР°С‡Р°Р»Р° Р·Р°Р±СЂРѕРЅРёСЂСѓР№ РџРљ, РїРѕС‚РѕРј РѕРїР»Р°С‡РёРІР°Р№ РїР°РєРµС‚.";
                 return false;
             }
 
-            var computer = dbContext.Computers.FirstOrDefault(item => item.Id == booking.ComputerId);
+            var computer = unitOfWork.Computers.GetById(booking.ComputerId);
             if (computer is null)
             {
-                message = "ПК из брони не найден в базе данных.";
+                message = "РџРљ РёР· Р±СЂРѕРЅРё РЅРµ РЅР°Р№РґРµРЅ РІ Р±Р°Р·Рµ РґР°РЅРЅС‹С….";
                 return false;
             }
 
-            if (HasActiveIndividualSession(dbContext, user.Id, out var activeSessionComputer))
+            if (HasActiveIndividualSession(unitOfWork, user.Id, out var activeSessionComputer))
             {
-                message = $"У клиента уже есть активная сессия на {activeSessionComputer}. Сначала завершите текущую сессию.";
+                message = $"РЈ РєР»РёРµРЅС‚Р° СѓР¶Рµ РµСЃС‚СЊ Р°РєС‚РёРІРЅР°СЏ СЃРµСЃСЃРёСЏ РЅР° {activeSessionComputer}. РЎРЅР°С‡Р°Р»Р° Р·Р°РІРµСЂС€РёС‚Рµ С‚РµРєСѓС‰СѓСЋ СЃРµСЃСЃРёСЋ.";
                 return false;
             }
 
@@ -356,7 +348,7 @@ public partial class MainWindow
             packageName = bookingLabel;
             if (user.Balance < amount)
             {
-                message = $"Недостаточно средств: нужно {amount:0.##} BYN, доступно {user.Balance:0.##} BYN.";
+                message = $"РќРµРґРѕСЃС‚Р°С‚РѕС‡РЅРѕ СЃСЂРµРґСЃС‚РІ: РЅСѓР¶РЅРѕ {amount:0.##} BYN, РґРѕСЃС‚СѓРїРЅРѕ {user.Balance:0.##} BYN.";
                 return false;
             }
 
@@ -369,9 +361,9 @@ public partial class MainWindow
             booking.Status = BookingStatuses.Confirmed;
             computer.Status = PcStatuses.Busy;
 
-            dbContext.GameSessions.Add(new GameSession
+            unitOfWork.GameSessions.Add(new GameSession
             {
-                Id = dbContext.GameSessions.GetNextId(session => session.Id),
+                Id = unitOfWork.GameSessions.GetNextId(session => session.Id),
                 UserId = user.Id,
                 ComputerId = computer.Id,
                 StartTime = startTime,
@@ -380,9 +372,9 @@ public partial class MainWindow
                 Status = SessionStatuses.Active
             });
 
-            dbContext.Payments.Add(new Payment
+            unitOfWork.Payments.Add(new Payment
             {
-                Id = dbContext.Payments.GetNextId(payment => payment.Id),
+                Id = unitOfWork.Payments.GetNextId(payment => payment.Id),
                 UserId = user.Id,
                 Amount = -amount,
                 PaymentType = PaymentTypes.Online,
@@ -392,15 +384,15 @@ public partial class MainWindow
                     : $"Package purchase: {packageName}; session started on {computer.Name}"
             });
 
-            dbContext.SaveChanges();
+            unitOfWork.SaveChanges();
             _balanceAmount = user.Balance;
-            message = $"{packageName}: списано {amount:0.##} BYN, начата сессия на {computer.Name} до {endTime:HH:mm}.";
+            message = $"{packageName}: СЃРїРёСЃР°РЅРѕ {amount:0.##} BYN, РЅР°С‡Р°С‚Р° СЃРµСЃСЃРёСЏ РЅР° {computer.Name} РґРѕ {endTime:HH:mm}.";
             return true;
         }
         catch (Exception ex)
         {
-            message = "Не удалось сохранить оплату пакета в базе данных.";
-            ShowDatabaseError("Ошибка оплаты пакета", ex);
+            message = "РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ РѕРїР»Р°С‚Сѓ РїР°РєРµС‚Р° РІ Р±Р°Р·Рµ РґР°РЅРЅС‹С….";
+            ShowDatabaseError("РћС€РёР±РєР° РѕРїР»Р°С‚С‹ РїР°РєРµС‚Р°", ex);
             return false;
         }
     }
@@ -420,7 +412,7 @@ public partial class MainWindow
         if (raw.Equals("booking", StringComparison.OrdinalIgnoreCase))
         {
             NavigateTo("booking");
-            ShowStatus("Бронь не выбрана", "Сначала создайте бронь, затем вернитесь к оплате.");
+            ShowStatus("Р‘СЂРѕРЅСЊ РЅРµ РІС‹Р±СЂР°РЅР°", "РЎРЅР°С‡Р°Р»Р° СЃРѕР·РґР°Р№С‚Рµ Р±СЂРѕРЅСЊ, Р·Р°С‚РµРј РІРµСЂРЅРёС‚РµСЃСЊ Рє РѕРїР»Р°С‚Рµ.");
             return;
         }
 

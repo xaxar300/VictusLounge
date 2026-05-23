@@ -1,8 +1,9 @@
-using System;
+﻿using System;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using VictusLounge.Data;
 using VictusLounge.Helpers;
+using VictusLounge.Repositories;
 
 namespace VictusLounge;
 
@@ -12,39 +13,30 @@ public partial class MainWindow
     {
         try
         {
-            using var dbContext = new AppDbContext();
-            NormalizeDatabaseState(dbContext);
+            using var unitOfWork = new UnitOfWork();
+            NormalizeDatabaseState(unitOfWork);
             if (IsLoaded)
             {
                 RefreshBookingDatesIfStale();
             }
 
             _computers.Clear();
-            _computers.AddRange(dbContext.Computers
-                .AsNoTracking()
-                .OrderBy(computer => computer.Id)
-                .ToList());
+            _computers.AddRange(unitOfWork.Computers.GetOrderedNoTracking());
 
             _tariffs.Clear();
-            _tariffs.AddRange(dbContext.Tariffs
-                .AsNoTracking()
-                .Where(tariff => tariff.IsActive)
-                .OrderBy(tariff => tariff.Id)
-                .ToList());
+            _tariffs.AddRange(unitOfWork.Tariffs.GetActiveOrdered());
 
-            RefreshEffectiveComputerStatuses(dbContext);
+            RefreshEffectiveComputerStatuses(unitOfWork);
 
             var now = DateTime.Now;
-            var activeSessions = dbContext.GameSessions.Count(session => session.Status != SessionStatuses.Closed
+            var activeSessions = unitOfWork.GameSessions.Count(session => session.Status != SessionStatuses.Closed
                 && session.StartTime <= now
                 && (session.EndTime == null || session.EndTime > now));
-            var pendingBookings = dbContext.Bookings.Count(booking => booking.Status == BookingStatuses.PendingPayment
+            var pendingBookings = unitOfWork.Bookings.Count(booking => booking.Status == BookingStatuses.PendingPayment
                 && booking.EndTime > now);
-            var pendingSessions = dbContext.GameSessions.Count(session => session.Status == SessionStatuses.AwaitingPayment
+            var pendingSessions = unitOfWork.GameSessions.Count(session => session.Status == SessionStatuses.AwaitingPayment
                 && (session.EndTime == null || session.EndTime > now));
-            var pendingTopups = dbContext.Payments.Count(payment =>
-                payment.PaymentType.StartsWith(PaymentTypes.Pending)
-                && payment.CreatedAt.Date == DateTime.Today);
+            var pendingTopups = unitOfWork.Payments.CountPendingForDate(DateTime.Today);
             var freePcs = _computers.Count(computer => NormalizePcStatus(computer.Status) == PcStatuses.Free);
             var servicePcs = _computers.Count(computer => NormalizePcStatus(computer.Status) == PcStatuses.Service);
             var today = DateTime.Today;
@@ -52,28 +44,19 @@ public partial class MainWindow
             _adminPaymentQueue = pendingBookings + pendingSessions + pendingTopups;
             _adminFreePcs = freePcs;
             _adminSupportQueue = servicePcs;
-            _shiftCash = dbContext.Payments
-                .AsNoTracking()
-                .Where(payment => payment.CreatedAt.Date == today)
-                .Where(payment => payment.PaymentType == PaymentTypes.Cash)
-                .Sum(payment => payment.Amount);
-            _shiftOnline = dbContext.Payments
-                .AsNoTracking()
-                .Where(payment => payment.CreatedAt.Date == today)
-                .Where(payment => payment.Amount > 0
-                    && (payment.PaymentType == PaymentTypes.Card || payment.PaymentType == PaymentTypes.Online))
-                .Sum(payment => payment.Amount);
+            _shiftCash = unitOfWork.Payments.SumForDate(today, PaymentTypes.Cash);
+            _shiftOnline = unitOfWork.Payments.SumOnlineForDate(today);
             SyncAdminViewModel();
 
-            UpdateDashboardSummary(dbContext);
+            UpdateDashboardSummary(unitOfWork);
             if (IsLoaded)
             {
-                AdminPaymentQueueHintText.Text = $"{pendingBookings} броней, {pendingSessions} сессий, {pendingTopups} пополнений";
+                AdminPaymentQueueHintText.Text = $"{pendingBookings} Р±СЂРѕРЅРµР№, {pendingSessions} СЃРµСЃСЃРёР№, {pendingTopups} РїРѕРїРѕР»РЅРµРЅРёР№";
             }
 
             if (_currentUserId > 0)
             {
-                var currentUser = dbContext.Users.AsNoTracking().FirstOrDefault(user => user.Id == _currentUserId);
+                var currentUser = unitOfWork.Users.GetByIdNoTracking(_currentUserId);
                 if (currentUser is not null)
                 {
                     _currentUserFullName = currentUser.FullName;
@@ -83,7 +66,7 @@ public partial class MainWindow
                     SyncCurrentUserViewModel();
                     UpdateCurrentBalanceText();
                     UpdateCurrentUserUi();
-                    RefreshClientUx(dbContext, currentUser);
+                    RefreshClientUx(unitOfWork, currentUser);
                 }
             }
 
@@ -96,13 +79,13 @@ public partial class MainWindow
             UpdateDashboardLoadBars();
             UpdateAnnouncementText();
             UpdateCabinetNextBenefit();
-            RebuildTodayClubList(dbContext);
-            RebuildOwnerStaffList(dbContext);
+            RebuildTodayClubList(unitOfWork);
+            RebuildOwnerStaffList(unitOfWork);
             RefreshLiveViewsAfterDatabaseChange();
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("Ошибка загрузки БД", ex);
+            ShowDatabaseError("РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё Р‘Р”", ex);
             // If SQL Server is unavailable, the screen keeps the last loaded values.
         }
     }
@@ -111,7 +94,7 @@ public partial class MainWindow
     {
         if (IsLoaded)
         {
-            ShowStatus(title, $"Не удалось выполнить операцию SQL Server. Проверь строку подключения и доступность сервера. {ex.Message}");
+            ShowStatus(title, $"РќРµ СѓРґР°Р»РѕСЃСЊ РІС‹РїРѕР»РЅРёС‚СЊ РѕРїРµСЂР°С†РёСЋ SQL Server. РџСЂРѕРІРµСЂСЊ СЃС‚СЂРѕРєСѓ РїРѕРґРєР»СЋС‡РµРЅРёСЏ Рё РґРѕСЃС‚СѓРїРЅРѕСЃС‚СЊ СЃРµСЂРІРµСЂР°. {ex.Message}");
         }
         else
         {
@@ -134,22 +117,17 @@ public partial class MainWindow
             return true;
         }
 
-        ShowStatus("Войдите в систему", "Операция не сохранена: пользователь не авторизован.");
+        ShowStatus("Р’РѕР№РґРёС‚Рµ РІ СЃРёСЃС‚РµРјСѓ", "РћРїРµСЂР°С†РёСЏ РЅРµ СЃРѕС…СЂР°РЅРµРЅР°: РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РЅРµ Р°РІС‚РѕСЂРёР·РѕРІР°РЅ.");
         return false;
     }
 
-    private int? ResolveCurrentOrAdminUserId(AppDbContext dbContext)
+    private int? ResolveCurrentOrAdminUserId(IUnitOfWork unitOfWork)
     {
-        if (_currentUserId > 0 && dbContext.Users.Any(user => user.Id == _currentUserId))
+        if (_currentUserId > 0 && unitOfWork.Users.Any(user => user.Id == _currentUserId))
         {
             return _currentUserId;
         }
 
-        var adminId = dbContext.Users
-            .Where(user => user.Role == "Admin")
-            .OrderBy(user => user.Id)
-            .Select(user => (int?)user.Id)
-            .FirstOrDefault();
-        return adminId;
+        return unitOfWork.Users.GetFirstAdminId();
     }
 }

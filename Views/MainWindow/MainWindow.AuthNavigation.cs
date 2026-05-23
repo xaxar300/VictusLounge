@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using VictusLounge.Data;
 using VictusLounge.Helpers;
 using VictusLounge.Models;
+using VictusLounge.Repositories;
 
 namespace VictusLounge;
 
@@ -80,8 +81,8 @@ public partial class MainWindow
         AuthErrorText.Visibility = Visibility.Collapsed;
         RegisterErrorText.Visibility = Visibility.Collapsed;
         AuthWindowTitleText.Text = isRegister
-            ? "Регистрация в Elite Gaming Lounge"
-            : "Вход в Elite Gaming Lounge";
+            ? "Р РµРіРёСЃС‚СЂР°С†РёСЏ РІ Elite Gaming Lounge"
+            : "Р’С…РѕРґ РІ Elite Gaming Lounge";
         UpdateAuthRoleButtons();
     }
 
@@ -92,17 +93,17 @@ public partial class MainWindow
 
         if (string.IsNullOrWhiteSpace(login) || string.IsNullOrWhiteSpace(password))
         {
-            ShowAuthError("Введите логин и пароль.");
+            ShowAuthError("Р’РІРµРґРёС‚Рµ Р»РѕРіРёРЅ Рё РїР°СЂРѕР»СЊ.");
             return;
         }
 
         try
         {
-            using var dbContext = new AppDbContext();
-            var user = dbContext.Users.FirstOrDefault(item => item.Login == login);
+            using var unitOfWork = new UnitOfWork();
+            var user = unitOfWork.Users.GetByLogin(login);
             if (user is null)
             {
-                ShowAuthError("Неверный логин или пароль.");
+                ShowAuthError("РќРµРІРµСЂРЅС‹Р№ Р»РѕРіРёРЅ РёР»Рё РїР°СЂРѕР»СЊ.");
                 return;
             }
 
@@ -111,19 +112,19 @@ public partial class MainWindow
                 if (PasswordHasher.IsHashed(user.PasswordHash)
                     || !string.Equals(user.PasswordHash, password, StringComparison.Ordinal))
                 {
-                    ShowAuthError("Неверный логин или пароль.");
+                    ShowAuthError("РќРµРІРµСЂРЅС‹Р№ Р»РѕРіРёРЅ РёР»Рё РїР°СЂРѕР»СЊ.");
                     return;
                 }
 
                 user.PasswordHash = PasswordHasher.HashPassword(password);
-                dbContext.SaveChanges();
+                unitOfWork.SaveChanges();
             }
 
             SignInUser(user);
         }
         catch (Exception ex)
         {
-            ShowAuthError($"Не удалось подключиться к SQL Server: {ex.Message}");
+            ShowAuthError($"РќРµ СѓРґР°Р»РѕСЃСЊ РїРѕРґРєР»СЋС‡РёС‚СЊСЃСЏ Рє SQL Server: {ex.Message}");
         }
     }
 
@@ -135,22 +136,22 @@ public partial class MainWindow
 
         if (string.IsNullOrWhiteSpace(fullName) || string.IsNullOrWhiteSpace(login) || string.IsNullOrWhiteSpace(password))
         {
-            ShowRegisterError("Заполните имя, логин и пароль.");
+            ShowRegisterError("Р—Р°РїРѕР»РЅРёС‚Рµ РёРјСЏ, Р»РѕРіРёРЅ Рё РїР°СЂРѕР»СЊ.");
             return;
         }
 
         try
         {
-            using var dbContext = new AppDbContext();
-            if (dbContext.Users.Any(user => user.Login == login))
+            using var unitOfWork = new UnitOfWork();
+            if (unitOfWork.Users.Any(user => user.Login == login))
             {
-                ShowRegisterError("Пользователь с таким логином уже есть.");
+                ShowRegisterError("РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃ С‚Р°РєРёРј Р»РѕРіРёРЅРѕРј СѓР¶Рµ РµСЃС‚СЊ.");
                 return;
             }
 
             var user = new User
             {
-                Id = dbContext.Users.Any() ? dbContext.Users.Max(item => item.Id) + 1 : 1,
+                Id = unitOfWork.Users.GetNextId(item => item.Id),
                 FullName = fullName,
                 Login = login,
                 PasswordHash = PasswordHasher.HashPassword(password),
@@ -158,13 +159,13 @@ public partial class MainWindow
                 Balance = 0m
             };
 
-            dbContext.Users.Add(user);
-            dbContext.SaveChanges();
+            unitOfWork.Users.Add(user);
+            unitOfWork.SaveChanges();
             SignInUser(user);
         }
         catch (Exception ex)
         {
-            ShowRegisterError($"Не удалось сохранить пользователя в SQL Server: {ex.Message}");
+            ShowRegisterError($"РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РІ SQL Server: {ex.Message}");
         }
     }
 
@@ -184,7 +185,7 @@ public partial class MainWindow
         UpdateCurrentUserUi();
         UpdateAuthRoleButtons();
         ApplyRoleAccess();
-        ShowStatus("Вход выполнен", $"{_currentUserFullName}: открыт режим {GetRoleTitle(_currentRole)}.");
+        ShowStatus("Р’С…РѕРґ РІС‹РїРѕР»РЅРµРЅ", $"{_currentUserFullName}: РѕС‚РєСЂС‹С‚ СЂРµР¶РёРј {GetRoleTitle(_currentRole)}.");
     }
 
     private void ShowAuthError(string message)
@@ -207,7 +208,7 @@ public partial class MainWindow
         }
 
         ProfileNameText.Text = _currentUserFullName;
-        ProfileRoleText.Text = $"{GetRoleTitle(_currentRole)} · {_currentUserLogin}";
+        ProfileRoleText.Text = $"{GetRoleTitle(_currentRole)} В· {_currentUserLogin}";
         ProfileInitialsText.Text = GetInitials(_currentUserFullName);
         WorkspaceText.Text = $"{GetRoleTitle(_currentRole)} workspace";
         UpdateCurrentBalanceText();
@@ -443,7 +444,7 @@ public partial class MainWindow
         {
             Dispatcher.InvokeAsync(ApplyMapPcButtonStatuses, DispatcherPriority.Loaded);
         }
-        ShowStatus(title, $"Открыт раздел: {title}.");
+        ShowStatus(title, $"РћС‚РєСЂС‹С‚ СЂР°Р·РґРµР»: {title}.");
     }
 
     private void SetNavState(Button button, bool isActive)
@@ -624,7 +625,7 @@ public partial class MainWindow
         BalanceSubtitleText.Text = T("Balance.Subtitle");
         BalanceTopupCardButton.Content = T("Balance.Topup");
         BalanceCurrentLabelText.Text = T("Balance.Current");
-        BalanceBonusText.Text = "Получено бонусов: 0";
+        BalanceBonusText.Text = "РџРѕР»СѓС‡РµРЅРѕ Р±РѕРЅСѓСЃРѕРІ: 0";
         BalancePromoLabelText.Text = T("Balance.Promo");
         BalanceApplyPromoButton.Content = T("Balance.Apply");
         BalancePackagesTitleText.Text = T("Balance.Packages");

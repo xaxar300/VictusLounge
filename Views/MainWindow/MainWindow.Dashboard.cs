@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using VictusLounge.Data;
 using VictusLounge.Helpers;
 using VictusLounge.Models;
+using VictusLounge.Repositories;
 
 namespace VictusLounge;
 
@@ -42,20 +43,20 @@ public partial class MainWindow
         RefreshBalanceHistoryFromDatabase();
     }
 
-    private void RefreshEffectiveComputerStatuses(AppDbContext dbContext)
+    private void RefreshEffectiveComputerStatuses(IUnitOfWork unitOfWork)
     {
         _pcStatusOverrides.Clear();
 
         var now = DateTime.Now;
-        var activeSessionComputerIds = dbContext.GameSessions
-            .AsNoTracking()
+        var activeSessionComputerIds = unitOfWork.GameSessions
+            .QueryNoTracking()
             .Where(session => session.Status != SessionStatuses.Closed
                 && session.StartTime <= now
                 && (session.EndTime == null || session.EndTime > now))
             .Select(session => session.ComputerId)
             .ToHashSet();
-        var imminentBookingComputerIds = dbContext.Bookings
-            .AsNoTracking()
+        var imminentBookingComputerIds = unitOfWork.Bookings
+            .QueryNoTracking()
             .Where(booking => booking.Status != BookingStatuses.Cancelled
                 && booking.StartTime <= now.AddMinutes(15)
                 && booking.EndTime > now)
@@ -78,12 +79,12 @@ public partial class MainWindow
         }
     }
 
-    private static void NormalizeDatabaseState(AppDbContext dbContext)
+    private static void NormalizeDatabaseState(IUnitOfWork unitOfWork)
     {
         var now = DateTime.Now;
         var hasChanges = false;
 
-        var expiredSessions = dbContext.GameSessions
+        var expiredSessions = unitOfWork.GameSessions.Query()
             .Where(session => session.Status != SessionStatuses.Closed
                 && session.Status != SessionStatuses.Team
                 && session.EndTime != null
@@ -95,22 +96,22 @@ public partial class MainWindow
             hasChanges = true;
         }
 
-        var activeSessionComputerIds = dbContext.GameSessions
-            .AsNoTracking()
+        var activeSessionComputerIds = unitOfWork.GameSessions
+            .QueryNoTracking()
             .Where(session => session.Status != SessionStatuses.Closed
                 && session.StartTime <= now
                 && (session.EndTime == null || session.EndTime > now))
             .Select(session => session.ComputerId)
             .ToHashSet();
-        var imminentBookingComputerIds = dbContext.Bookings
-            .AsNoTracking()
+        var imminentBookingComputerIds = unitOfWork.Bookings
+            .QueryNoTracking()
             .Where(booking => booking.Status != BookingStatuses.Cancelled
                 && booking.StartTime <= now.AddMinutes(15)
                 && booking.EndTime > now)
             .Select(booking => booking.ComputerId)
             .ToHashSet();
 
-        foreach (var computer in dbContext.Computers)
+        foreach (var computer in unitOfWork.Computers.Query())
         {
             var savedStatus = NormalizePcStatus(computer.Status);
             var actualStatus = savedStatus == PcStatuses.Service
@@ -130,11 +131,11 @@ public partial class MainWindow
 
         if (hasChanges)
         {
-            dbContext.SaveChanges();
+            unitOfWork.SaveChanges();
         }
     }
 
-    private void UpdateDashboardSummary(AppDbContext dbContext)
+    private void UpdateDashboardSummary(IUnitOfWork unitOfWork)
     {
         if (!IsLoaded)
         {
@@ -152,13 +153,13 @@ public partial class MainWindow
             .Count();
 
         DashboardFreePcsValue.Text = freePcs.ToString();
-        DashboardFreePcsHint.Text = $"из {totalPcs}";
+        DashboardFreePcsHint.Text = $"РёР· {totalPcs}";
         DashboardZonesValue.Text = $"{availableZones}/{totalZones}";
-        DashboardZonesHint.Text = "зоны с доступными местами";
+        DashboardZonesHint.Text = "Р·РѕРЅС‹ СЃ РґРѕСЃС‚СѓРїРЅС‹РјРё РјРµСЃС‚Р°РјРё";
 
         var now = DateTime.Now;
-        var activeBookingQuery = dbContext.Bookings
-            .AsNoTracking()
+        var activeBookingQuery = unitOfWork.Bookings
+            .QueryNoTracking()
             .Where(booking => booking.Status != BookingStatuses.Cancelled && booking.EndTime >= now);
 
         if (_currentUserId > 0)
@@ -167,22 +168,22 @@ public partial class MainWindow
                 .Where(booking => booking.UserId == _currentUserId)
                 .OrderBy(booking => booking.StartTime)
                 .ToList();
-            DashboardBookingLabel.Text = "Мои брони";
+            DashboardBookingLabel.Text = "РњРѕРё Р±СЂРѕРЅРё";
             DashboardBookingValue.Text = myBookings.Count.ToString();
             DashboardBookingHint.Text = myBookings.FirstOrDefault() is { } nextBooking
-                ? $"ближайшая {nextBooking.StartTime:dd.MM HH:mm}"
-                : "нет ближайшей брони";
+                ? $"Р±Р»РёР¶Р°Р№С€Р°СЏ {nextBooking.StartTime:dd.MM HH:mm}"
+                : "РЅРµС‚ Р±Р»РёР¶Р°Р№С€РµР№ Р±СЂРѕРЅРё";
         }
         else
         {
             var todayBookings = activeBookingQuery.Count(booking => booking.StartTime.Date == DateTime.Today);
-            DashboardBookingLabel.Text = "Брони сегодня";
+            DashboardBookingLabel.Text = "Р‘СЂРѕРЅРё СЃРµРіРѕРґРЅСЏ";
             DashboardBookingValue.Text = todayBookings.ToString();
-            DashboardBookingHint.Text = "по данным SQL Server";
+            DashboardBookingHint.Text = "РїРѕ РґР°РЅРЅС‹Рј SQL Server";
         }
 
         DashboardEventsValue.Text = "3";
-        DashboardEventsHint.Text = "Dota 2 · CS2 · LAN";
+        DashboardEventsHint.Text = "Dota 2 В· CS2 В· LAN";
     }
 
     private static string NormalizeZoneGroup(string zone)
@@ -224,7 +225,7 @@ public partial class MainWindow
         }
 
         bar.Value = total == 0 ? 0 : Math.Round((double)(total - free) / total * 100);
-        label.Text = $"{free}/{total} свободно";
+        label.Text = $"{free}/{total} СЃРІРѕР±РѕРґРЅРѕ";
     }
 
     private void UpdateAnnouncementText()
@@ -238,7 +239,7 @@ public partial class MainWindow
         var busyPcs = _computers.Count(computer => NormalizePcStatus(computer.Status) == PcStatuses.Busy);
         var servicePcs = _computers.Count(computer => NormalizePcStatus(computer.Status) == PcStatuses.Service);
         AnnouncementTextA.Text =
-            $"Свободно ПК: {freePcs} · занято: {busyPcs} · сервис: {servicePcs} · Standard {_standardRate} BYN/ч · VIP {_vipRate} BYN/ч · Royal {_royalRate} BYN/ч ·";
+            $"РЎРІРѕР±РѕРґРЅРѕ РџРљ: {freePcs} В· Р·Р°РЅСЏС‚Рѕ: {busyPcs} В· СЃРµСЂРІРёСЃ: {servicePcs} В· Standard {_standardRate} BYN/С‡ В· VIP {_vipRate} BYN/С‡ В· Royal {_royalRate} BYN/С‡ В·";
         AnnouncementTextB.Text = AnnouncementTextA.Text;
         ResetAnnouncementMarquee();
     }
@@ -254,11 +255,11 @@ public partial class MainWindow
         var regularFourHours = _standardRate * 4m;
         var saving = regularFourHours - eveningPackPrice;
         CabinetNextBenefitText.Text = saving > 0
-            ? $"Evening Pack выгоднее обычной оплаты на {saving:0.##} BYN при игре 4 часа."
-            : $"Для игры на 4 часа сейчас выгоднее обычный тариф Standard: {regularFourHours:0.##} BYN.";
+            ? $"Evening Pack РІС‹РіРѕРґРЅРµРµ РѕР±С‹С‡РЅРѕР№ РѕРїР»Р°С‚С‹ РЅР° {saving:0.##} BYN РїСЂРё РёРіСЂРµ 4 С‡Р°СЃР°."
+            : $"Р”Р»СЏ РёРіСЂС‹ РЅР° 4 С‡Р°СЃР° СЃРµР№С‡Р°СЃ РІС‹РіРѕРґРЅРµРµ РѕР±С‹С‡РЅС‹Р№ С‚Р°СЂРёС„ Standard: {regularFourHours:0.##} BYN.";
     }
 
-    private void RebuildTodayClubList(AppDbContext dbContext)
+    private void RebuildTodayClubList(IUnitOfWork unitOfWork)
     {
         if (!IsLoaded)
         {
@@ -272,9 +273,9 @@ public partial class MainWindow
 
         var today = DateTime.Today;
         var computers = _computers.ToDictionary(computer => computer.Id);
-        var users = dbContext.Users.AsNoTracking().ToDictionary(user => user.Id);
-        var items = dbContext.Bookings
-            .AsNoTracking()
+        var users = unitOfWork.Users.QueryNoTracking().ToDictionary(user => user.Id);
+        var items = unitOfWork.Bookings
+            .QueryNoTracking()
             .Where(booking => booking.StartTime.Date == today && booking.Status != BookingStatuses.Cancelled)
             .OrderBy(booking => booking.StartTime)
             .Take(3)
@@ -282,8 +283,8 @@ public partial class MainWindow
 
         if (items.Count == 0)
         {
-            var activeSessions = dbContext.GameSessions
-                .AsNoTracking()
+            var activeSessions = unitOfWork.GameSessions
+                .QueryNoTracking()
                 .Where(session => session.Status != SessionStatuses.Closed
                     && session.StartTime <= DateTime.Now
                     && (session.EndTime == null || session.EndTime > DateTime.Now))
@@ -297,8 +298,8 @@ public partial class MainWindow
                 users.TryGetValue(session.UserId, out var user);
                 AddTodayClubItem(
                     session.StartTime.ToString("HH:mm"),
-                    $"{computer?.Name ?? "ПК"} · {user?.FullName ?? "клиент"}",
-                    $"{computer?.Zone ?? "-"} · активная сессия");
+                    $"{computer?.Name ?? "РџРљ"} В· {user?.FullName ?? "РєР»РёРµРЅС‚"}",
+                    $"{computer?.Zone ?? "-"} В· Р°РєС‚РёРІРЅР°СЏ СЃРµСЃСЃРёСЏ");
             }
         }
         else
@@ -309,8 +310,8 @@ public partial class MainWindow
                 users.TryGetValue(booking.UserId, out var user);
                 AddTodayClubItem(
                     booking.StartTime.ToString("HH:mm"),
-                    $"{computer?.Name ?? "ПК"} · {user?.FullName ?? "клиент"}",
-                    $"{computer?.Zone ?? "-"} · {booking.Status}");
+                    $"{computer?.Name ?? "РџРљ"} В· {user?.FullName ?? "РєР»РёРµРЅС‚"}",
+                    $"{computer?.Zone ?? "-"} В· {booking.Status}");
             }
         }
 
@@ -318,14 +319,14 @@ public partial class MainWindow
         {
             TodayClubList.Children.Add(new TextBlock
             {
-                Text = "На сегодня нет активных броней и сессий.",
+                Text = "РќР° СЃРµРіРѕРґРЅСЏ РЅРµС‚ Р°РєС‚РёРІРЅС‹С… Р±СЂРѕРЅРµР№ Рё СЃРµСЃСЃРёР№.",
                 Foreground = (Brush)FindResource("MutedBrush"),
                 TextWrapping = TextWrapping.Wrap
             });
         }
     }
 
-    private void RebuildOwnerStaffList(AppDbContext dbContext)
+    private void RebuildOwnerStaffList(IUnitOfWork unitOfWork)
     {
         if (!IsLoaded || OwnerStaffList is null)
         {
@@ -333,17 +334,13 @@ public partial class MainWindow
         }
 
         OwnerStaffList.Children.Clear();
-        var shifts = dbContext.Shifts
-            .AsNoTracking()
-            .OrderByDescending(shift => shift.StartTime)
-            .Take(3)
-            .ToList();
+        var shifts = unitOfWork.Shifts.GetRecent(3);
 
         if (shifts.Count == 0)
         {
             OwnerStaffList.Children.Add(new TextBlock
             {
-                Text = "Смены пока не заведены.",
+                Text = "РЎРјРµРЅС‹ РїРѕРєР° РЅРµ Р·Р°РІРµРґРµРЅС‹.",
                 Foreground = (Brush)FindResource("MutedBrush"),
                 TextWrapping = TextWrapping.Wrap
             });
@@ -352,10 +349,10 @@ public partial class MainWindow
 
         foreach (var shift in shifts)
         {
-            var endText = shift.EndTime?.ToString("HH:mm") ?? "открыта";
+            var endText = shift.EndTime?.ToString("HH:mm") ?? "РѕС‚РєСЂС‹С‚Р°";
             OwnerStaffList.Children.Add(new TextBlock
             {
-                Text = $"{shift.EmployeeName} · {shift.StartTime:dd.MM HH:mm}-{endText} · касса {shift.CashTotal:0.##} BYN",
+                Text = $"{shift.EmployeeName} В· {shift.StartTime:dd.MM HH:mm}-{endText} В· РєР°СЃСЃР° {shift.CashTotal:0.##} BYN",
                 Foreground = (Brush)FindResource("MutedBrush"),
                 Margin = new Thickness(0, 0, 0, 10),
                 TextWrapping = TextWrapping.Wrap

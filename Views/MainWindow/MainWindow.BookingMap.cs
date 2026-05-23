@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using VictusLounge.Data;
 using VictusLounge.Helpers;
 using VictusLounge.Models;
+using VictusLounge.Repositories;
 
 namespace VictusLounge;
 
@@ -24,7 +25,7 @@ public partial class MainWindow
             return;
         }
 
-        ShowStatus($"Выбрана зона {element.Tag}", GetZoneDetails(element.Tag?.ToString() ?? "Standard"));
+        ShowStatus($"Р’С‹Р±СЂР°РЅР° Р·РѕРЅР° {element.Tag}", GetZoneDetails(element.Tag?.ToString() ?? "Standard"));
     }
 
     private void PcButton_Click(object sender, RoutedEventArgs e)
@@ -49,19 +50,19 @@ public partial class MainWindow
         var statusText = GetStatusText(status, true);
 
         PcDetailTitle.Text = pc;
-        PcDetailSubtitle.Text = $"{zone}: статус — {statusText}.";
-        PcPhotoCaption.Text = $"{pc} · {zone}";
+        PcDetailSubtitle.Text = $"{zone}: СЃС‚Р°С‚СѓСЃ вЂ” {statusText}.";
+        PcPhotoCaption.Text = $"{pc} В· {zone}";
         var specs = GetPcSpecs(zone);
         PcCpuText.Text = specs.Cpu;
         PcGpuText.Text = specs.Gpu;
         PcRamText.Text = specs.Ram;
         PcMonitorText.Text = specs.Monitor;
         PcIntervalsText.Text = status == PcStatuses.Free
-            ? "Свободно сегодня: 18:00-20:00, 21:00-23:00."
-            : "Ближайший свободный интервал появится после завершения текущего статуса.";
+            ? "РЎРІРѕР±РѕРґРЅРѕ СЃРµРіРѕРґРЅСЏ: 18:00-20:00, 21:00-23:00."
+            : "Р‘Р»РёР¶Р°Р№С€РёР№ СЃРІРѕР±РѕРґРЅС‹Р№ РёРЅС‚РµСЂРІР°Р» РїРѕСЏРІРёС‚СЃСЏ РїРѕСЃР»Рµ Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµРєСѓС‰РµРіРѕ СЃС‚Р°С‚СѓСЃР°.";
         UpdateSelectedMapPcBookingButton(status);
 
-        ShowStatus($"Выбран {pc}", $"{zone}, статус: {statusText}.");
+        ShowStatus($"Р’С‹Р±СЂР°РЅ {pc}", $"{zone}, СЃС‚Р°С‚СѓСЃ: {statusText}.");
     }
 
     private void UpdateSelectedMapPcBookingButton(string status)
@@ -77,13 +78,13 @@ public partial class MainWindow
     {
         if (string.IsNullOrWhiteSpace(_selectedMapPc) || string.IsNullOrWhiteSpace(_selectedMapZone))
         {
-            ShowStatus("ПК не выбран", "Сначала выберите место на схеме клуба.");
+            ShowStatus("РџРљ РЅРµ РІС‹Р±СЂР°РЅ", "РЎРЅР°С‡Р°Р»Р° РІС‹Р±РµСЂРёС‚Рµ РјРµСЃС‚Рѕ РЅР° СЃС…РµРјРµ РєР»СѓР±Р°.");
             return;
         }
 
         if (_selectedMapStatus != PcStatuses.Free)
         {
-            ShowStatus("ПК недоступен", "Этот ПК сейчас нельзя забронировать: он занят, в брони или на обслуживании.");
+            ShowStatus("РџРљ РЅРµРґРѕСЃС‚СѓРїРµРЅ", "Р­С‚РѕС‚ РџРљ СЃРµР№С‡Р°СЃ РЅРµР»СЊР·СЏ Р·Р°Р±СЂРѕРЅРёСЂРѕРІР°С‚СЊ: РѕРЅ Р·Р°РЅСЏС‚, РІ Р±СЂРѕРЅРё РёР»Рё РЅР° РѕР±СЃР»СѓР¶РёРІР°РЅРёРё.");
             return;
         }
 
@@ -94,7 +95,7 @@ public partial class MainWindow
         UpdateBookingSeatButtons();
         UpdateBookingSummary();
         NavigateTo("booking");
-        ShowStatus("ПК перенесен в бронь", $"{_selectedMapPc} уже выбран в форме бронирования.");
+        ShowStatus("РџРљ РїРµСЂРµРЅРµСЃРµРЅ РІ Р±СЂРѕРЅСЊ", $"{_selectedMapPc} СѓР¶Рµ РІС‹Р±СЂР°РЅ РІ С„РѕСЂРјРµ Р±СЂРѕРЅРёСЂРѕРІР°РЅРёСЏ.");
     }
 
     private void BookingMode_Click(object sender, RoutedEventArgs e)
@@ -118,8 +119,8 @@ public partial class MainWindow
         UpdateBookingSeatButtons();
         UpdateBookingSummary();
         ShowStatus(
-            _isCompanyBooking ? "Бронь для компании" : "Одиночная бронь",
-            _isCompanyBooking ? "Можно выбрать несколько ПК." : "Активен выбор одного ПК.");
+            _isCompanyBooking ? "Р‘СЂРѕРЅСЊ РґР»СЏ РєРѕРјРїР°РЅРёРё" : "РћРґРёРЅРѕС‡РЅР°СЏ Р±СЂРѕРЅСЊ",
+            _isCompanyBooking ? "РњРѕР¶РЅРѕ РІС‹Р±СЂР°С‚СЊ РЅРµСЃРєРѕР»СЊРєРѕ РџРљ." : "РђРєС‚РёРІРµРЅ РІС‹Р±РѕСЂ РѕРґРЅРѕРіРѕ РџРљ.");
     }
 
     private void BookingDate_Click(object sender, RoutedEventArgs e)
@@ -129,7 +130,7 @@ public partial class MainWindow
             _bookingDate = date;
             SetActiveButton(button, DateTodayButton, DateTomorrowButton, DateThirdButton, DateCustomButton);
             UpdateBookingSummary();
-            ShowStatus("Дата изменена", $"Бронь перенесена на {_bookingDate:yyyy-MM-dd}.");
+            ShowStatus("Р”Р°С‚Р° РёР·РјРµРЅРµРЅР°", $"Р‘СЂРѕРЅСЊ РїРµСЂРµРЅРµСЃРµРЅР° РЅР° {_bookingDate:yyyy-MM-dd}.");
         }
     }
 
@@ -153,7 +154,7 @@ public partial class MainWindow
         SetActiveButton(button, ZoneStandardButton, ZoneVipButton, ZoneBootcampButton, ZoneRoyalButton);
         RebuildBookingSeatGrid();
         UpdateBookingSummary();
-        ShowStatus("Зона изменена", $"Показаны ПК для тарифа: {_bookingZoneName}.");
+        ShowStatus("Р—РѕРЅР° РёР·РјРµРЅРµРЅР°", $"РџРѕРєР°Р·Р°РЅС‹ РџРљ РґР»СЏ С‚Р°СЂРёС„Р°: {_bookingZoneName}.");
     }
 
     private void ToggleTimePicker_Click(object sender, RoutedEventArgs e)
@@ -173,7 +174,7 @@ public partial class MainWindow
         _bookingHour = hour;
         UpdateBookingTimeButtons();
         UpdateBookingSummary();
-        ShowStatus("Время изменено", $"Начало брони: {GetBookingStartTime()}.");
+        ShowStatus("Р’СЂРµРјСЏ РёР·РјРµРЅРµРЅРѕ", $"РќР°С‡Р°Р»Рѕ Р±СЂРѕРЅРё: {GetBookingStartTime()}.");
     }
 
     private void BookingMinute_Click(object sender, RoutedEventArgs e)
@@ -185,14 +186,14 @@ public partial class MainWindow
 
         if (!IsMinuteAllowedForCurrentPackage(minute))
         {
-            ShowStatus("Минуты недоступны", "Пакетные тарифы стартуют ровно в выбранный час.");
+            ShowStatus("РњРёРЅСѓС‚С‹ РЅРµРґРѕСЃС‚СѓРїРЅС‹", "РџР°РєРµС‚РЅС‹Рµ С‚Р°СЂРёС„С‹ СЃС‚Р°СЂС‚СѓСЋС‚ СЂРѕРІРЅРѕ РІ РІС‹Р±СЂР°РЅРЅС‹Р№ С‡Р°СЃ.");
             return;
         }
 
         _bookingMinute = minute;
         UpdateBookingTimeButtons();
         UpdateBookingSummary();
-        ShowStatus("Минуты изменены", $"Начало брони: {GetBookingStartTime()}.");
+        ShowStatus("РњРёРЅСѓС‚С‹ РёР·РјРµРЅРµРЅС‹", $"РќР°С‡Р°Р»Рѕ Р±СЂРѕРЅРё: {GetBookingStartTime()}.");
     }
 
     private void DurationButton_Click(object sender, RoutedEventArgs e)
@@ -236,7 +237,7 @@ public partial class MainWindow
         SetActiveButton(button, Duration1Button, Duration2Button, Duration3Button, MorningPackButton, Duration8Button);
         UpdateBookingTimeButtons();
         UpdateBookingSummary();
-        ShowStatus("Тариф обновлен", GetPackageDescription());
+        ShowStatus("РўР°СЂРёС„ РѕР±РЅРѕРІР»РµРЅ", GetPackageDescription());
     }
 
     private void BookingSeat_Click(object sender, RoutedEventArgs e)
@@ -258,9 +259,9 @@ public partial class MainWindow
         }
         else if (!_selectedSeats.Contains(seat) && _selectedSeats.Count >= 5)
         {
-            BookingErrorText.Text = "Групповая бронь ограничена 5 ПК.";
+            BookingErrorText.Text = "Р“СЂСѓРїРїРѕРІР°СЏ Р±СЂРѕРЅСЊ РѕРіСЂР°РЅРёС‡РµРЅР° 5 РџРљ.";
             BookingErrorText.Visibility = Visibility.Visible;
-            ShowStatus("Лимит брони", "Для компании можно выбрать максимум 5 ПК.");
+            ShowStatus("Р›РёРјРёС‚ Р±СЂРѕРЅРё", "Р”Р»СЏ РєРѕРјРїР°РЅРёРё РјРѕР¶РЅРѕ РІС‹Р±СЂР°С‚СЊ РјР°РєСЃРёРјСѓРј 5 РџРљ.");
             return;
         }
 
@@ -272,32 +273,32 @@ public partial class MainWindow
         BookingErrorText.Visibility = Visibility.Collapsed;
         UpdateBookingSeatButtons();
         UpdateBookingSummary();
-        ShowStatus("Выбор ПК обновлен", _selectedSeats.Count == 0 ? "ПК пока не выбран." : $"Выбрано: {string.Join(", ", _selectedSeats)}.");
+        ShowStatus("Р’С‹Р±РѕСЂ РџРљ РѕР±РЅРѕРІР»РµРЅ", _selectedSeats.Count == 0 ? "РџРљ РїРѕРєР° РЅРµ РІС‹Р±СЂР°РЅ." : $"Р’С‹Р±СЂР°РЅРѕ: {string.Join(", ", _selectedSeats)}.");
     }
 
     private void ConfirmBooking_Click(object sender, RoutedEventArgs e)
     {
         if (_selectedSeats.Count == 0)
         {
-            BookingErrorText.Text = "Выберите хотя бы один свободный ПК перед подтверждением.";
+            BookingErrorText.Text = "Р’С‹Р±РµСЂРёС‚Рµ С…РѕС‚СЏ Р±С‹ РѕРґРёРЅ СЃРІРѕР±РѕРґРЅС‹Р№ РџРљ РїРµСЂРµРґ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёРµРј.";
             BookingErrorText.Visibility = Visibility.Visible;
-            ShowStatus("Нужен ПК", "Выберите хотя бы один свободный ПК перед подтверждением.");
+            ShowStatus("РќСѓР¶РµРЅ РџРљ", "Р’С‹Р±РµСЂРёС‚Рµ С…РѕС‚СЏ Р±С‹ РѕРґРёРЅ СЃРІРѕР±РѕРґРЅС‹Р№ РџРљ РїРµСЂРµРґ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёРµРј.");
             return;
         }
 
         if (!_isCompanyBooking && _selectedSeats.Count > 1)
         {
-            BookingErrorText.Text = "Одиночная бронь может содержать только 1 ПК.";
+            BookingErrorText.Text = "РћРґРёРЅРѕС‡РЅР°СЏ Р±СЂРѕРЅСЊ РјРѕР¶РµС‚ СЃРѕРґРµСЂР¶Р°С‚СЊ С‚РѕР»СЊРєРѕ 1 РџРљ.";
             BookingErrorText.Visibility = Visibility.Visible;
-            ShowStatus("Лимит брони", "Переключитесь на групповую бронь, если нужно несколько ПК.");
+            ShowStatus("Р›РёРјРёС‚ Р±СЂРѕРЅРё", "РџРµСЂРµРєР»СЋС‡РёС‚РµСЃСЊ РЅР° РіСЂСѓРїРїРѕРІСѓСЋ Р±СЂРѕРЅСЊ, РµСЃР»Рё РЅСѓР¶РЅРѕ РЅРµСЃРєРѕР»СЊРєРѕ РџРљ.");
             return;
         }
 
         if (_isCompanyBooking && _selectedSeats.Count > 5)
         {
-            BookingErrorText.Text = "Групповая бронь ограничена 5 ПК.";
+            BookingErrorText.Text = "Р“СЂСѓРїРїРѕРІР°СЏ Р±СЂРѕРЅСЊ РѕРіСЂР°РЅРёС‡РµРЅР° 5 РџРљ.";
             BookingErrorText.Visibility = Visibility.Visible;
-            ShowStatus("Лимит брони", "Уберите лишние ПК перед подтверждением.");
+            ShowStatus("Р›РёРјРёС‚ Р±СЂРѕРЅРё", "РЈР±РµСЂРёС‚Рµ Р»РёС€РЅРёРµ РџРљ РїРµСЂРµРґ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёРµРј.");
             return;
         }
 
@@ -307,19 +308,19 @@ public partial class MainWindow
         var end = start.AddHours(_bookingDuration);
         if (start <= DateTime.Now.AddMinutes(-15) || end <= start)
         {
-            BookingErrorText.Text = "Нельзя создать бронь на прошедшее или некорректное время.";
+            BookingErrorText.Text = "РќРµР»СЊР·СЏ СЃРѕР·РґР°С‚СЊ Р±СЂРѕРЅСЊ РЅР° РїСЂРѕС€РµРґС€РµРµ РёР»Рё РЅРµРєРѕСЂСЂРµРєС‚РЅРѕРµ РІСЂРµРјСЏ.";
             BookingErrorText.Visibility = Visibility.Visible;
-            ShowStatus("Некорректное время", "Выберите актуальное время начала и длительность брони.");
+            ShowStatus("РќРµРєРѕСЂСЂРµРєС‚РЅРѕРµ РІСЂРµРјСЏ", "Р’С‹Р±РµСЂРёС‚Рµ Р°РєС‚СѓР°Р»СЊРЅРѕРµ РІСЂРµРјСЏ РЅР°С‡Р°Р»Р° Рё РґР»РёС‚РµР»СЊРЅРѕСЃС‚СЊ Р±СЂРѕРЅРё.");
             return;
         }
 
         BookingConfirmText.Text =
-            $"ПК: {SummarySeatsText.Text}\n" +
-            $"Зона: {SummaryZoneText.Text}\n" +
-            $"Дата: {SummaryDateText.Text}\n" +
-            $"Время: {SummaryTimeText.Text}\n" +
-            $"Тариф: {SummaryTariffText.Text}\n" +
-            $"Итого: {SummaryTotalText.Text}";
+            $"РџРљ: {SummarySeatsText.Text}\n" +
+            $"Р—РѕРЅР°: {SummaryZoneText.Text}\n" +
+            $"Р”Р°С‚Р°: {SummaryDateText.Text}\n" +
+            $"Р’СЂРµРјСЏ: {SummaryTimeText.Text}\n" +
+            $"РўР°СЂРёС„: {SummaryTariffText.Text}\n" +
+            $"РС‚РѕРіРѕ: {SummaryTotalText.Text}";
 
         if (!SaveBookingSelectionToDatabase())
         {
@@ -330,14 +331,14 @@ public partial class MainWindow
         RebuildBookingSeatGrid();
         RefreshAdminUx();
         BookingConfirmOverlay.Visibility = Visibility.Visible;
-        ShowImportantStatus("Бронь подтверждена", $"{SummarySeatsText.Text}, {SummaryDateText.Text}, {SummaryTimeText.Text}. Итог: {SummaryTotalText.Text}.");
+        ShowImportantStatus("Р‘СЂРѕРЅСЊ РїРѕРґС‚РІРµСЂР¶РґРµРЅР°", $"{SummarySeatsText.Text}, {SummaryDateText.Text}, {SummaryTimeText.Text}. РС‚РѕРі: {SummaryTotalText.Text}.");
     }
 
     private bool SaveBookingSelectionToDatabase()
     {
         if (!EnsureSignedInForDatabaseWrite())
         {
-            BookingErrorText.Text = "Войдите в систему перед бронированием.";
+            BookingErrorText.Text = "Р’РѕР№РґРёС‚Рµ РІ СЃРёСЃС‚РµРјСѓ РїРµСЂРµРґ Р±СЂРѕРЅРёСЂРѕРІР°РЅРёРµРј.";
             BookingErrorText.Visibility = Visibility.Visible;
             return false;
         }
@@ -348,74 +349,66 @@ public partial class MainWindow
 
         if (!_isCompanyBooking && seats.Length > 1)
         {
-            BookingErrorText.Text = "Одиночная бронь может содержать только 1 ПК.";
+            BookingErrorText.Text = "РћРґРёРЅРѕС‡РЅР°СЏ Р±СЂРѕРЅСЊ РјРѕР¶РµС‚ СЃРѕРґРµСЂР¶Р°С‚СЊ С‚РѕР»СЊРєРѕ 1 РџРљ.";
             BookingErrorText.Visibility = Visibility.Visible;
             return false;
         }
 
         if (_isCompanyBooking && seats.Length > 5)
         {
-            BookingErrorText.Text = "Групповая бронь ограничена 5 ПК.";
+            BookingErrorText.Text = "Р“СЂСѓРїРїРѕРІР°СЏ Р±СЂРѕРЅСЊ РѕРіСЂР°РЅРёС‡РµРЅР° 5 РџРљ.";
             BookingErrorText.Visibility = Visibility.Visible;
             return false;
         }
 
         if (end <= start)
         {
-            BookingErrorText.Text = "Окончание брони должно быть позже её начала.";
+            BookingErrorText.Text = "РћРєРѕРЅС‡Р°РЅРёРµ Р±СЂРѕРЅРё РґРѕР»Р¶РЅРѕ Р±С‹С‚СЊ РїРѕР·Р¶Рµ РµС‘ РЅР°С‡Р°Р»Р°.";
             BookingErrorText.Visibility = Visibility.Visible;
             return false;
         }
 
         if (start < DateTime.Now.AddMinutes(-15))
         {
-            BookingErrorText.Text = "Нельзя бронировать на прошедшее время. Выберите ближайший свободный час.";
+            BookingErrorText.Text = "РќРµР»СЊР·СЏ Р±СЂРѕРЅРёСЂРѕРІР°С‚СЊ РЅР° РїСЂРѕС€РµРґС€РµРµ РІСЂРµРјСЏ. Р’С‹Р±РµСЂРёС‚Рµ Р±Р»РёР¶Р°Р№С€РёР№ СЃРІРѕР±РѕРґРЅС‹Р№ С‡Р°СЃ.";
             BookingErrorText.Visibility = Visibility.Visible;
             return false;
         }
 
         try
         {
-            using var dbContext = new AppDbContext();
+            using var unitOfWork = new UnitOfWork();
 
             var resolvedComputers = new Dictionary<string, Computer>(StringComparer.Ordinal);
             foreach (var seat in seats)
             {
-                var computer = dbContext.Computers.FirstOrDefault(item => item.Name == seat);
+                var computer = unitOfWork.Computers.GetByName(seat);
                 if (computer is null)
                 {
-                    BookingErrorText.Text = $"ПК {seat} не найден в базе данных.";
+                    BookingErrorText.Text = $"РџРљ {seat} РЅРµ РЅР°Р№РґРµРЅ РІ Р±Р°Р·Рµ РґР°РЅРЅС‹С….";
                     BookingErrorText.Visibility = Visibility.Visible;
                     return false;
                 }
 
                 if (NormalizePcStatus(computer.Status) == PcStatuses.Service)
                 {
-                    BookingErrorText.Text = $"ПК {seat} находится в обслуживании. Выберите другое место.";
+                    BookingErrorText.Text = $"РџРљ {seat} РЅР°С…РѕРґРёС‚СЃСЏ РІ РѕР±СЃР»СѓР¶РёРІР°РЅРёРё. Р’С‹Р±РµСЂРёС‚Рµ РґСЂСѓРіРѕРµ РјРµСЃС‚Рѕ.";
                     BookingErrorText.Visibility = Visibility.Visible;
                     return false;
                 }
 
-                var hasConflict = dbContext.Bookings.Any(booking =>
-                    booking.ComputerId == computer.Id
-                    && booking.Status != BookingStatuses.Cancelled
-                    && booking.StartTime < end
-                    && booking.EndTime > start);
+                var hasConflict = unitOfWork.Bookings.HasTimeConflict(computer.Id, start, end);
                 if (hasConflict)
                 {
-                    BookingErrorText.Text = $"ПК {seat} уже занят на это время. Выберите другой интервал или место.";
+                    BookingErrorText.Text = $"РџРљ {seat} СѓР¶Рµ Р·Р°РЅСЏС‚ РЅР° СЌС‚Рѕ РІСЂРµРјСЏ. Р’С‹Р±РµСЂРёС‚Рµ РґСЂСѓРіРѕР№ РёРЅС‚РµСЂРІР°Р» РёР»Рё РјРµСЃС‚Рѕ.";
                     BookingErrorText.Visibility = Visibility.Visible;
                     return false;
                 }
 
-                var hasSessionConflict = dbContext.GameSessions.Any(session =>
-                    session.ComputerId == computer.Id
-                    && session.Status != SessionStatuses.Closed
-                    && session.StartTime < end
-                    && (session.EndTime == null || session.EndTime > start));
+                var hasSessionConflict = unitOfWork.GameSessions.HasTimeConflict(computer.Id, start, end);
                 if (hasSessionConflict)
                 {
-                    BookingErrorText.Text = $"ПК {seat} уже занят игровой сессией на это время. Выберите другой интервал или место.";
+                    BookingErrorText.Text = $"РџРљ {seat} СѓР¶Рµ Р·Р°РЅСЏС‚ РёРіСЂРѕРІРѕР№ СЃРµСЃСЃРёРµР№ РЅР° СЌС‚Рѕ РІСЂРµРјСЏ. Р’С‹Р±РµСЂРёС‚Рµ РґСЂСѓРіРѕР№ РёРЅС‚РµСЂРІР°Р» РёР»Рё РјРµСЃС‚Рѕ.";
                     BookingErrorText.Visibility = Visibility.Visible;
                     return false;
                 }
@@ -423,14 +416,14 @@ public partial class MainWindow
                 resolvedComputers[seat] = computer;
             }
 
-            var nextBookingId = dbContext.Bookings.Any() ? dbContext.Bookings.Max(booking => booking.Id) + 1 : 1;
+            var nextBookingId = unitOfWork.Bookings.GetNextId(booking => booking.Id);
             var isImminent = start.Date == DateTime.Today && start <= DateTime.Now.AddMinutes(15);
 
             foreach (var seat in seats)
             {
                 var computer = resolvedComputers[seat];
 
-                dbContext.Bookings.Add(new Booking
+                unitOfWork.Bookings.Add(new Booking
                 {
                     Id = nextBookingId++,
                     UserId = _currentUserId,
@@ -449,12 +442,12 @@ public partial class MainWindow
                 }
             }
 
-            dbContext.SaveChanges();
+            unitOfWork.SaveChanges();
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("Ошибка сохранения брони", ex);
-            BookingErrorText.Text = "Не удалось сохранить бронь: проверьте подключение к SQL Server.";
+            ShowDatabaseError("РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ Р±СЂРѕРЅРё", ex);
+            BookingErrorText.Text = "РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ Р±СЂРѕРЅСЊ: РїСЂРѕРІРµСЂСЊС‚Рµ РїРѕРґРєР»СЋС‡РµРЅРёРµ Рє SQL Server.";
             BookingErrorText.Visibility = Visibility.Visible;
             return false;
         }
@@ -473,7 +466,7 @@ public partial class MainWindow
         _selectedSeats.Clear();
         UpdateBookingSeatButtons();
         UpdateBookingSummary();
-        ShowStatus("Выбор очищен", "Можно собрать бронь заново.");
+        ShowStatus("Р’С‹Р±РѕСЂ РѕС‡РёС‰РµРЅ", "РњРѕР¶РЅРѕ СЃРѕР±СЂР°С‚СЊ Р±СЂРѕРЅСЊ Р·Р°РЅРѕРІРѕ.");
     }
 
     private void UpdateBookingSummary()
@@ -490,19 +483,19 @@ public partial class MainWindow
         var baseTotal = _bookingTariff * _bookingDuration * seatsCount;
         var discount = baseTotal - total;
 
-        SummarySeatsText.Text = _selectedSeats.Count == 0 ? "—" : string.Join(", ", _selectedSeats.Order());
+        SummarySeatsText.Text = _selectedSeats.Count == 0 ? "вЂ”" : string.Join(", ", _selectedSeats.Order());
         SummaryZoneText.Text = _bookingZoneName;
         SummaryDateText.Text = _bookingDate.ToString("yyyy-MM-dd");
         SummaryTimeText.Text = $"{start:HH:mm}-{end:HH:mm}";
-        SummaryDurationText.Text = $"{_bookingDuration} ч";
-        SummaryTariffText.Text = $"{_bookingTariff} BYN/час · {GetTariffLabel()}";
+        SummaryDurationText.Text = $"{_bookingDuration} С‡";
+        SummaryTariffText.Text = $"{_bookingTariff} BYN/С‡Р°СЃ В· {GetTariffLabel()}";
         SummaryBaseTotalText.Text = _selectedSeats.Count == 0 ? "0 BYN" : $"{baseTotal:0.##} BYN";
-        SummaryDiscountText.Text = _selectedSeats.Count == 0 ? GetTariffLabel() : $"{GetTariffLabel()} · −{discount:0.##} BYN";
+        SummaryDiscountText.Text = _selectedSeats.Count == 0 ? GetTariffLabel() : $"{GetTariffLabel()} В· в€’{discount:0.##} BYN";
         SummaryTotalText.Text = _selectedSeats.Count == 0 ? "0 BYN" : $"{total:0.##} BYN";
-        TimePickerToggleButton.Content = $"Выбрать время: {GetBookingStartTime()}";
+        TimePickerToggleButton.Content = $"Р’С‹Р±СЂР°С‚СЊ РІСЂРµРјСЏ: {GetBookingStartTime()}";
         PackageHintText.Text = GetPackageDescription();
         BookingWarningText.Visibility = end.Date > start.Date ? Visibility.Visible : Visibility.Collapsed;
-        BookingWarningText.Text = $"Бронь закончится на следующий день: {end:dd.MM HH:mm}.";
+        BookingWarningText.Text = $"Р‘СЂРѕРЅСЊ Р·Р°РєРѕРЅС‡РёС‚СЃСЏ РЅР° СЃР»РµРґСѓСЋС‰РёР№ РґРµРЅСЊ: {end:dd.MM HH:mm}.";
         BookingErrorText.Visibility = Visibility.Collapsed;
         SyncBookingViewModel();
     }
@@ -650,19 +643,19 @@ public partial class MainWindow
 
         try
         {
-            using var dbContext = new AppDbContext();
-            var computer = dbContext.Computers.FirstOrDefault(item => item.Name == pc);
+            using var unitOfWork = new UnitOfWork();
+            var computer = unitOfWork.Computers.GetByName(pc);
             if (computer is null)
             {
                 return;
             }
 
             computer.Status = status;
-            dbContext.SaveChanges();
+            unitOfWork.SaveChanges();
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("Ошибка сохранения статуса ПК", ex);
+            ShowDatabaseError("РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ СЃС‚Р°С‚СѓСЃР° РџРљ", ex);
         }
     }
 
@@ -733,9 +726,9 @@ public partial class MainWindow
     {
         return _bookingPackage switch
         {
-            "night" => "Night Pack: 8 часов, старт только 22:00, 23:00 или 00:00, скидка 25%.",
-            "morning" => "Morning Pack: 3 часа, старт только 06:00, 07:00 или 08:00, скидка 20%.",
-            _ => $"Обычный тариф: {_bookingDuration} ч, скидка Gold 10%."
+            "night" => "Night Pack: 8 С‡Р°СЃРѕРІ, СЃС‚Р°СЂС‚ С‚РѕР»СЊРєРѕ 22:00, 23:00 РёР»Рё 00:00, СЃРєРёРґРєР° 25%.",
+            "morning" => "Morning Pack: 3 С‡Р°СЃР°, СЃС‚Р°СЂС‚ С‚РѕР»СЊРєРѕ 06:00, 07:00 РёР»Рё 08:00, СЃРєРёРґРєР° 20%.",
+            _ => $"РћР±С‹С‡РЅС‹Р№ С‚Р°СЂРёС„: {_bookingDuration} С‡, СЃРєРёРґРєР° Gold 10%."
         };
     }
 
@@ -828,10 +821,10 @@ public partial class MainWindow
             if (_selectedMapPc == pc)
             {
                 _selectedMapStatus = seat.Status;
-                PcDetailSubtitle.Text = $"{parts[1]}: статус — {GetStatusText(seat.Status, true)}.";
+                PcDetailSubtitle.Text = $"{parts[1]}: СЃС‚Р°С‚СѓСЃ вЂ” {GetStatusText(seat.Status, true)}.";
                 PcIntervalsText.Text = seat.IsAvailable
-                    ? "Свободно сегодня: 18:00-20:00, 21:00-23:00."
-                    : "Ближайший свободный интервал появится после завершения текущего статуса.";
+                    ? "РЎРІРѕР±РѕРґРЅРѕ СЃРµРіРѕРґРЅСЏ: 18:00-20:00, 21:00-23:00."
+                    : "Р‘Р»РёР¶Р°Р№С€РёР№ СЃРІРѕР±РѕРґРЅС‹Р№ РёРЅС‚РµСЂРІР°Р» РїРѕСЏРІРёС‚СЃСЏ РїРѕСЃР»Рµ Р·Р°РІРµСЂС€РµРЅРёСЏ С‚РµРєСѓС‰РµРіРѕ СЃС‚Р°С‚СѓСЃР°.";
                 UpdateSelectedMapPcBookingButton(seat.Status);
             }
         }
@@ -900,11 +893,11 @@ public partial class MainWindow
     {
         return zone switch
         {
-            "Standard" => "Standard: 18 свободных ПК, тариф 8 BYN/час.",
-            "VIP" => "VIP: 4 свободных ПК, тариф 14 BYN/час.",
-            "Bootcamp" => "Bootcamp: 1 свободная комната, тариф 50 BYN/час.",
-            "Royal VIP" => "Royal VIP: 3 свободных ПК, тариф 24 BYN/час.",
-            _ => "Зона выбрана."
+            "Standard" => "Standard: 18 СЃРІРѕР±РѕРґРЅС‹С… РџРљ, С‚Р°СЂРёС„ 8 BYN/С‡Р°СЃ.",
+            "VIP" => "VIP: 4 СЃРІРѕР±РѕРґРЅС‹С… РџРљ, С‚Р°СЂРёС„ 14 BYN/С‡Р°СЃ.",
+            "Bootcamp" => "Bootcamp: 1 СЃРІРѕР±РѕРґРЅР°СЏ РєРѕРјРЅР°С‚Р°, С‚Р°СЂРёС„ 50 BYN/С‡Р°СЃ.",
+            "Royal VIP" => "Royal VIP: 3 СЃРІРѕР±РѕРґРЅС‹С… РџРљ, С‚Р°СЂРёС„ 24 BYN/С‡Р°СЃ.",
+            _ => "Р—РѕРЅР° РІС‹Р±СЂР°РЅР°."
         };
     }
 
