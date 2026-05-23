@@ -55,7 +55,7 @@ public partial class MainWindow
 
             dbContext.GameSessions.Add(new GameSession
             {
-                Id = GetNextId(dbContext.GameSessions, session => session.Id),
+                Id = dbContext.GameSessions.GetNextId(session => session.Id),
                 UserId = _currentUserId,
                 ComputerId = computer.Id,
                 StartTime = now,
@@ -66,7 +66,7 @@ public partial class MainWindow
 
             dbContext.Payments.Add(new Payment
             {
-                Id = GetNextId(dbContext.Payments, payment => payment.Id),
+                Id = dbContext.Payments.GetNextId(payment => payment.Id),
                 UserId = _currentUserId,
                 Amount = amount,
                 PaymentType = PaymentTypes.Cash,
@@ -143,7 +143,7 @@ public partial class MainWindow
 
                 dbContext.Payments.Add(new Payment
                 {
-                    Id = GetNextId(dbContext.Payments, payment => payment.Id),
+                    Id = dbContext.Payments.GetNextId(payment => payment.Id),
                     UserId = paymentUserId.Value,
                     Amount = amount,
                     PaymentType = PaymentTypes.Cash,
@@ -285,7 +285,7 @@ public partial class MainWindow
 
             dbContext.Payments.Add(new Payment
             {
-                Id = GetNextId(dbContext.Payments, payment => payment.Id),
+                Id = dbContext.Payments.GetNextId(payment => payment.Id),
                 UserId = paymentUserId,
                 Amount = amount,
                 PaymentType = PaymentTypes.Online,
@@ -316,7 +316,7 @@ public partial class MainWindow
             {
                 shift = new Shift
                 {
-                    Id = GetNextId(dbContext.Shifts, item => item.Id),
+                    Id = dbContext.Shifts.GetNextId(item => item.Id),
                     EmployeeName = _currentUserFullName,
                     StartTime = DateTime.Now,
                     CashTotal = _shiftCash
@@ -352,7 +352,7 @@ public partial class MainWindow
             // Income/expense separation is documented in README as a production improvement.
             dbContext.Payments.Add(new Payment
             {
-                Id = GetNextId(dbContext.Payments, payment => payment.Id),
+                Id = dbContext.Payments.GetNextId(payment => payment.Id),
                 UserId = paymentUserId.Value,
                 Amount = -amount,
                 PaymentType = PaymentTypes.Cash,
@@ -568,7 +568,7 @@ public partial class MainWindow
             {
                 shift = new Shift
                 {
-                    Id = GetNextId(dbContext.Shifts, item => item.Id),
+                    Id = dbContext.Shifts.GetNextId(item => item.Id),
                     EmployeeName = employeeName,
                     StartTime = now,
                     CashTotal = _shiftCash
@@ -1379,7 +1379,7 @@ public partial class MainWindow
 
             dbContext.Payments.Add(new Payment
             {
-                Id = GetNextId(dbContext.Payments, payment => payment.Id),
+                Id = dbContext.Payments.GetNextId(payment => payment.Id),
                 UserId = userId.Value,
                 Amount = 0,
                 PaymentType = PaymentTypes.AdminLog,

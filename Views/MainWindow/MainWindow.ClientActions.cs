@@ -122,7 +122,7 @@ public partial class MainWindow
             {
                 dbContext.Payments.Add(new Payment
                 {
-                    Id = GetNextId(dbContext.Payments, payment => payment.Id),
+                    Id = dbContext.Payments.GetNextId(payment => payment.Id),
                     UserId = _currentUserId,
                     Amount = 0,
                     PaymentType = PaymentTypes.EventRegistration,
@@ -291,7 +291,7 @@ public partial class MainWindow
 
         if (SavePackagePurchase(packageName, amount, out var resultMessage))
         {
-            BalanceAmountText.Text = $"{_balanceAmount:0.##} BYN";
+            UpdateCurrentBalanceText();
             LoadDatabaseState();
             RefreshLiveViewsAfterDatabaseChange();
             Dispatcher.InvokeAsync(() =>
@@ -371,7 +371,7 @@ public partial class MainWindow
 
             dbContext.GameSessions.Add(new GameSession
             {
-                Id = GetNextId(dbContext.GameSessions, session => session.Id),
+                Id = dbContext.GameSessions.GetNextId(session => session.Id),
                 UserId = user.Id,
                 ComputerId = computer.Id,
                 StartTime = startTime,
@@ -382,7 +382,7 @@ public partial class MainWindow
 
             dbContext.Payments.Add(new Payment
             {
-                Id = GetNextId(dbContext.Payments, payment => payment.Id),
+                Id = dbContext.Payments.GetNextId(payment => payment.Id),
                 UserId = user.Id,
                 Amount = -amount,
                 PaymentType = PaymentTypes.Online,

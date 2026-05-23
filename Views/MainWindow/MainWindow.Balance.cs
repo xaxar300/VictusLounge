@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Globalization;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using VictusLounge.Data;
+using VictusLounge.Helpers;
 
 namespace VictusLounge;
 
@@ -10,12 +10,7 @@ public partial class MainWindow
 {
     private static bool TryParseMoney(string raw, out decimal amount)
     {
-        var digits = new string(raw.Where(ch => char.IsDigit(ch) || ch is '.' or ',').ToArray());
-        return decimal.TryParse(
-            digits.Replace(',', '.'),
-            System.Globalization.NumberStyles.Number,
-            System.Globalization.CultureInfo.InvariantCulture,
-            out amount) && amount > 0;
+        return MoneyFormatter.TryParsePositive(raw, out amount);
     }
 
     private decimal CalculateTopupBonus(decimal amount)

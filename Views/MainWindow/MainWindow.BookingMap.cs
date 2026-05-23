@@ -325,7 +325,7 @@ public partial class MainWindow
 
         BookingConfirmText.Text =
             $"ПК: {SummarySeatsText.Text}\n" +
-            $"Р—РѕРЅР°: {SummaryZoneText.Text}\n" +
+            $"Зона: {SummaryZoneText.Text}\n" +
             $"Дата: {SummaryDateText.Text}\n" +
             $"Время: {SummaryTimeText.Text}\n" +
             $"Тариф: {SummaryTariffText.Text}\n" +
@@ -678,15 +678,7 @@ public partial class MainWindow
 
     private static string NormalizePcStatus(string status)
     {
-        return status.Trim().ToLowerInvariant() switch
-        {
-            "available" => PcStatuses.Free,
-            "active" => PcStatuses.Busy,
-            "occupied" => PcStatuses.Busy,
-            "maintenance" => PcStatuses.Service,
-            "" => PcStatuses.Free,
-            var value => value
-        };
+        return PcStatusNormalizer.Normalize(status);
     }
 
     private void SetActiveButton(Button activeButton, params Button[] buttons)
@@ -741,9 +733,9 @@ public partial class MainWindow
     {
         return _bookingPackage switch
         {
-            "night" => "Night Pack ?25%",
-            "morning" => "Morning Pack ?20%",
-            _ => "Gold ?10%"
+            "night" => "Night Pack -25%",
+            "morning" => "Morning Pack -20%",
+            _ => "Gold -10%"
         };
     }
 

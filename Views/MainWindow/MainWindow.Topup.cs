@@ -133,7 +133,7 @@ public partial class MainWindow
             var bonusSource = IsPromoApplied() ? $"promo {_appliedPromoCode}" : $"tier {GetClientTier(user)}";
             user.Balance += amount + bonus;
             user.LoyaltyTier = BetterTier(user.LoyaltyTier, GetClientTier(user.Balance));
-            var nextPaymentId = GetNextId(dbContext.Payments, payment => payment.Id);
+            var nextPaymentId = dbContext.Payments.GetNextId(payment => payment.Id);
             dbContext.Payments.Add(new Payment
             {
                 Id = nextPaymentId++,
@@ -182,7 +182,7 @@ public partial class MainWindow
 
             dbContext.Payments.Add(new Payment
             {
-                Id = GetNextId(dbContext.Payments, payment => payment.Id),
+                Id = dbContext.Payments.GetNextId(payment => payment.Id),
                 UserId = _currentUserId,
                 Amount = amount,
                 PaymentType = method == "erip" ? PaymentTypes.PendingErip : PaymentTypes.PendingCash,
@@ -240,7 +240,7 @@ public partial class MainWindow
             return;
         }
 
-        BalanceAmountText.Text = $"{_balanceAmount:0.##} BYN";
+        UpdateCurrentBalanceText();
         LoadDatabaseState();
         RefreshAdminUx();
         SyncCurrentUserViewModel();

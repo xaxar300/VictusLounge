@@ -60,12 +60,13 @@ public partial class MainWindow
 
         CabinetUserNameText.Text = user.FullName;
         CabinetTierText.Text = $"{GetClientTier(user)} · {user.Login}";
-        CabinetProgressText.Text = $"{progress}% ? бонусов: {bonus:0.##}";
+        CabinetProgressText.Text = $"{progress}% · бонусов: {bonus:0.##}";
         CabinetBalanceText.Text = $"{user.Balance:0.##} BYN";
         CabinetBonusText.Text = $"{bonus:0.##}";
         CabinetPlayedText.Text = $"{playedHours:0.#} ч";
         CabinetFavoriteZoneText.Text = favoriteZone;
-        BalanceAmountText.Text = $"{user.Balance:0.##} BYN";
+        _balanceAmount = user.Balance;
+        UpdateCurrentBalanceText();
         BalanceBonusText.Text = $"Получено бонусов: {bonus:0.##}";
         UpdateBalancePersonalOffer(user);
 
@@ -74,7 +75,7 @@ public partial class MainWindow
             var price = CalculateBookingTotal(activeBooking, bookingComputer);
             var label = GetBookingPackageLabel(activeBooking);
             var payablePrice = ApplyBookingPromo(price);
-            var promoSuffix = payablePrice < price ? $" ? промокод ?{price - payablePrice:0.##} BYN" : string.Empty;
+            var promoSuffix = payablePrice < price ? $" · промокод -{price - payablePrice:0.##} BYN" : string.Empty;
             CabinetActiveBookingText.Text = $"{bookingComputer.Name} · {activeBooking.StartTime:dd.MM HH:mm}–{activeBooking.EndTime:HH:mm}";
             CabinetActiveBookingPriceText.Text = $"{payablePrice:0.##} BYN";
             CabinetCancelBookingButton.Visibility = Visibility.Visible;
@@ -121,7 +122,7 @@ public partial class MainWindow
 
         var duration = Math.Max(1, (booking.EndTime - booking.StartTime).TotalHours);
         var payableTotal = ApplyBookingPromo(total);
-        var promoSuffix = payableTotal < total ? $" ? промокод ?{total - payableTotal:0.##} BYN" : string.Empty;
+        var promoSuffix = payableTotal < total ? $" · промокод -{total - payableTotal:0.##} BYN" : string.Empty;
         var tag = $"{packageLabel}|{payableTotal:0.##} BYN";
         BalancePackagesTitleText.Text = "Оплата активной брони";
         QuickGameTitleText.Text = $"{computer.Name} · {computer.Zone}";
@@ -202,9 +203,9 @@ public partial class MainWindow
     {
         return booking.Package switch
         {
-            "night" => "Night Pack ?25%",
-            "morning" => "Morning Pack ?20%",
-            _ => "Gold ?10%"
+            "night" => "Night Pack -25%",
+            "morning" => "Morning Pack -20%",
+            _ => "Gold -10%"
         };
     }
 
@@ -413,11 +414,11 @@ public partial class MainWindow
 
         AddCabinetSessionRow(0, "Статус", "Активна", true);
         AddCabinetSessionRow(1, "ПК", computer?.Name ?? "-", false);
-        AddCabinetSessionRow(2, "Р—РѕРЅР°", computer?.Zone ?? "-", false);
+        AddCabinetSessionRow(2, "Зона", computer?.Zone ?? "-", false);
         AddCabinetSessionRow(3, "Начало", currentSession.StartTime.ToString("dd.MM HH:mm"), false);
         AddCabinetSessionRow(4, "Окончание", finishText, false);
         AddCabinetSessionRow(5, "Длительность", $"{duration:0.#} ч", false);
-        AddCabinetSessionRow(6, "РЎСѓРјРјР°", $"{currentSession.TotalPrice:0.##} BYN", false);
+        AddCabinetSessionRow(6, "Сумма", $"{currentSession.TotalPrice:0.##} BYN", false);
         _activeCabinetSessionId = currentSession.Id;
         CabinetEndSessionButton.Visibility = string.Equals(currentSession.Status, SessionStatuses.Team, StringComparison.OrdinalIgnoreCase)
             ? Visibility.Collapsed
@@ -502,7 +503,7 @@ public partial class MainWindow
         AddBalanceHistoryCell(0, 0, "Дата", "GoldLightBrush", FontWeights.Bold);
         AddBalanceHistoryCell(0, 1, "Операция", "GoldLightBrush", FontWeights.Bold);
         AddBalanceHistoryCell(0, 2, "Метод", "GoldLightBrush", FontWeights.Bold);
-        AddBalanceHistoryCell(0, 3, "РЎСѓРјРјР°", "GoldLightBrush", FontWeights.Bold);
+        AddBalanceHistoryCell(0, 3, "Сумма", "GoldLightBrush", FontWeights.Bold);
         AddBalanceHistoryCell(0, 4, "Статус", "GoldLightBrush", FontWeights.Bold, alignRight: true);
 
         if (payments.Count == 0)

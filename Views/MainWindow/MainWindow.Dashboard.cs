@@ -152,7 +152,7 @@ public partial class MainWindow
             .Count();
 
         DashboardFreePcsValue.Text = freePcs.ToString();
-        DashboardFreePcsHint.Text = $"РёР· {totalPcs}";
+        DashboardFreePcsHint.Text = $"из {totalPcs}";
         DashboardZonesValue.Text = $"{availableZones}/{totalZones}";
         DashboardZonesHint.Text = "зоны с доступными местами";
 
@@ -182,7 +182,7 @@ public partial class MainWindow
         }
 
         DashboardEventsValue.Text = "3";
-        DashboardEventsHint.Text = "Dota 2 ? CS2 ? LAN";
+        DashboardEventsHint.Text = "Dota 2 · CS2 · LAN";
     }
 
     private static string NormalizeZoneGroup(string zone)

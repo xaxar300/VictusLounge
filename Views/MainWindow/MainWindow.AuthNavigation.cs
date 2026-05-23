@@ -81,7 +81,7 @@ public partial class MainWindow
         RegisterErrorText.Visibility = Visibility.Collapsed;
         AuthWindowTitleText.Text = isRegister
             ? "Регистрация в Elite Gaming Lounge"
-            : "Р'С…од РІ Elite Gaming Lounge";
+            : "Вход в Elite Gaming Lounge";
         UpdateAuthRoleButtons();
     }
 
@@ -210,7 +210,7 @@ public partial class MainWindow
         ProfileRoleText.Text = $"{GetRoleTitle(_currentRole)} · {_currentUserLogin}";
         ProfileInitialsText.Text = GetInitials(_currentUserFullName);
         WorkspaceText.Text = $"{GetRoleTitle(_currentRole)} workspace";
-        BalanceAmountText.Text = $"{_balanceAmount:0.##} BYN";
+        UpdateCurrentBalanceText();
         SyncCurrentUserViewModel();
     }
 
