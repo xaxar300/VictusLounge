@@ -172,6 +172,7 @@ public partial class MainWindow : Window
     private readonly List<Computer> _computers = [];
     private readonly List<Tariff> _tariffs = [];
     private int? _activeCabinetBookingId;
+    private int? _activeCabinetSessionId;
     private int _currentUserId;
     private string _currentUserFullName = "Not signed in";
     private string _currentUserLogin = string.Empty;
@@ -231,6 +232,7 @@ public partial class MainWindow : Window
         try
         {
             using var dbContext = new AppDbContext();
+            NormalizeDatabaseState(dbContext);
             if (IsLoaded)
             {
                 RefreshBookingDatesIfStale();
@@ -255,8 +257,10 @@ public partial class MainWindow : Window
             var activeSessions = dbContext.GameSessions.Count(session => session.Status != SessionStatuses.Closed
                 && session.StartTime <= now
                 && (session.EndTime == null || session.EndTime > now));
-            var pendingBookings = dbContext.Bookings.Count(booking => booking.Status == BookingStatuses.PendingPayment);
-            var pendingSessions = dbContext.GameSessions.Count(session => session.Status == SessionStatuses.AwaitingPayment);
+            var pendingBookings = dbContext.Bookings.Count(booking => booking.Status == BookingStatuses.PendingPayment
+                && booking.EndTime > now);
+            var pendingSessions = dbContext.GameSessions.Count(session => session.Status == SessionStatuses.AwaitingPayment
+                && (session.EndTime == null || session.EndTime > now));
             var freePcs = _computers.Count(computer => NormalizePcStatus(computer.Status) == PcStatuses.Free);
             var servicePcs = _computers.Count(computer => NormalizePcStatus(computer.Status) == PcStatuses.Service);
             var today = DateTime.Today;
@@ -387,6 +391,62 @@ public partial class MainWindow : Window
 
             computer.Status = effectiveStatus;
             _pcStatusOverrides[computer.Name] = effectiveStatus;
+        }
+    }
+
+    private static void NormalizeDatabaseState(AppDbContext dbContext)
+    {
+        var now = DateTime.Now;
+        var hasChanges = false;
+
+        var expiredSessions = dbContext.GameSessions
+            .Where(session => session.Status != SessionStatuses.Closed
+                && session.Status != SessionStatuses.Team
+                && session.EndTime != null
+                && session.EndTime <= now)
+            .ToList();
+        foreach (var session in expiredSessions)
+        {
+            session.Status = SessionStatuses.Closed;
+            hasChanges = true;
+        }
+
+        var activeSessionComputerIds = dbContext.GameSessions
+            .AsNoTracking()
+            .Where(session => session.Status != SessionStatuses.Closed
+                && session.StartTime <= now
+                && (session.EndTime == null || session.EndTime > now))
+            .Select(session => session.ComputerId)
+            .ToHashSet();
+        var imminentBookingComputerIds = dbContext.Bookings
+            .AsNoTracking()
+            .Where(booking => booking.Status != BookingStatuses.Cancelled
+                && booking.StartTime <= now.AddMinutes(15)
+                && booking.EndTime > now)
+            .Select(booking => booking.ComputerId)
+            .ToHashSet();
+
+        foreach (var computer in dbContext.Computers)
+        {
+            var savedStatus = NormalizePcStatus(computer.Status);
+            var actualStatus = savedStatus == PcStatuses.Service
+                ? PcStatuses.Service
+                : activeSessionComputerIds.Contains(computer.Id)
+                    ? PcStatuses.Busy
+                    : imminentBookingComputerIds.Contains(computer.Id)
+                        ? PcStatuses.Reserved
+                        : PcStatuses.Free;
+
+            if (computer.Status != actualStatus)
+            {
+                computer.Status = actualStatus;
+                hasChanges = true;
+            }
+        }
+
+        if (hasChanges)
+        {
+            dbContext.SaveChanges();
         }
     }
 
@@ -1210,6 +1270,110 @@ public partial class MainWindow : Window
         }
     }
 
+    private void CabinetEndSession_Click(object sender, RoutedEventArgs e)
+    {
+        if (_activeCabinetSessionId is null)
+        {
+            ShowStatus("Сессия не выбрана", "В кабинете нет индивидуальной сессии для завершения.");
+            return;
+        }
+
+        if (EndCurrentClientSession(_activeCabinetSessionId.Value, out var computerName))
+        {
+            LoadDatabaseState();
+            ApplyMapPcButtonStatuses();
+            RebuildBookingSeatGrid();
+            RefreshAdminUx();
+            ShowStatus("Сессия завершена", $"{computerName} освобожден, сессия закрыта в базе данных.");
+            return;
+        }
+
+        ShowStatus("Сессия не завершена", "Не удалось закрыть текущую индивидуальную сессию.");
+    }
+
+    private bool EndCurrentClientSession(int sessionId, out string computerName)
+    {
+        computerName = "ПК";
+
+        try
+        {
+            using var dbContext = new AppDbContext();
+            var now = DateTime.Now;
+            var session = dbContext.GameSessions.FirstOrDefault(item =>
+                item.Id == sessionId
+                && item.UserId == _currentUserId
+                && item.Status != SessionStatuses.Closed
+                && item.Status != SessionStatuses.Team
+                && item.StartTime <= now
+                && (item.EndTime == null || item.EndTime > now));
+
+            if (session is null)
+            {
+                return false;
+            }
+
+            session.EndTime = now;
+            session.Status = SessionStatuses.Closed;
+
+            var computer = dbContext.Computers.FirstOrDefault(item => item.Id == session.ComputerId);
+            if (computer is not null)
+            {
+                computerName = computer.Name;
+                var hasOtherOpenSession = dbContext.GameSessions.Any(item =>
+                    item.Id != session.Id
+                    && item.ComputerId == session.ComputerId
+                    && item.Status != SessionStatuses.Closed
+                    && item.StartTime <= now
+                    && (item.EndTime == null || item.EndTime > now));
+                var hasImminentBooking = dbContext.Bookings.Any(item =>
+                    item.ComputerId == session.ComputerId
+                    && item.Status != BookingStatuses.Cancelled
+                    && item.StartTime <= now.AddMinutes(15)
+                    && item.EndTime > now);
+
+                if (NormalizePcStatus(computer.Status) != PcStatuses.Service)
+                {
+                    computer.Status = hasOtherOpenSession
+                        ? PcStatuses.Busy
+                        : hasImminentBooking
+                            ? PcStatuses.Reserved
+                            : PcStatuses.Free;
+                }
+            }
+
+            dbContext.SaveChanges();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            ShowDatabaseError("Ошибка завершения сессии", ex);
+            return false;
+        }
+    }
+
+    private static bool HasActiveIndividualSession(AppDbContext dbContext, int userId, out string computerName)
+    {
+        var now = DateTime.Now;
+        var sessionInfo = dbContext.GameSessions
+            .AsNoTracking()
+            .Where(session => session.UserId == userId
+                && session.Status != SessionStatuses.Closed
+                && session.Status != SessionStatuses.Team
+                && (session.EndTime == null || session.EndTime > now))
+            .OrderByDescending(session => session.StartTime)
+            .Select(session => new
+            {
+                ComputerName = dbContext.Computers
+                    .Where(computer => computer.Id == session.ComputerId)
+                    .Select(computer => computer.Name)
+                    .FirstOrDefault()
+            })
+            .FirstOrDefault();
+
+        computerName = sessionInfo?.ComputerName ?? "другом ПК";
+        return sessionInfo is not null;
+    }
+
     private void RebuildCabinetSessionsGrid(IReadOnlyCollection<GameSession> sessions, IReadOnlyDictionary<int, Computer> computers)
     {
         CabinetSessionsGrid.Children.Clear();
@@ -1224,11 +1388,14 @@ public partial class MainWindow : Window
             .Where(session => session.Status != SessionStatuses.Closed
                 && session.StartTime <= now
                 && (session.EndTime is null || session.EndTime > now))
-            .OrderByDescending(session => session.StartTime)
+            .OrderBy(session => string.Equals(session.Status, SessionStatuses.Team, StringComparison.OrdinalIgnoreCase) ? 1 : 0)
+            .ThenByDescending(session => session.StartTime)
             .FirstOrDefault();
 
         if (currentSession is null)
         {
+            _activeCabinetSessionId = null;
+            CabinetEndSessionButton.Visibility = Visibility.Collapsed;
             AddCabinetSessionRow(0, "Статус", "Нет текущей сессии", true);
             AddCabinetSessionRow(1, "Действие", "Оплатите активную бронь или начните сессию у администратора.", false);
             return;
@@ -1246,6 +1413,10 @@ public partial class MainWindow : Window
         AddCabinetSessionRow(4, "Окончание", finishText, false);
         AddCabinetSessionRow(5, "Длительность", $"{duration:0.#} ч", false);
         AddCabinetSessionRow(6, "Сумма", $"{currentSession.TotalPrice:0.##} BYN", false);
+        _activeCabinetSessionId = currentSession.Id;
+        CabinetEndSessionButton.Visibility = string.Equals(currentSession.Status, SessionStatuses.Team, StringComparison.OrdinalIgnoreCase)
+            ? Visibility.Collapsed
+            : Visibility.Visible;
     }
 
     private void AddCabinetSessionRow(int row, string label, string value, bool isPrimary)
@@ -2312,6 +2483,12 @@ public partial class MainWindow : Window
                 return false;
             }
 
+            if (HasActiveIndividualSession(dbContext, user.Id, out var activeSessionComputer))
+            {
+                message = $"У клиента уже есть активная сессия на {activeSessionComputer}. Сначала завершите текущую сессию.";
+                return false;
+            }
+
             var bookingAmount = CalculateBookingTotal(booking, computer);
             var bookingLabel = GetBookingPackageLabel(booking);
             amount = ApplyBookingPromo(bookingAmount);
@@ -2425,11 +2602,11 @@ public partial class MainWindow : Window
         ShowStatus(T("Balance.PackageSelected"), message);
     }
 
-    private void SaveGuestSession(string computerName, decimal amount)
+    private bool SaveGuestSession(string computerName, decimal amount)
     {
         if (!EnsureSignedInForDatabaseWrite())
         {
-            return;
+            return false;
         }
 
         try
@@ -2438,7 +2615,27 @@ public partial class MainWindow : Window
             var computer = dbContext.Computers.FirstOrDefault(item => item.Name == computerName);
             if (computer is null)
             {
-                return;
+                return false;
+            }
+
+            var now = DateTime.Now;
+            var hasComputerSessionConflict = dbContext.GameSessions.Any(session =>
+                session.ComputerId == computer.Id
+                && session.Status != SessionStatuses.Closed
+                && (session.EndTime == null || session.EndTime > now));
+            if (hasComputerSessionConflict)
+            {
+                ShowStatus("ПК занят", $"{computerName}: уже есть незакрытая сессия на этом ПК.");
+                return false;
+            }
+
+            var currentUser = dbContext.Users.FirstOrDefault(user => user.Id == _currentUserId);
+            if (currentUser is not null
+                && NormalizeRole(currentUser.Role) == "client"
+                && HasActiveIndividualSession(dbContext, _currentUserId, out var activeSessionComputer))
+            {
+                ShowStatus("Сессия уже активна", $"У клиента уже есть активная сессия на {activeSessionComputer}. Сначала завершите ее.");
+                return false;
             }
 
             dbContext.GameSessions.Add(new GameSession
@@ -2446,7 +2643,7 @@ public partial class MainWindow : Window
                 Id = GetNextId(dbContext.GameSessions, session => session.Id),
                 UserId = _currentUserId,
                 ComputerId = computer.Id,
-                StartTime = DateTime.Now,
+                StartTime = now,
                 EndTime = null,
                 TotalPrice = amount,
                 Status = SessionStatuses.Active
@@ -2458,22 +2655,25 @@ public partial class MainWindow : Window
                 UserId = _currentUserId,
                 Amount = amount,
                 PaymentType = PaymentTypes.Cash,
-                CreatedAt = DateTime.Now,
+                CreatedAt = now,
                 Comment = $"Guest session: {computerName}"
             });
 
             computer.Status = PcStatuses.Busy;
             dbContext.SaveChanges();
             LoadDatabaseState();
-            var currentUser = dbContext.Users.AsNoTracking().FirstOrDefault(user => user.Id == _currentUserId);
-            if (currentUser is not null)
+            var refreshedUser = dbContext.Users.AsNoTracking().FirstOrDefault(user => user.Id == _currentUserId);
+            if (refreshedUser is not null)
             {
-                RefreshClientUx(dbContext, currentUser);
+                RefreshClientUx(dbContext, refreshedUser);
             }
+
+            return true;
         }
         catch (Exception ex)
         {
             ShowDatabaseError("Ошибка сохранения сессии", ex);
+            return false;
         }
     }
 
@@ -2812,14 +3012,14 @@ public partial class MainWindow : Window
         switch (action)
         {
             case "admin-new-session":
-                _adminActiveSessions++;
-                _adminFreePcs = Math.Max(0, _adminFreePcs - 1);
-                _shiftCash += 8;
-                SaveGuestSession("STD-13", 8m);
-                SetPcStatus("STD-13", PcStatuses.Busy);
-                RefreshAdminUx();
-                AddAdminLog("STD-13 started as guest session");
-                ShowStatus("Новая сессия", "Запущена гостевая сессия на STD-13. Карта и бронь обновлены.");
+                if (SaveGuestSession("STD-13", 8m))
+                {
+                    _shiftCash += 8;
+                    SetPcStatus("STD-13", PcStatuses.Busy);
+                    RefreshAdminUx();
+                    AddAdminLog("STD-13 started as guest session");
+                    ShowStatus("Новая сессия", "Запущена гостевая сессия на STD-13. Карта и бронь обновлены.");
+                }
                 break;
 
             case "admin-payment":

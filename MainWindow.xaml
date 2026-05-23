@@ -836,6 +836,14 @@
                                                     <TextBlock Grid.Row="3" Grid.Column="3" Text="5 ч" Margin="0,12,0,0" />
                                                     <TextBlock Grid.Row="3" Grid.Column="4" Text="50 BYN" HorizontalAlignment="Right" Margin="0,12,0,0" />
                                                 </Grid>
+                                                <Button x:Name="CabinetEndSessionButton"
+                                                        Content="Завершить сессию"
+                                                        Style="{StaticResource GhostButtonStyle}"
+                                                        Visibility="Collapsed"
+                                                        Click="CabinetEndSession_Click"
+                                                        Margin="0,16,0,0"
+                                                        HorizontalAlignment="Right"
+                                                        Padding="18,8" />
                                             </StackPanel>
                                         </Border>
                                     </Grid>
