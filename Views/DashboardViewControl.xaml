@@ -1,0 +1,167 @@
+<UserControl x:Class="VictusLounge.Views.DashboardViewControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Transparent">
+<StackPanel>
+                        <Border Style="{StaticResource PanelBorderStyle}" Padding="24" Margin="0,0,0,16">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1.05*" />
+                                    <ColumnDefinition Width="1.5*" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Row="0" Grid.Column="0">
+                                    <TextBlock Text="CLUB STATUS" Style="{StaticResource KickerTextStyle}" />
+                                    <TextBlock Text="Рабочая панель клуба" FontSize="38" FontWeight="Black" Margin="0,7,0,8" TextWrapping="Wrap" />
+                                    <TextBlock Text="Состояние зала, броней и смены на сегодня." Style="{StaticResource MutedTextStyle}" />
+                                    <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
+                                        <Button Content="Новая бронь" Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,11,0" Tag="booking" Click="NavigationButton_Click" />
+                                        <Button Content="Схема" Style="{StaticResource GhostButtonStyle}" Margin="0,0,11,0" Tag="map" Click="NavigationButton_Click" />
+                                        <Button Content="События" Style="{StaticResource GhostButtonStyle}" Tag="events" Click="QuickAction_Click" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <UniformGrid Grid.Row="0" Grid.Column="1" Columns="4" Margin="20,0,0,0">
+                                    <Border CornerRadius="12" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Background="#13D4AF37" Padding="13" Margin="0,0,10,0">
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock x:Name="DashboardFreePcsLabel" Text="Свободно ПК" Foreground="{DynamicResource MutedBrush}" FontSize="12" />
+                                            <TextBlock x:Name="DashboardFreePcsValue" Text="0" Foreground="{DynamicResource GoldLightBrush}" FontSize="32" FontWeight="Black" Margin="0,7,0,5" />
+                                            <TextBlock x:Name="DashboardFreePcsHint" Text="из 0" Foreground="{DynamicResource MutedBrush}" FontSize="12" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border CornerRadius="12" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Background="{DynamicResource SurfaceBrush}" Padding="13" Margin="0,0,10,0">
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock x:Name="DashboardZonesLabel" Text="Доступные зоны" Foreground="{DynamicResource MutedBrush}" FontSize="12" />
+                                            <TextBlock x:Name="DashboardZonesValue" Text="0/0" Foreground="{DynamicResource GoldLightBrush}" FontSize="32" FontWeight="Black" Margin="0,7,0,5" />
+                                            <TextBlock x:Name="DashboardZonesHint" Text="есть свободные места" Foreground="{DynamicResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border CornerRadius="12" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Background="{DynamicResource SurfaceBrush}" Padding="13" Margin="0,0,10,0">
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock x:Name="DashboardBookingLabel" Text="Мои брони" Foreground="{DynamicResource MutedBrush}" FontSize="12" />
+                                            <TextBlock x:Name="DashboardBookingValue" Text="0" Foreground="{DynamicResource GoldLightBrush}" FontSize="32" FontWeight="Black" Margin="0,7,0,5" />
+                                            <TextBlock x:Name="DashboardBookingHint" Text="нет ближайшей брони" Foreground="{DynamicResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border CornerRadius="12" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Background="{DynamicResource SurfaceBrush}" Padding="13">
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock x:Name="DashboardEventsLabel" Text="События сегодня" Foreground="{DynamicResource MutedBrush}" FontSize="12" />
+                                            <TextBlock x:Name="DashboardEventsValue" Text="3" Foreground="{DynamicResource GoldLightBrush}" FontSize="32" FontWeight="Black" Margin="0,7,0,5" />
+                                            <TextBlock x:Name="DashboardEventsHint" Text="Dota 2 · CS2 · LAN" Foreground="{DynamicResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+                                </UniformGrid>
+
+                                <UniformGrid Grid.Row="1" Grid.ColumnSpan="2" Columns="4" Margin="0,20,0,0">
+                                    <Border CornerRadius="12" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Background="{DynamicResource SurfaceBrush}" Padding="12" Margin="0,0,10,0">
+                                        <StackPanel>
+                                            <TextBlock Text="Standard" FontWeight="Bold" />
+                                            <ProgressBar x:Name="StandardZoneLoadBar" Value="0" Height="8" Margin="0,10,0,0" Foreground="{DynamicResource GoldBrush}" Background="{DynamicResource SurfaceBrush}" />
+                                            <TextBlock x:Name="StandardZoneLoadText" Text="0/0 свободно" Foreground="{DynamicResource MutedBrush}" FontSize="11" Margin="0,7,0,0" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border CornerRadius="12" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Background="{DynamicResource SurfaceBrush}" Padding="12" Margin="0,0,10,0">
+                                        <StackPanel>
+                                            <TextBlock Text="VIP" FontWeight="Bold" />
+                                            <ProgressBar x:Name="VipZoneLoadBar" Value="0" Height="8" Margin="0,10,0,0" Foreground="{DynamicResource GoldBrush}" Background="{DynamicResource SurfaceBrush}" />
+                                            <TextBlock x:Name="VipZoneLoadText" Text="0/0 свободно" Foreground="{DynamicResource MutedBrush}" FontSize="11" Margin="0,7,0,0" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border CornerRadius="12" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Background="{DynamicResource SurfaceBrush}" Padding="12" Margin="0,0,10,0">
+                                        <StackPanel>
+                                            <TextBlock Text="Bootcamp" FontWeight="Bold" />
+                                            <ProgressBar x:Name="BootcampZoneLoadBar" Value="0" Height="8" Margin="0,10,0,0" Foreground="{DynamicResource GoldBrush}" Background="{DynamicResource SurfaceBrush}" />
+                                            <TextBlock x:Name="BootcampZoneLoadText" Text="0/0 свободно" Foreground="{DynamicResource MutedBrush}" FontSize="11" Margin="0,7,0,0" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border CornerRadius="12" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Background="{DynamicResource SurfaceBrush}" Padding="12">
+                                        <StackPanel>
+                                            <TextBlock Text="Royal" FontWeight="Bold" />
+                                            <ProgressBar x:Name="RoyalZoneLoadBar" Value="0" Height="8" Margin="0,10,0,0" Foreground="{DynamicResource GoldBrush}" Background="{DynamicResource SurfaceBrush}" />
+                                            <TextBlock x:Name="RoyalZoneLoadText" Text="0/0 свободно" Foreground="{DynamicResource MutedBrush}" FontSize="11" Margin="0,7,0,0" />
+                                        </StackPanel>
+                                    </Border>
+                                </UniformGrid>
+                            </Grid>
+                        </Border>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.ColumnSpan="2" Style="{StaticResource PanelBorderStyle}" Margin="0,0,16,16">
+                                <StackPanel>
+                                    <TextBlock Text="QUICK ACTIONS" Style="{StaticResource KickerTextStyle}" />
+                                    <TextBlock Text="Быстрые действия" FontSize="22" FontWeight="Bold" Margin="0,6,0,16" />
+                                    <UniformGrid Columns="4">
+                                        <Button Style="{StaticResource SidebarButtonStyle}" Height="116" Background="{DynamicResource PanelGradientBrush}" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Margin="0,0,10,0" Tag="booking" Click="QuickAction_Click">
+                                            <StackPanel VerticalAlignment="Bottom"><TextBlock Text="Новая бронь" FontWeight="Bold" /><TextBlock Text="Дата, зона, ПК, summary" Foreground="{DynamicResource MutedBrush}" Margin="0,7,0,0" TextWrapping="Wrap" /></StackPanel>
+                                        </Button>
+                                        <Button Style="{StaticResource SidebarButtonStyle}" Height="116" Background="{DynamicResource PanelGradientBrush}" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Margin="0,0,10,0" Tag="tournament" Click="QuickAction_Click">
+                                            <StackPanel VerticalAlignment="Bottom"><TextBlock Text="Записаться на турнир" FontWeight="Bold" TextWrapping="Wrap" /><TextBlock Text="Dota 2, CS2, LAN Party" Foreground="{DynamicResource MutedBrush}" Margin="0,7,0,0" TextWrapping="Wrap" /></StackPanel>
+                                        </Button>
+                                        <Button Style="{StaticResource SidebarButtonStyle}" Height="116" Background="{DynamicResource PanelGradientBrush}" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Margin="0,0,10,0" Tag="package" Click="QuickAction_Click">
+                                            <StackPanel VerticalAlignment="Bottom"><TextBlock Text="Купить пакет" FontWeight="Bold" /><TextBlock Text="Quick Game / Night Pack" Foreground="{DynamicResource MutedBrush}" Margin="0,7,0,0" TextWrapping="Wrap" /></StackPanel>
+                                        </Button>
+                                        <Button Style="{StaticResource SidebarButtonStyle}" Height="116" Background="{DynamicResource PanelGradientBrush}" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Tag="profile" Click="QuickAction_Click">
+                                            <StackPanel VerticalAlignment="Bottom"><TextBlock Text="Открыть профиль" FontWeight="Bold" /><TextBlock Text="Бонусы, сессии, брони" Foreground="{DynamicResource MutedBrush}" Margin="0,7,0,0" TextWrapping="Wrap" /></StackPanel>
+                                        </Button>
+                                    </UniformGrid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="2" Style="{StaticResource PanelBorderStyle}" Margin="0,0,0,16">
+                                <StackPanel x:Name="TodayClubList">
+                                    <TextBlock Text="Сегодня в клубе" FontSize="22" FontWeight="Bold" Margin="0,0,0,12" />
+                                    <TextBlock Text="Данные загружаются из бронирований и сессий." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Row="1" Grid.ColumnSpan="2" Style="{StaticResource PanelBorderStyle}" Margin="0,0,16,0">
+                                <StackPanel>
+                                    <DockPanel Margin="0,0,0,16">
+                                        <Button Content="Схема" DockPanel.Dock="Right" Style="{StaticResource GhostButtonStyle}" MinHeight="34" Padding="14,0" Tag="map" Click="NavigationButton_Click" />
+                                        <StackPanel>
+                                            <TextBlock Text="ZONES" Style="{StaticResource KickerTextStyle}" />
+                                            <TextBlock Text="Зоны клуба" FontSize="22" FontWeight="Bold" Margin="0,6,0,0" />
+                                        </StackPanel>
+                                    </DockPanel>
+                                    <UniformGrid Columns="4">
+                                        <Border CornerRadius="12" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Background="#21D4AF37" Padding="14" Height="104" Margin="0,0,10,0" Cursor="Hand" Tag="Standard" MouseLeftButtonUp="ZoneCard_MouseLeftButtonUp">
+                                            <StackPanel VerticalAlignment="Bottom"><TextBlock Text="Standard" /><TextBlock Text="28 ПК" Foreground="{DynamicResource GoldLightBrush}" FontSize="23" FontWeight="Black" Margin="0,5,0,4" /><TextBlock Text="8 BYN/час · 18 свободно" Foreground="{DynamicResource MutedBrush}" FontSize="12" TextWrapping="Wrap" /></StackPanel>
+                                        </Border>
+                                        <Border CornerRadius="12" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Background="#2EF2D57A" Padding="14" Height="104" Margin="0,0,10,0" Cursor="Hand" Tag="VIP" MouseLeftButtonUp="ZoneCard_MouseLeftButtonUp">
+                                            <StackPanel VerticalAlignment="Bottom"><TextBlock Text="VIP" /><TextBlock Text="10 ПК" Foreground="{DynamicResource GoldLightBrush}" FontSize="23" FontWeight="Black" Margin="0,5,0,4" /><TextBlock Text="14 BYN/час · 4 свободно" Foreground="{DynamicResource MutedBrush}" FontSize="12" TextWrapping="Wrap" /></StackPanel>
+                                        </Border>
+                                        <Border CornerRadius="12" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Background="#2268D889" Padding="14" Height="104" Margin="0,0,10,0" Cursor="Hand" Tag="Bootcamp" MouseLeftButtonUp="ZoneCard_MouseLeftButtonUp">
+                                            <StackPanel VerticalAlignment="Bottom"><TextBlock Text="Bootcamp" /><TextBlock Text="2 комнаты" Foreground="{DynamicResource GoldLightBrush}" FontSize="23" FontWeight="Black" Margin="0,5,0,4" /><TextBlock Text="50 BYN/час · 1 свободна" Foreground="{DynamicResource MutedBrush}" FontSize="12" TextWrapping="Wrap" /></StackPanel>
+                                        </Border>
+                                        <Border CornerRadius="12" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Background="#22FFFFFF" Padding="14" Height="104" Cursor="Hand" Tag="Royal VIP" MouseLeftButtonUp="ZoneCard_MouseLeftButtonUp">
+                                            <StackPanel VerticalAlignment="Bottom"><TextBlock Text="Royal VIP" /><TextBlock Text="4 ПК" Foreground="{DynamicResource GoldLightBrush}" FontSize="23" FontWeight="Black" Margin="0,5,0,4" /><TextBlock Text="24 BYN/час · 3 свободно" Foreground="{DynamicResource MutedBrush}" FontSize="12" TextWrapping="Wrap" /></StackPanel>
+                                        </Border>
+                                    </UniformGrid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource PanelBorderStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Последние уведомления" FontSize="22" FontWeight="Bold" Margin="0,0,0,12" />
+                                    <Grid Margin="0,0,0,13"><Grid.ColumnDefinitions><ColumnDefinition Width="22" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><Ellipse Width="10" Height="10" Fill="{DynamicResource OkBrush}" VerticalAlignment="Top" Margin="0,5,0,0" /><StackPanel Grid.Column="1"><TextBlock Text="PC-07 свободен" FontWeight="Bold" /><TextBlock Text="Standard Hall" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,4,0,0" /></StackPanel></Grid>
+                                    <Grid Margin="0,0,0,13"><Grid.ColumnDefinitions><ColumnDefinition Width="22" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><Ellipse Width="10" Height="10" Fill="{DynamicResource WaitBrush}" VerticalAlignment="Top" Margin="0,5,0,0" /><StackPanel Grid.Column="1"><TextBlock Text="Бронь скоро начнется" FontWeight="Bold" TextWrapping="Wrap" /><TextBlock Text="VIP-03 · 18:00" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,4,0,0" /></StackPanel></Grid>
+                                    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="22" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><Ellipse Width="10" Height="10" Fill="{DynamicResource DangerBrush}" VerticalAlignment="Top" Margin="0,5,0,0" /><StackPanel Grid.Column="1"><TextBlock Text="PC-18 service" FontWeight="Bold" /><TextBlock Text="Требуется проверка" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,4,0,0" /></StackPanel></Grid>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                        </StackPanel>
+</UserControl>

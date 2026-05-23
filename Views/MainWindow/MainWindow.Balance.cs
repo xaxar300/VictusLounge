@@ -60,7 +60,7 @@ public partial class MainWindow
         };
     }
 
-    private static bool IsValidDemoCardNumber(string raw)
+    private static bool IsValidPaymentCardNumber(string raw)
     {
         var digits = new string(raw.Where(char.IsDigit).ToArray());
         if (digits.Length < 12)

@@ -1,0 +1,56 @@
+<UserControl x:Class="VictusLounge.Views.AdminDashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Transparent">
+<StackPanel>
+                            <DockPanel Margin="0,0,0,18" LastChildFill="False">
+                                <StackPanel DockPanel.Dock="Left">
+                                    <TextBlock Text="ADMIN CONTROL" Style="{StaticResource KickerTextStyle}" />
+                                    <TextBlock Text="Админ-панель" FontSize="38" FontWeight="Black" Margin="0,7,0,8" />
+                                    <TextBlock Text="Сессии, платежи, статусы ПК и быстрые операции администратора." Style="{StaticResource MutedTextStyle}" />
+                                </StackPanel>
+                                <Button Content="Новая сессия" DockPanel.Dock="Right" Style="{StaticResource PrimaryButtonStyle}" Tag="admin-new-session" Click="AdminAction_Click" Width="180" VerticalAlignment="Top" />
+                            </DockPanel>
+
+                            <UniformGrid Columns="4" Margin="0,0,0,16">
+                                <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,12,0"><StackPanel><TextBlock Text="Активные сессии" Foreground="{DynamicResource MutedBrush}" /><TextBlock x:Name="AdminActiveSessionsValue" Text="0" Foreground="{DynamicResource GoldLightBrush}" FontSize="34" FontWeight="Black" Margin="0,8,0,0" /><TextBlock Text="открытые в БД" Foreground="{DynamicResource MutedBrush}" /></StackPanel></Border>
+                                <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,12,0"><StackPanel><TextBlock Text="Ожидают оплату" Foreground="{DynamicResource MutedBrush}" /><TextBlock x:Name="AdminPaymentQueueValue" Text="5" Foreground="{DynamicResource GoldLightBrush}" FontSize="34" FontWeight="Black" Margin="0,8,0,0" /><TextBlock x:Name="AdminPaymentQueueHintText" Text="0 броней, 0 сессий" Foreground="{DynamicResource MutedBrush}" /></StackPanel></Border>
+                                <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,12,0"><StackPanel><TextBlock Text="Свободные ПК" Foreground="{DynamicResource MutedBrush}" /><TextBlock x:Name="AdminFreePcsValue" Text="0" Foreground="{DynamicResource GoldLightBrush}" FontSize="34" FontWeight="Black" Margin="0,8,0,0" /><TextBlock x:Name="AdminFreePcsHintText" Text="из 0 рабочих мест" Foreground="{DynamicResource MutedBrush}" /></StackPanel></Border>
+                                <Border Style="{StaticResource PanelBorderStyle}"><StackPanel><TextBlock Text="Техподдержка" Foreground="{DynamicResource MutedBrush}" /><TextBlock x:Name="AdminSupportValue" Text="3" Foreground="{DynamicResource GoldLightBrush}" FontSize="34" FontWeight="Black" Margin="0,8,0,0" /><TextBlock Text="2 сервиса, 1 уборка" Foreground="{DynamicResource MutedBrush}" /></StackPanel></Border>
+                            </UniformGrid>
+
+                            <Grid Margin="0,0,0,16">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="1.35*" /><ColumnDefinition Width="0.85*" /></Grid.ColumnDefinitions>
+                                <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,16,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Текущие сессии" FontSize="26" FontWeight="Black" Margin="0,0,0,16" />
+                                        <Grid x:Name="AdminSessionsGrid">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="0.8*" /><ColumnDefinition Width="1.2*" /><ColumnDefinition Width="1*" /><ColumnDefinition Width="1*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                            <TextBlock Text="ПК" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" />
+                                            <TextBlock Grid.Column="1" Text="Клиент" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" />
+                                            <TextBlock Grid.Column="2" Text="До" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" />
+                                            <TextBlock Grid.Column="3" Text="Статус" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="1" Style="{StaticResource PanelBorderStyle}">
+                                    <StackPanel x:Name="AdminQuickOpsPanel">
+                                        <TextBlock Text="Быстрые операции" FontSize="26" FontWeight="Black" Margin="0,0,0,16" />
+                                        <Button Content="Открыть карту клуба" Style="{StaticResource GhostButtonStyle}" Tag="map" Click="NavigationButton_Click" Margin="0,0,0,10" />
+                                        <Button Content="Создать бронь" Style="{StaticResource GhostButtonStyle}" Tag="booking" Click="NavigationButton_Click" Margin="0,0,0,10" />
+                                        <Button Content="Перенести бронь" Style="{StaticResource GhostButtonStyle}" Tag="admin-reschedule-booking" Click="AdminAction_Click" Margin="0,0,0,10" />
+                                        <Button Content="Отменить бронь" Style="{StaticResource GhostButtonStyle}" Tag="admin-cancel-booking" Click="AdminAction_Click" Margin="0,0,0,10" />
+                                        <Button Content="Отметить оплату" Style="{StaticResource PrimaryButtonStyle}" Tag="admin-payment" Click="AdminAction_Click" Margin="0,0,0,10" />
+                                        <Button Content="Поставить ПК в сервис" Style="{StaticResource GhostButtonStyle}" Tag="admin-service" Click="AdminAction_Click" Margin="0,0,0,10" />
+                                        <Button Content="Закрыть все оплаты" Style="{StaticResource GhostButtonStyle}" Tag="admin-settle-all" Click="AdminAction_Click" Margin="0,0,0,10" />
+                                        <Button Content="Снять сервис с ПК" Style="{StaticResource GhostButtonStyle}" Tag="admin-clear-service" Click="AdminAction_Click" Margin="0,0,0,16" />
+                                        <TextBlock Text="Журнал операций" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" Margin="0,0,0,8" />
+                                        <StackPanel x:Name="AdminOperationLogList">
+                                            <TextBlock Text="Журнал операций пуст" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+</UserControl>

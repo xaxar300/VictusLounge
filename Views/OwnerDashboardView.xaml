@@ -1,0 +1,50 @@
+<UserControl x:Class="VictusLounge.Views.OwnerDashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Transparent">
+<StackPanel>
+                            <DockPanel Margin="0,0,0,18" LastChildFill="False">
+                                <StackPanel DockPanel.Dock="Left">
+                                    <TextBlock Text="OWNER CENTER" Style="{StaticResource KickerTextStyle}" />
+                                    <TextBlock Text="Владелец" FontSize="38" FontWeight="Black" Margin="0,7,0,8" />
+                                    <TextBlock Text="Доход, загрузка клуба, тарифы и сотрудники в одном рабочем разделе." Style="{StaticResource MutedTextStyle}" />
+                                </StackPanel>
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                                    <Button x:Name="OwnerPeakModeButton" Content="Пик" Style="{StaticResource GhostButtonStyle}" Tag="owner-peak" Click="AdminAction_Click" Width="86" Margin="0,0,8,0" />
+                                    <Button x:Name="OwnerNightModeButton" Content="Ночь" Style="{StaticResource GhostButtonStyle}" Tag="owner-night" Click="AdminAction_Click" Width="86" Margin="0,0,8,0" />
+                                    <Button Content="Экспорт отчета" Style="{StaticResource GhostButtonStyle}" Tag="owner-export" Click="AdminAction_Click" Width="160" />
+                                </StackPanel>
+                            </DockPanel>
+
+                            <UniformGrid Columns="4" Margin="0,0,0,16">
+                                <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,12,0"><StackPanel><TextBlock Text="Выручка сегодня" Foreground="{DynamicResource MutedBrush}" /><TextBlock x:Name="OwnerRevenueValue" Text="2 146 BYN" Foreground="{DynamicResource GoldLightBrush}" FontSize="30" FontWeight="Black" Margin="0,8,0,0" /><TextBlock Text="+18% к среде" Foreground="{DynamicResource OkBrush}" /></StackPanel></Border>
+                                <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,12,0"><StackPanel><TextBlock Text="Загрузка" Foreground="{DynamicResource MutedBrush}" /><TextBlock x:Name="OwnerLoadValue" Text="76%" Foreground="{DynamicResource GoldLightBrush}" FontSize="30" FontWeight="Black" Margin="0,8,0,0" /><ProgressBar x:Name="OwnerLoadBar" Value="76" Maximum="100" Height="8" Margin="0,8,0,0" /></StackPanel></Border>
+                                <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,12,0"><StackPanel><TextBlock Text="Средний чек" Foreground="{DynamicResource MutedBrush}" /><TextBlock x:Name="OwnerAverageValue" Text="31 BYN" Foreground="{DynamicResource GoldLightBrush}" FontSize="30" FontWeight="Black" Margin="0,8,0,0" /><TextBlock Text="пакеты растут" Foreground="{DynamicResource MutedBrush}" /></StackPanel></Border>
+                                <Border Style="{StaticResource PanelBorderStyle}"><StackPanel><TextBlock Text="Повторы клиентов" Foreground="{DynamicResource MutedBrush}" /><TextBlock x:Name="OwnerRepeatValue" Text="64%" Foreground="{DynamicResource GoldLightBrush}" FontSize="30" FontWeight="Black" Margin="0,8,0,0" /><TextBlock Text="Gold/Elite" Foreground="{DynamicResource MutedBrush}" /></StackPanel></Border>
+                            </UniformGrid>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="1.1*" /><ColumnDefinition Width="0.9*" /></Grid.ColumnDefinitions>
+                                <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,16,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Тарифы и пакеты" FontSize="26" FontWeight="Black" Margin="0,0,0,16" />
+                                        <UniformGrid Columns="2">
+                                            <Border CornerRadius="12" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Background="{DynamicResource SurfaceBrush}" Padding="14" Margin="0,0,12,12"><StackPanel><TextBlock Text="Standard" FontWeight="Bold" /><TextBlock x:Name="OwnerStandardPriceText" Text="8 BYN/час · 14 ПК" Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,12" /><Button Content="Изменить" Style="{StaticResource GhostButtonStyle}" Tag="owner-standard" Click="AdminAction_Click" /></StackPanel></Border>
+                                            <Border CornerRadius="12" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Background="{DynamicResource SurfaceBrush}" Padding="14" Margin="0,0,0,12"><StackPanel><TextBlock Text="VIP" FontWeight="Bold" /><TextBlock x:Name="OwnerVipPriceText" Text="14 BYN/час · 8 ПК" Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,12" /><Button Content="Изменить" Style="{StaticResource GhostButtonStyle}" Tag="owner-vip" Click="AdminAction_Click" /></StackPanel></Border>
+                                            <Border CornerRadius="12" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Background="{DynamicResource SurfaceBrush}" Padding="14" Margin="0,0,12,0"><StackPanel><TextBlock Text="Bootcamp" FontWeight="Bold" /><TextBlock x:Name="OwnerBootcampPriceText" Text="50 BYN/час · 5 ПК" Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,12" /><Button Content="Изменить" Style="{StaticResource GhostButtonStyle}" Tag="owner-bootcamp" Click="AdminAction_Click" /></StackPanel></Border>
+                                            <Border CornerRadius="12" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Background="#18D4AF37" Padding="14"><StackPanel><TextBlock Text="Royal VIP" FontWeight="Bold" /><TextBlock x:Name="OwnerRoyalPriceText" Text="24 BYN/час · 5 ПК" Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,12" /><Button Content="Изменить" Style="{StaticResource PrimaryButtonStyle}" Tag="owner-royal" Click="AdminAction_Click" /></StackPanel></Border>
+                                        </UniformGrid>
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="1" Style="{StaticResource PanelBorderStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="Сотрудники" FontSize="26" FontWeight="Black" Margin="0,0,0,16" />
+                                        <StackPanel x:Name="OwnerStaffList" Margin="0,0,0,18">
+                                            <TextBlock Text="Смены загружаются из базы данных." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <Button Content="Открыть расписание" Style="{StaticResource PrimaryButtonStyle}" Tag="owner-schedule" Click="AdminAction_Click" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+</UserControl>

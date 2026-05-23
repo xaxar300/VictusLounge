@@ -32,4 +32,6 @@ public static class PaymentTypes
     public const string Pending = "Pending";
     public const string PendingErip = "PendingErip";
     public const string PendingCash = "PendingCash";
+    public const string EventRegistration = "EventRegistration";
+    public const string AdminLog = "AdminLog";
 }

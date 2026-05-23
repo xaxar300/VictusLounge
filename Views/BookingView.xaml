@@ -1,0 +1,125 @@
+<UserControl x:Class="VictusLounge.Views.BookingView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Transparent">
+<StackPanel>
+                            <DockPanel Margin="0,0,0,18">
+                                <StackPanel>
+                                    <TextBlock Text="BOOKING FLOW" Style="{StaticResource KickerTextStyle}" />
+                                    <TextBlock Text="Бронирование" FontSize="38" FontWeight="Black" Margin="0,7,0,8" />
+                                    <TextBlock Text="Выберите дату, зону, один или несколько ПК, затем проверьте итог перед подтверждением." Style="{StaticResource MutedTextStyle}" />
+                                </StackPanel>
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                                    <Button x:Name="SingleModeButton" Content="Одиночная" Style="{StaticResource PrimaryButtonStyle}" Tag="single" Click="BookingMode_Click" Margin="0,0,10,0" />
+                                    <Button x:Name="CompanyModeButton" Content="Для компании" Style="{StaticResource GhostButtonStyle}" Tag="company" Click="BookingMode_Click" />
+                                </StackPanel>
+                            </DockPanel>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1.7*" />
+                                    <ColumnDefinition Width="0.9*" />
+                                </Grid.ColumnDefinitions>
+
+                                <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,16,0">
+                                    <StackPanel>
+                                        <UniformGrid Columns="4" Margin="0,0,0,16">
+                                            <Button x:Name="DateTodayButton" Content="Сегодня&#x0a;сегодня" Tag="" Style="{StaticResource PrimaryButtonStyle}" Click="BookingDate_Click" Margin="0,0,10,0" />
+                                            <Button x:Name="DateTomorrowButton" Content="Завтра&#x0a;+1 день" Tag="" Style="{StaticResource GhostButtonStyle}" Click="BookingDate_Click" Margin="0,0,10,0" />
+                                            <Button x:Name="DateThirdButton" Content="+2 дня&#x0a;дата" Tag="" Style="{StaticResource GhostButtonStyle}" Click="BookingDate_Click" Margin="0,0,10,0" />
+                                            <Button x:Name="DateCustomButton" Content="+3 дня&#x0a;дата" Tag="" Style="{StaticResource GhostButtonStyle}" Click="BookingDate_Click" />
+                                        </UniformGrid>
+
+                                        <Grid Margin="0,0,0,16">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="1.1*" /><ColumnDefinition Width="0.9*" /></Grid.ColumnDefinitions>
+                                            <StackPanel Margin="0,0,10,0">
+                                                <TextBlock Text="Зона" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,7" />
+                                                <WrapPanel>
+                                                    <Button x:Name="ZoneStandardButton" Content="Standard" Tag="Standard|Standard Hall|8" Style="{StaticResource PrimaryButtonStyle}" Click="BookingZone_Click" Margin="0,0,10,10" />
+                                                    <Button x:Name="ZoneVipButton" Content="VIP" Tag="VIP|VIP Zone|14" Style="{StaticResource GhostButtonStyle}" Click="BookingZone_Click" Margin="0,0,10,10" />
+                                                    <Button x:Name="ZoneBootcampButton" Content="Bootcamp" Tag="Bootcamp|Bootcamp Room|50" Style="{StaticResource GhostButtonStyle}" Click="BookingZone_Click" Margin="0,0,10,10" />
+                                                    <Button x:Name="ZoneRoyalButton" Content="Royal VIP" Tag="Royal VIP|Royal VIP|24" Style="{StaticResource GhostButtonStyle}" Click="BookingZone_Click" Margin="0,0,10,10" />
+                                                </WrapPanel>
+                                                <TextBlock Text="Тариф" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,7" />
+                                                <WrapPanel>
+                                                    <Button x:Name="Duration1Button" Content="1 час" Tag="1" Style="{StaticResource PrimaryButtonStyle}" Click="DurationButton_Click" Margin="0,0,10,10" />
+                                                    <Button x:Name="Duration2Button" Content="2 часа" Tag="2" Style="{StaticResource GhostButtonStyle}" Click="DurationButton_Click" Margin="0,0,10,10" />
+                                                    <Button x:Name="Duration3Button" Content="3 часа" Tag="3" Style="{StaticResource GhostButtonStyle}" Click="DurationButton_Click" Margin="0,0,10,10" />
+                                                    <Button x:Name="MorningPackButton" Content="Morning Pack" Tag="morning" Style="{StaticResource GhostButtonStyle}" Click="DurationButton_Click" Margin="0,0,10,10" />
+                                                    <Button x:Name="Duration8Button" Content="Night Pack" Tag="night" Style="{StaticResource GhostButtonStyle}" Click="DurationButton_Click" Margin="0,0,10,10" />
+                                                </WrapPanel>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock Text="Начало" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,7" />
+                                                <Button x:Name="TimePickerToggleButton"
+                                                        Content="Выбрать время: 18:00"
+                                                        Style="{StaticResource GhostButtonStyle}"
+                                                        Click="ToggleTimePicker_Click"
+                                                        Width="300"
+                                                        HorizontalAlignment="Left" />
+                                                <Border x:Name="TimePickerPanel"
+                                                        Width="300"
+                                                        HorizontalAlignment="Left"
+                                                        Visibility="Collapsed"
+                                                        CornerRadius="12"
+                                                        BorderBrush="{DynamicResource LineBrush}"
+                                                        BorderThickness="1"
+                                                        Background="{DynamicResource PanelGradientBrush}"
+                                                        Padding="12"
+                                                        Margin="0,10,0,0">
+                                                    <StackPanel>
+                                                        <StackPanel>
+                                                            <TextBlock Text="Часы" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,8" />
+                                                            <UniformGrid x:Name="BookingHourGrid" Columns="4" />
+                                                        </StackPanel>
+                                                        <StackPanel Margin="0,10,0,0">
+                                                            <TextBlock Text="Минуты" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,8" />
+                                                            <UniformGrid x:Name="BookingMinuteGrid" Columns="4" />
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Border>
+                                                <Border CornerRadius="12"
+                                                        BorderBrush="{DynamicResource LineSoftBrush}"
+                                                        BorderThickness="1"
+                                                        Background="{DynamicResource SurfaceBrush}"
+                                                        Padding="12"
+                                                        Margin="0,12,0,0">
+                                                    <TextBlock x:Name="PackageHintText"
+                                                               Text="Обычный тариф: любое время с шагом 15 минут."
+                                                               Foreground="{DynamicResource MutedBrush}"
+                                                               TextWrapping="Wrap" />
+                                                </Border>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <TextBlock Text="Выбор ПК" FontSize="22" FontWeight="Bold" Margin="0,0,0,12" />
+                                        <UniformGrid x:Name="BookingSeatGrid" Columns="7" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Column="1" Style="{StaticResource PanelBorderStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="SUMMARY" Style="{StaticResource KickerTextStyle}" />
+                                        <TextBlock Text="Итог брони" FontSize="26" FontWeight="Black" Margin="0,8,0,16" />
+                                        <Grid>
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                            <TextBlock Text="ПК" Foreground="{DynamicResource MutedBrush}" /><TextBlock x:Name="SummarySeatsText" Grid.Column="1" Text="—" FontWeight="Bold" HorizontalAlignment="Right" TextWrapping="Wrap" />
+                                            <TextBlock Grid.Row="1" Text="Зона" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" /><TextBlock x:Name="SummaryZoneText" Grid.Row="1" Grid.Column="1" Text="Standard Hall" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" />
+                                            <TextBlock Grid.Row="2" Text="Дата" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" /><TextBlock x:Name="SummaryDateText" Grid.Row="2" Grid.Column="1" Text="сегодня" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" />
+                                            <TextBlock Grid.Row="3" Text="Время" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" /><TextBlock x:Name="SummaryTimeText" Grid.Row="3" Grid.Column="1" Text="18:00-19:00" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" />
+                                            <TextBlock Grid.Row="4" Text="Длительность" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" /><TextBlock x:Name="SummaryDurationText" Grid.Row="4" Grid.Column="1" Text="1 ч" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" />
+                                            <TextBlock Grid.Row="5" Text="Тариф" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" /><TextBlock x:Name="SummaryTariffText" Grid.Row="5" Grid.Column="1" Text="8 BYN/час" FontWeight="Bold" HorizontalAlignment="Right" TextWrapping="Wrap" Margin="0,10,0,0" />
+                                            <TextBlock Grid.Row="6" Text="Без скидки" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" /><TextBlock x:Name="SummaryBaseTotalText" Grid.Row="6" Grid.Column="1" Text="0 BYN" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" />
+                                            <TextBlock Grid.Row="7" Text="Скидка" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" /><TextBlock x:Name="SummaryDiscountText" Grid.Row="7" Grid.Column="1" Text="Gold −10%" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" />
+                                            <TextBlock Grid.Row="8" Text="Итого" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" Margin="0,18,0,0" /><TextBlock x:Name="SummaryTotalText" Grid.Row="8" Grid.Column="1" Text="0 BYN" Foreground="{DynamicResource GoldLightBrush}" FontSize="22" FontWeight="Black" HorizontalAlignment="Right" Margin="0,14,0,0" />
+                                        </Grid>
+                                        <TextBlock x:Name="BookingWarningText" Foreground="{DynamicResource WaitBrush}" TextWrapping="Wrap" Margin="0,14,0,0" Visibility="Collapsed" />
+                                        <TextBlock x:Name="BookingErrorText" Foreground="{DynamicResource DangerBrush}" TextWrapping="Wrap" Margin="0,8,0,0" Visibility="Collapsed" />
+                                        <Button Content="Подтвердить бронь" Style="{StaticResource PrimaryButtonStyle}" Click="ConfirmBooking_Click" Margin="0,22,0,10" />
+                                        <Button Content="Очистить выбор" Style="{StaticResource GhostButtonStyle}" Click="ClearBooking_Click" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+</UserControl>

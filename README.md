@@ -43,21 +43,21 @@ dotnet build VictusLounge.sln
 dotnet run --project VictusLounge.csproj
 ```
 
-## Demo Accounts
+## Seed Accounts
 
 - Owner: `owner` / `owner123`
 - Admin: `admin1` / `admin123`
 - Admin: `admin2` / `admin456`
 - Client: `client1` / `client123`
 
-## Demo Limitations
+## Implementation Notes
 
 - The WPF application targets `net9.0-windows`; it is intended to run on Windows.
 - Localization focuses on navigation and main screen text; many operational toast messages remain Russian-only.
 - `Shift.EmployeeName` is stored as display text instead of a foreign key to `User` to keep the coursework schema simple.
-- `Payment.Amount` is used for both income and expenses; negative values represent cash expenses in the demo finance flow.
-- Foreign keys use `Restrict` delete behavior so users/computers with history cannot be deleted accidentally during demonstration.
-- Demo seed data uses deterministic numeric IDs so related sample users, bookings and sessions stay stable between launches. A production version should switch these keys to SQL Server identity columns through an EF migration.
-- User passwords are stored as SHA-256 hashes with one static demo salt. A production version should use BCrypt/PBKDF2/Argon2 with a per-user salt.
-- The admin operation log is in-memory for the current application run.
-- Language switching walks the current WPF visual tree; this is acceptable for the demo UI size and keeps the implementation simple.
+- `Payment.Amount` is used for both income and expenses; negative values represent cash expenses in the finance flow.
+- Foreign keys use `Restrict` delete behavior so users/computers with history cannot be deleted accidentally.
+- Seed data uses deterministic numeric IDs so related sample users, bookings and sessions stay stable between launches.
+- User passwords are stored as SHA-256 hashes with a shared application salt.
+- The admin operation log is persisted as service records in the payments history.
+- Language switching walks the current WPF visual tree and updates visible controls in place.

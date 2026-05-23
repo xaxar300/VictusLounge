@@ -1,0 +1,53 @@
+<UserControl x:Class="VictusLounge.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Transparent">
+<StackPanel>
+                            <DockPanel Margin="0,0,0,18">
+                                <StackPanel>
+                                    <TextBlock Text="SETTINGS" Style="{StaticResource KickerTextStyle}" />
+                                    <TextBlock x:Name="SettingsTitleText" Text="Настройки" FontSize="38" FontWeight="Black" Margin="0,7,0,8" />
+                                    <TextBlock x:Name="SettingsSubtitleText" Text="Смена темы приложения и языка интерфейса." Style="{StaticResource MutedTextStyle}" />
+                                </StackPanel>
+                            </DockPanel>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,16,0">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <TextBlock x:Name="SettingsThemeTitleText" Text="Тема приложения" FontSize="24" FontWeight="Black" />
+                                        <TextBlock x:Name="SettingsThemeDescriptionText" Grid.Row="1" Text="Black Gold оставляет премиальный стиль клуба, Graphite дает более холодный рабочий вид." Style="{StaticResource MutedTextStyle}" Margin="0,8,0,20" />
+                                        <UniformGrid Grid.Row="2" Columns="2">
+                                            <Button x:Name="BlackGoldThemeButton" Content="Black Gold" Style="{StaticResource PrimaryButtonStyle}" Tag="BlackGold" Click="ThemeButton_Click" Margin="0,0,10,0" />
+                                            <Button x:Name="GraphiteThemeButton" Content="Graphite" Style="{StaticResource GhostButtonStyle}" Tag="Graphite" Click="ThemeButton_Click" />
+                                        </UniformGrid>
+                                    </Grid>
+                                </Border>
+
+                                <Border Grid.Column="1" Style="{StaticResource PanelBorderStyle}">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <TextBlock x:Name="SettingsLanguageTitleText" Text="Язык интерфейса" FontSize="24" FontWeight="Black" />
+                                        <TextBlock x:Name="SettingsLanguageDescriptionText" Grid.Row="1" Text="Переключает основные элементы навигации и страницу настроек." Style="{StaticResource MutedTextStyle}" Margin="0,8,0,20" />
+                                        <UniformGrid Grid.Row="2" Columns="2">
+                                            <Button x:Name="RuLanguageButton" Content="RU" Style="{StaticResource PrimaryButtonStyle}" Tag="ru" Click="LanguageButton_Click" Margin="0,0,10,0" />
+                                            <Button x:Name="EnLanguageButton" Content="EN" Style="{StaticResource GhostButtonStyle}" Tag="en" Click="LanguageButton_Click" />
+                                        </UniformGrid>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+</UserControl>

@@ -1,0 +1,174 @@
+<UserControl x:Class="VictusLounge.Views.BalanceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Transparent">
+<StackPanel>
+                            <DockPanel Margin="0,0,0,18">
+                                <StackPanel>
+                                    <TextBlock x:Name="BalanceKickerText" Text="BALANCE &amp; PACKS" Style="{StaticResource KickerTextStyle}" />
+                                    <TextBlock x:Name="BalanceTitleText" Text="Баланс, бонусы, пакеты" FontSize="38" FontWeight="Black" Margin="0,7,0,8" />
+                                    <TextBlock x:Name="BalanceSubtitleText" Text="История операций, промокод, пакеты времени и персональные акции клиента." Style="{StaticResource MutedTextStyle}" />
+                                </StackPanel>
+                            </DockPanel>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="0.95*" />
+                                    <ColumnDefinition Width="1.75*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,16,16">
+                                    <StackPanel>
+                                        <TextBlock x:Name="BalanceCurrentLabelText" Text="Текущий баланс" Foreground="{DynamicResource MutedBrush}" />
+                                        <TextBlock x:Name="BalanceAmountText" Text="42 BYN" Foreground="{DynamicResource GoldLightBrush}" FontSize="42" FontWeight="Black" Margin="0,8,0,0" />
+                                        <TextBlock x:Name="BalanceBonusText" Text="Получено бонусов: 18.5" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,22" />
+
+                                        <TextBlock x:Name="BalancePromoLabelText" Text="Промокод" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,7" />
+                                        <Border Height="42"
+                                                CornerRadius="12"
+                                                BorderBrush="{DynamicResource LineBrush}"
+                                                BorderThickness="1"
+                                                Background="{DynamicResource SurfaceBrush}"
+                                                Padding="12,0"
+                                                Margin="0,0,0,12">
+                                            <TextBox x:Name="PromoCodeBox"
+                                                     ToolTip="ELITE-NIGHT"
+                                                     FontWeight="Bold"
+                                                     VerticalContentAlignment="Center" />
+                                        </Border>
+
+                                        <WrapPanel Margin="0,0,0,10">
+                                            <Button x:Name="BalanceApplyPromoButton"
+                                                    Content="Применить"
+                                                    Style="{StaticResource GhostButtonStyle}"
+                                                    Tag="promo"
+                                                    Click="BalanceAction_Click"
+                                                    Margin="0,0,10,0" />
+                                            <Button Content="Снять"
+                                                    Style="{StaticResource GhostButtonStyle}"
+                                                    Tag="promo-clear"
+                                                    Click="BalanceAction_Click" />
+                                        </WrapPanel>
+                                        <Button x:Name="BalanceTopupCardButton"
+                                                Content="Пополнить баланс"
+                                                Style="{StaticResource PrimaryButtonStyle}"
+                                                Tag="topup"
+                                                Click="BalanceAction_Click" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Column="1" Style="{StaticResource PanelBorderStyle}" Margin="0,0,0,16">
+                                    <StackPanel>
+                                        <TextBlock x:Name="BalancePackagesTitleText" Text="Пакеты времени" FontSize="26" FontWeight="Black" Margin="0,0,0,16" />
+                                        <UniformGrid Columns="3">
+                                            <Border x:Name="QuickGamePackageCard" CornerRadius="12" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Background="{DynamicResource SurfaceBrush}" Padding="14" Margin="0,0,12,12" Tag="Quick Game|15 BYN" MouseLeftButtonUp="BalancePackageCard_MouseLeftButtonUp" Cursor="Hand">
+                                                <StackPanel>
+                                                    <TextBlock x:Name="QuickGameTitleText" Text="Quick Game" Foreground="{DynamicResource MutedBrush}" />
+                                                    <TextBlock x:Name="QuickGamePackageText" Text="2 часа · 15 BYN" FontSize="18" FontWeight="Black" Margin="0,8,0,14" TextWrapping="Wrap" />
+                                                    <Button x:Name="QuickGameBuyButton" Content="Купить" Style="{StaticResource GhostButtonStyle}" Tag="Quick Game|15 BYN" Click="BalancePackage_Click" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Border x:Name="EveningPackageCard" CornerRadius="12" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Background="#20D4AF37" Padding="14" Margin="0,0,12,12" Tag="Evening Pack|29 BYN" MouseLeftButtonUp="BalancePackageCard_MouseLeftButtonUp" Cursor="Hand">
+                                                <StackPanel>
+                                                    <TextBlock Text="Evening Pack" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" />
+                                                    <TextBlock x:Name="EveningPackageText" Text="4 часа · 29 BYN" FontSize="18" FontWeight="Black" Margin="0,8,0,14" TextWrapping="Wrap" />
+                                                    <Button x:Name="EveningBuyButton" Content="Купить" Style="{StaticResource PrimaryButtonStyle}" Tag="Evening Pack|29 BYN" Click="BalancePackage_Click" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Border x:Name="NightPackageCard" CornerRadius="12" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Background="{DynamicResource SurfaceBrush}" Padding="14" Margin="0,0,0,12" Tag="Night Pack|49 BYN" MouseLeftButtonUp="BalancePackageCard_MouseLeftButtonUp" Cursor="Hand">
+                                                <StackPanel>
+                                                    <TextBlock Text="Night Pack" Foreground="{DynamicResource MutedBrush}" />
+                                                    <TextBlock x:Name="NightPackageText" Text="8 часов · 49 BYN" FontSize="18" FontWeight="Black" Margin="0,8,0,14" TextWrapping="Wrap" />
+                                                    <Button x:Name="NightBuyButton" Content="Купить" Style="{StaticResource GhostButtonStyle}" Tag="Night Pack|49 BYN" Click="BalancePackage_Click" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Border x:Name="BootcampPackageCard" CornerRadius="12" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Background="{DynamicResource SurfaceBrush}" Padding="14" Margin="0,0,12,0" Tag="Bootcamp Training|180 BYN" MouseLeftButtonUp="BalancePackageCard_MouseLeftButtonUp" Cursor="Hand">
+                                                <StackPanel>
+                                                    <TextBlock Text="Bootcamp Training" Foreground="{DynamicResource MutedBrush}" />
+                                                    <TextBlock x:Name="BootcampPackageText" Text="5 ПК · 180 BYN" FontSize="18" FontWeight="Black" Margin="0,8,0,14" TextWrapping="Wrap" />
+                                                    <Button x:Name="BootcampBuyButton" Content="Купить" Style="{StaticResource GhostButtonStyle}" Tag="Bootcamp Training|180 BYN" Click="BalancePackage_Click" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Border x:Name="WeekendPackageCard" CornerRadius="12" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Background="{DynamicResource SurfaceBrush}" Padding="14" Margin="0,0,12,0" Tag="Weekend Pass|79 BYN" MouseLeftButtonUp="BalancePackageCard_MouseLeftButtonUp" Cursor="Hand">
+                                                <StackPanel>
+                                                    <TextBlock Text="Weekend Pass" Foreground="{DynamicResource MutedBrush}" />
+                                                    <TextBlock x:Name="WeekendPackageText" Text="12 часов · 79 BYN" FontSize="18" FontWeight="Black" Margin="0,8,0,14" TextWrapping="Wrap" />
+                                                    <Button x:Name="WeekendBuyButton" Content="Купить" Style="{StaticResource GhostButtonStyle}" Tag="Weekend Pass|79 BYN" Click="BalancePackage_Click" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Border CornerRadius="12" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Background="#13D4AF37" Padding="14">
+                                                <StackPanel>
+                                                    <TextBlock x:Name="BalancePersonalOfferLabelText" Text="Персональная акция" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" />
+                                                    <TextBlock x:Name="BalancePersonalOfferText" Text="Gold: +10% бонусов при пополнении от 50 BYN" FontSize="16" FontWeight="Bold" Margin="0,8,0,14" TextWrapping="Wrap" />
+                                                    <Button x:Name="BalanceOfferButton" Content="Активировать" Style="{StaticResource GhostButtonStyle}" Tag="offer" Click="BalanceAction_Click" Visibility="Collapsed" />
+                                                </StackPanel>
+                                            </Border>
+                                        </UniformGrid>
+                                        <Border CornerRadius="12" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Background="{DynamicResource SurfaceBrush}" Padding="14" Margin="0,16,0,0">
+                                            <StackPanel>
+                                                <TextBlock Text="Статусы клиентов" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" Margin="0,0,0,10" />
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="0.9*" />
+                                                        <ColumnDefinition Width="1.2*" />
+                                                        <ColumnDefinition Width="2*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+                                                    <TextBlock Text="Bronze" FontWeight="Bold" />
+                                                    <TextBlock Grid.Column="1" Text="0 BYN" Foreground="{DynamicResource MutedBrush}" />
+                                                    <TextBlock Grid.Column="2" Text="Базовый доступ, без бонуса к пополнению" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />
+                                                    <TextBlock Grid.Row="1" Text="Silver" FontWeight="Bold" Margin="0,8,0,0" />
+                                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="25 BYN" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,0" />
+                                                    <TextBlock Grid.Row="1" Grid.Column="2" Text="+5% бонусов при пополнении от 50 BYN" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,0" />
+                                                    <TextBlock Grid.Row="2" Text="Gold" FontWeight="Bold" Margin="0,8,0,0" />
+                                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="75 BYN" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,0" />
+                                                    <TextBlock Grid.Row="2" Grid.Column="2" Text="+10% бонусов при пополнении от 50 BYN" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,0" />
+                                                    <TextBlock Grid.Row="3" Text="Elite" FontWeight="Bold" Margin="0,8,0,0" />
+                                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="150 BYN" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,0" />
+                                                    <TextBlock Grid.Row="3" Grid.Column="2" Text="+15% бонусов при пополнении от 50 BYN" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,0" />
+                                                </Grid>
+                                                <TextBlock Text="Промокод имеет приоритет: если он активен, бонус статуса не суммируется." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,12,0,0" />
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Row="1" Grid.ColumnSpan="2" Style="{StaticResource PanelBorderStyle}">
+                                    <StackPanel>
+                                        <DockPanel Margin="0,0,0,16" LastChildFill="False">
+                                            <TextBlock x:Name="BalanceHistoryTitleText" Text="История начислений и списаний" FontSize="26" FontWeight="Black" />
+                                            <Button x:Name="BalanceReceiptButton" Content="Экспорт" DockPanel.Dock="Right" Style="{StaticResource GhostButtonStyle}" Tag="export" Click="BalanceAction_Click" Width="96" MinHeight="34" Padding="0" />
+                                        </DockPanel>
+
+                                        <Grid x:Name="BalanceHistoryGrid">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="0.7*" />
+                                                <ColumnDefinition Width="1.7*" />
+                                                <ColumnDefinition Width="1*" />
+                                                <ColumnDefinition Width="0.9*" />
+                                                <ColumnDefinition Width="0.9*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+
+                                            <TextBlock x:Name="BalanceDateHeaderText" Text="Дата" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" />
+                                            <TextBlock x:Name="BalanceOperationHeaderText" Grid.Column="1" Text="Операция" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" />
+                                            <TextBlock x:Name="BalanceMethodHeaderText" Grid.Column="2" Text="Метод" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" />
+                                            <TextBlock x:Name="BalanceSumHeaderText" Grid.Column="3" Text="Сумма" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" />
+                                            <TextBlock x:Name="BalanceStatusHeaderText" Grid.Column="4" Text="Статус" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" HorizontalAlignment="Right" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+</UserControl>
