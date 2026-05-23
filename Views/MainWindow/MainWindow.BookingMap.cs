@@ -275,16 +275,6 @@ public partial class MainWindow
         ShowStatus("Выбор ПК обновлен", _selectedSeats.Count == 0 ? "ПК пока не выбран." : $"Выбрано: {string.Join(", ", _selectedSeats)}.");
     }
 
-    private void BookingInput_Changed(object sender, EventArgs e)
-    {
-        if (!IsLoaded)
-        {
-            return;
-        }
-
-        UpdateBookingSummary();
-    }
-
     private void ConfirmBooking_Click(object sender, RoutedEventArgs e)
     {
         if (_selectedSeats.Count == 0)
@@ -931,4 +921,3 @@ public partial class MainWindow
     }
 
 }
-

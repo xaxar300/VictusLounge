@@ -48,20 +48,20 @@ public partial class MainWindow
             var freePcs = _computers.Count(computer => NormalizePcStatus(computer.Status) == PcStatuses.Free);
             var servicePcs = _computers.Count(computer => NormalizePcStatus(computer.Status) == PcStatuses.Service);
             var today = DateTime.Today;
-            var todayPayments = dbContext.Payments
-                .AsNoTracking()
-                .Where(payment => payment.CreatedAt.Date == today)
-                .ToList();
-
             _adminActiveSessions = activeSessions;
             _adminPaymentQueue = pendingBookings + pendingSessions + pendingTopups;
             _adminFreePcs = freePcs;
             _adminSupportQueue = servicePcs;
-            _shiftCash = todayPayments
-                .Where(payment => IsConfirmedCashPayment(payment.PaymentType))
+            _shiftCash = dbContext.Payments
+                .AsNoTracking()
+                .Where(payment => payment.CreatedAt.Date == today)
+                .Where(payment => payment.PaymentType == PaymentTypes.Cash)
                 .Sum(payment => payment.Amount);
-            _shiftOnline = todayPayments
-                .Where(payment => payment.Amount > 0 && IsConfirmedOnlinePayment(payment.PaymentType))
+            _shiftOnline = dbContext.Payments
+                .AsNoTracking()
+                .Where(payment => payment.CreatedAt.Date == today)
+                .Where(payment => payment.Amount > 0
+                    && (payment.PaymentType == PaymentTypes.Card || payment.PaymentType == PaymentTypes.Online))
                 .Sum(payment => payment.Amount);
             SyncAdminViewModel();
 
@@ -125,17 +125,6 @@ public partial class MainWindow
             item.Name.Contains(namePart, StringComparison.OrdinalIgnoreCase));
 
         return tariff is null ? fallback : (int)Math.Round(tariff.PricePerHour);
-    }
-
-    private static bool IsConfirmedCashPayment(string paymentType)
-    {
-        return paymentType.Equals(PaymentTypes.Cash, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool IsConfirmedOnlinePayment(string paymentType)
-    {
-        return paymentType.Equals(PaymentTypes.Card, StringComparison.OrdinalIgnoreCase)
-            || paymentType.Equals(PaymentTypes.Online, StringComparison.OrdinalIgnoreCase);
     }
 
     private bool EnsureSignedInForDatabaseWrite()

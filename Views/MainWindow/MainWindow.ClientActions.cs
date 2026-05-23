@@ -405,31 +405,6 @@ public partial class MainWindow
         }
     }
 
-    private static double GetPackageDurationHours(string packageName, Booking booking)
-    {
-        if (packageName.Contains("Quick", StringComparison.OrdinalIgnoreCase))
-        {
-            return 2;
-        }
-
-        if (packageName.Contains("Evening", StringComparison.OrdinalIgnoreCase))
-        {
-            return 4;
-        }
-
-        if (packageName.Contains("Night", StringComparison.OrdinalIgnoreCase))
-        {
-            return 8;
-        }
-
-        if (packageName.Contains("Weekend", StringComparison.OrdinalIgnoreCase))
-        {
-            return 12;
-        }
-
-        return Math.Max(1, (booking.EndTime - booking.StartTime).TotalHours);
-    }
-
     private void BalancePackageCard_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         if (e.OriginalSource is DependencyObject source && FindAncestor<Button>(source) is not null)
@@ -464,4 +439,3 @@ public partial class MainWindow
     }
 
 }
-

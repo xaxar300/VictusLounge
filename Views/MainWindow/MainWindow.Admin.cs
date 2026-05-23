@@ -1022,43 +1022,6 @@ public partial class MainWindow
         ShowStatus("Оплата принята", $"{computerName}: касса +{amount:0.##} BYN.");
     }
 
-    private void PayFirstPendingAdminSession()
-    {
-        try
-        {
-            using var dbContext = new AppDbContext();
-            var session = dbContext.GameSessions
-                .AsNoTracking()
-                .Where(item => item.EndTime == null
-                    && item.Status == SessionStatuses.AwaitingPayment
-                    && dbContext.Computers.Any(computer => computer.Id == item.ComputerId && computer.Name == "STD-10"))
-                .OrderBy(item => item.StartTime)
-                .FirstOrDefault();
-            if (session is null)
-            {
-                ShowStatus("Оплата не найдена", "STD-10 не ожидает оплату.");
-                return;
-            }
-
-            var computerName = dbContext.Computers
-                .AsNoTracking()
-                .Where(item => item.Id == session.ComputerId)
-                .Select(item => item.Name)
-                .FirstOrDefault();
-            if (string.IsNullOrWhiteSpace(computerName))
-            {
-                ShowStatus("Оплата не найдена", "ПК для ожидающей оплаты не найден в БД.");
-                return;
-            }
-
-            PayAdminSession(computerName);
-        }
-        catch (Exception ex)
-        {
-            ShowDatabaseError("Ошибка поиска оплаты", ex);
-        }
-    }
-
     private void ExtendAdminSession(string computerName)
     {
         const decimal extensionPrice = 36m;
@@ -1401,10 +1364,6 @@ public partial class MainWindow
             : comment;
     }
 
-    private static int ToggleRate(int current, int normal, int raised)
-    {
-        return current == normal ? raised : normal;
-    }
     private static T? FindAncestor<T>(DependencyObject source) where T : DependencyObject
     {
         var current = source;
@@ -1422,4 +1381,3 @@ public partial class MainWindow
     }
 
 }
-

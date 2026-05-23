@@ -207,32 +207,24 @@ public partial class MainWindow
 
     private void UpdateZoneLoad(string zonePart, ProgressBar bar, TextBlock label)
     {
-        var zoneComputers = _computers
-            .Where(computer => NormalizeZoneGroup(computer.Zone).Equals(zonePart, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-        var total = zoneComputers.Count;
-        var free = zoneComputers.Count(computer => NormalizePcStatus(computer.Status) == PcStatuses.Free);
-        bar.Value = total == 0 ? 0 : Math.Round((double)(total - free) / total * 100);
-        label.Text = $"{free}/{total} свободно";
-    }
-
-    private double CalculateZoneLoad(string zonePart)
-    {
-        var zoneComputers = _computers
-            .Where(computer => computer.Zone.Contains(zonePart, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-        if (zoneComputers.Count == 0)
+        var total = 0;
+        var free = 0;
+        foreach (var computer in _computers)
         {
-            return 0;
+            if (!NormalizeZoneGroup(computer.Zone).Equals(zonePart, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            total++;
+            if (NormalizePcStatus(computer.Status) == PcStatuses.Free)
+            {
+                free++;
+            }
         }
 
-        var busyCount = zoneComputers.Count(computer =>
-        {
-            var status = NormalizePcStatus(computer.Status);
-            return status is PcStatuses.Busy or PcStatuses.Reserved or PcStatuses.Service;
-        });
-
-        return Math.Round((double)busyCount / zoneComputers.Count * 100);
+        bar.Value = total == 0 ? 0 : Math.Round((double)(total - free) / total * 100);
+        label.Text = $"{free}/{total} свободно";
     }
 
     private void UpdateAnnouncementText()
@@ -406,4 +398,3 @@ public partial class MainWindow
     }
 
 }
-
