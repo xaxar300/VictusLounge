@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Globalization;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
+using VictusLounge.Data;
 
 namespace VictusLounge;
 
@@ -23,10 +25,28 @@ public partial class MainWindow
             return 0;
         }
 
-        var rate = IsPromoApplied()
-            ? 0.2m
-            : GetTierTopupBonusRate(GetClientTier(_balanceAmount));
+        var promoCode = GetAppliedPromoCode();
+        if (promoCode is not null)
+        {
+            return amount >= promoCode.MinTopupAmount ? Math.Round(amount * promoCode.TopupBonusRate, 2) : 0;
+        }
+
+        var rate = GetTierTopupBonusRate(GetCurrentClientTier());
         return Math.Round(amount * rate, 2);
+    }
+
+    private string GetCurrentClientTier()
+    {
+        try
+        {
+            using var dbContext = new AppDbContext();
+            var user = dbContext.Users.AsNoTracking().FirstOrDefault(item => item.Id == _currentUserId);
+            return user is null ? GetClientTier(_balanceAmount) : GetClientTier(user);
+        }
+        catch
+        {
+            return GetClientTier(_balanceAmount);
+        }
     }
 
     private static decimal GetTierTopupBonusRate(string tier)

@@ -110,7 +110,7 @@
     <sys:String x:Key="Cabinet.FavoriteZone">Любимая зона</sys:String>
     <sys:String x:Key="Cabinet.Topup">Пополнить баланс</sys:String>
     <sys:String x:Key="Cabinet.ActiveBookings">Активные брони</sys:String>
-    <sys:String x:Key="Cabinet.LastSessions">Последние сессии</sys:String>
+    <sys:String x:Key="Cabinet.LastSessions">Текущая сессия</sys:String>
     <sys:String x:Key="Table.Date">Дата</sys:String>
     <sys:String x:Key="Table.Pc">ПК</sys:String>
     <sys:String x:Key="Table.Zone">Зона</sys:String>

@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<GameSession> GameSessions => Set<GameSession>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<Shift> Shifts => Set<Shift>();
+    public DbSet<PromoCode> PromoCodes => Set<PromoCode>();
 
     public AppDbContext()
     {
@@ -81,6 +82,7 @@ public class AppDbContext : DbContext
         ConfigureGameSessions(modelBuilder);
         ConfigurePayments(modelBuilder);
         ConfigureShifts(modelBuilder);
+        ConfigurePromoCodes(modelBuilder);
     }
 
     private static void ConfigureUsers(ModelBuilder modelBuilder)
@@ -92,6 +94,7 @@ public class AppDbContext : DbContext
             entity.Property(user => user.Login).HasMaxLength(50).IsRequired();
             entity.Property(user => user.PasswordHash).HasMaxLength(256).IsRequired();
             entity.Property(user => user.Role).HasMaxLength(30).IsRequired();
+            entity.Property(user => user.LoyaltyTier).HasMaxLength(30).IsRequired();
             entity.Property(user => user.Balance).HasPrecision(10, 2);
             entity.HasIndex(user => user.Login).IsUnique();
         });
@@ -129,6 +132,7 @@ public class AppDbContext : DbContext
             entity.Property(booking => booking.Id).ValueGeneratedNever();
             entity.Property(booking => booking.Status).HasMaxLength(30).IsRequired();
             entity.Property(booking => booking.Package).HasMaxLength(30).IsRequired();
+            entity.Property(booking => booking.TotalPrice).HasPrecision(10, 2);
             entity.HasOne(booking => booking.User)
                 .WithMany()
                 .HasForeignKey(booking => booking.UserId)
@@ -180,6 +184,19 @@ public class AppDbContext : DbContext
             entity.Property(shift => shift.Id).ValueGeneratedNever();
             entity.Property(shift => shift.EmployeeName).HasMaxLength(120).IsRequired();
             entity.Property(shift => shift.CashTotal).HasPrecision(10, 2);
+        });
+    }
+
+    private static void ConfigurePromoCodes(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<PromoCode>(entity =>
+        {
+            entity.Property(promoCode => promoCode.Id).ValueGeneratedNever();
+            entity.Property(promoCode => promoCode.Code).HasMaxLength(50).IsRequired();
+            entity.Property(promoCode => promoCode.BookingDiscountRate).HasPrecision(5, 2);
+            entity.Property(promoCode => promoCode.TopupBonusRate).HasPrecision(5, 2);
+            entity.Property(promoCode => promoCode.MinTopupAmount).HasPrecision(10, 2);
+            entity.HasIndex(promoCode => promoCode.Code).IsUnique();
         });
     }
 }

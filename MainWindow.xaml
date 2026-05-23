@@ -797,7 +797,7 @@
 
                                         <Border Grid.Column="1" Style="{StaticResource PanelBorderStyle}">
                                             <StackPanel>
-                                                <TextBlock Text="Последние сессии" FontSize="22" FontWeight="Bold" Margin="0,0,0,14" />
+                                                <TextBlock Text="Текущая сессия" FontSize="22" FontWeight="Bold" Margin="0,0,0,14" />
                                                 <Grid x:Name="CabinetSessionsGrid">
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="0.7*" />
@@ -1113,7 +1113,7 @@
 
                             <UniformGrid Columns="4" Margin="0,0,0,16">
                                 <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,12,0"><StackPanel><TextBlock Text="Активные сессии" Foreground="{DynamicResource MutedBrush}" /><TextBlock x:Name="AdminActiveSessionsValue" Text="0" Foreground="{DynamicResource GoldLightBrush}" FontSize="34" FontWeight="Black" Margin="0,8,0,0" /><TextBlock Text="открытые в БД" Foreground="{DynamicResource MutedBrush}" /></StackPanel></Border>
-                                <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,12,0"><StackPanel><TextBlock Text="Ожидают оплату" Foreground="{DynamicResource MutedBrush}" /><TextBlock x:Name="AdminPaymentQueueValue" Text="5" Foreground="{DynamicResource GoldLightBrush}" FontSize="34" FontWeight="Black" Margin="0,8,0,0" /><TextBlock Text="2 онлайн, 3 на кассе" Foreground="{DynamicResource MutedBrush}" /></StackPanel></Border>
+                                <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,12,0"><StackPanel><TextBlock Text="Ожидают оплату" Foreground="{DynamicResource MutedBrush}" /><TextBlock x:Name="AdminPaymentQueueValue" Text="5" Foreground="{DynamicResource GoldLightBrush}" FontSize="34" FontWeight="Black" Margin="0,8,0,0" /><TextBlock x:Name="AdminPaymentQueueHintText" Text="0 броней, 0 сессий" Foreground="{DynamicResource MutedBrush}" /></StackPanel></Border>
                                 <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,12,0"><StackPanel><TextBlock Text="Свободные ПК" Foreground="{DynamicResource MutedBrush}" /><TextBlock x:Name="AdminFreePcsValue" Text="0" Foreground="{DynamicResource GoldLightBrush}" FontSize="34" FontWeight="Black" Margin="0,8,0,0" /><TextBlock x:Name="AdminFreePcsHintText" Text="из 0 рабочих мест" Foreground="{DynamicResource MutedBrush}" /></StackPanel></Border>
                                 <Border Style="{StaticResource PanelBorderStyle}"><StackPanel><TextBlock Text="Техподдержка" Foreground="{DynamicResource MutedBrush}" /><TextBlock x:Name="AdminSupportValue" Text="3" Foreground="{DynamicResource GoldLightBrush}" FontSize="34" FontWeight="Black" Margin="0,8,0,0" /><TextBlock Text="2 сервиса, 1 уборка" Foreground="{DynamicResource MutedBrush}" /></StackPanel></Border>
                             </UniformGrid>

@@ -12,12 +12,12 @@ public static class DatabaseInitializer
     {
         using var dbContext = new AppDbContext();
         dbContext.Database.EnsureCreated();
-        EnsureBookingPackageColumn(dbContext);
+        EnsureCompatibilitySchema(dbContext);
 
         Seed(dbContext);
     }
 
-    private static void EnsureBookingPackageColumn(AppDbContext dbContext)
+    private static void EnsureCompatibilitySchema(AppDbContext dbContext)
     {
         dbContext.Database.ExecuteSqlRaw("""
             IF COL_LENGTH('Bookings', 'Package') IS NULL
@@ -27,14 +27,47 @@ public static class DatabaseInitializer
                     CONSTRAINT [DF_Bookings_Package] DEFAULT N'regular'
             END
             """);
+        dbContext.Database.ExecuteSqlRaw("""
+            IF COL_LENGTH('Bookings', 'TotalPrice') IS NULL
+            BEGIN
+                ALTER TABLE [Bookings]
+                ADD [TotalPrice] decimal(10,2) NOT NULL
+                    CONSTRAINT [DF_Bookings_TotalPrice] DEFAULT 0
+            END
+            """);
+        dbContext.Database.ExecuteSqlRaw("""
+            IF COL_LENGTH('Users', 'LoyaltyTier') IS NULL
+            BEGIN
+                ALTER TABLE [Users]
+                ADD [LoyaltyTier] nvarchar(30) NOT NULL
+                    CONSTRAINT [DF_Users_LoyaltyTier] DEFAULT N'Bronze'
+            END
+            """);
+        dbContext.Database.ExecuteSqlRaw("""
+            IF OBJECT_ID(N'[PromoCodes]', N'U') IS NULL
+            BEGIN
+                CREATE TABLE [PromoCodes] (
+                    [Id] int NOT NULL,
+                    [Code] nvarchar(50) NOT NULL,
+                    [BookingDiscountRate] decimal(5,2) NOT NULL,
+                    [TopupBonusRate] decimal(5,2) NOT NULL,
+                    [MinTopupAmount] decimal(10,2) NOT NULL,
+                    [IsActive] bit NOT NULL,
+                    CONSTRAINT [PK_PromoCodes] PRIMARY KEY ([Id])
+                );
+                CREATE UNIQUE INDEX [IX_PromoCodes_Code] ON [PromoCodes] ([Code]);
+            END
+            """);
     }
 
     private static void Seed(AppDbContext dbContext)
     {
         UpsertUsers(dbContext);
         MigratePlainTextPasswords(dbContext);
+        MigrateUserLoyaltyTiers(dbContext);
         UpsertComputers(dbContext);
         UpsertTariffs(dbContext);
+        UpsertPromoCodes(dbContext);
         UpsertBookings(dbContext);
         UpsertGameSessions(dbContext);
         UpsertPayments(dbContext);
@@ -43,20 +76,55 @@ public static class DatabaseInitializer
         dbContext.SaveChanges();
     }
 
+    private static void MigrateUserLoyaltyTiers(AppDbContext dbContext)
+    {
+        foreach (var user in dbContext.Users)
+        {
+            user.LoyaltyTier = BetterTier(user.LoyaltyTier, TierFromBalance(user.Balance));
+        }
+    }
+
+    private static string BetterTier(string current, string candidate)
+    {
+        return TierRank(candidate) > TierRank(current) ? candidate : current;
+    }
+
+    private static int TierRank(string tier)
+    {
+        return tier switch
+        {
+            "Elite" => 3,
+            "Gold" => 2,
+            "Silver" => 1,
+            _ => 0
+        };
+    }
+
+    private static string TierFromBalance(decimal balance)
+    {
+        return balance switch
+        {
+            >= 150 => "Elite",
+            >= 75 => "Gold",
+            >= 25 => "Silver",
+            _ => "Bronze"
+        };
+    }
+
     private static void UpsertUsers(AppDbContext dbContext)
     {
         var users = new[]
         {
-            new User { Id = 1, FullName = "Victor Romanov", Login = "owner", PasswordHash = PasswordHasher.HashPassword("owner123"), Role = "Owner", Balance = 0m },
-            new User { Id = 2, FullName = "Anna Smirnova", Login = "admin1", PasswordHash = PasswordHasher.HashPassword("admin123"), Role = "Admin", Balance = 0m },
-            new User { Id = 3, FullName = "Dmitry Volkov", Login = "admin2", PasswordHash = PasswordHasher.HashPassword("admin456"), Role = "Admin", Balance = 0m },
-            new User { Id = 4, FullName = "Ivan Petrov", Login = "client1", PasswordHash = PasswordHasher.HashPassword("client123"), Role = "Client", Balance = 42m },
-            new User { Id = 5, FullName = "Maria Sokolova", Login = "client2", PasswordHash = PasswordHasher.HashPassword("client234"), Role = "Client", Balance = 18m },
-            new User { Id = 6, FullName = "Pavel Morozov", Login = "client3", PasswordHash = PasswordHasher.HashPassword("client345"), Role = "Client", Balance = 65m },
-            new User { Id = 7, FullName = "Elena Kuznetsova", Login = "client4", PasswordHash = PasswordHasher.HashPassword("client456"), Role = "Client", Balance = 27m },
-            new User { Id = 8, FullName = "Nikita Zakharov", Login = "client5", PasswordHash = PasswordHasher.HashPassword("client567"), Role = "Client", Balance = 10m },
-            new User { Id = 9, FullName = "Olga Belova", Login = "client6", PasswordHash = PasswordHasher.HashPassword("client678"), Role = "Client", Balance = 33m },
-            new User { Id = 10, FullName = "Sergey Antonov", Login = "client7", PasswordHash = PasswordHasher.HashPassword("client789"), Role = "Client", Balance = 75m }
+            new User { Id = 1, FullName = "Victor Romanov", Login = "owner", PasswordHash = PasswordHasher.HashPassword("owner123"), Role = "Owner", Balance = 0m, LoyaltyTier = "Bronze" },
+            new User { Id = 2, FullName = "Anna Smirnova", Login = "admin1", PasswordHash = PasswordHasher.HashPassword("admin123"), Role = "Admin", Balance = 0m, LoyaltyTier = "Bronze" },
+            new User { Id = 3, FullName = "Dmitry Volkov", Login = "admin2", PasswordHash = PasswordHasher.HashPassword("admin456"), Role = "Admin", Balance = 0m, LoyaltyTier = "Bronze" },
+            new User { Id = 4, FullName = "Ivan Petrov", Login = "client1", PasswordHash = PasswordHasher.HashPassword("client123"), Role = "Client", Balance = 42m, LoyaltyTier = "Silver" },
+            new User { Id = 5, FullName = "Maria Sokolova", Login = "client2", PasswordHash = PasswordHasher.HashPassword("client234"), Role = "Client", Balance = 18m, LoyaltyTier = "Bronze" },
+            new User { Id = 6, FullName = "Pavel Morozov", Login = "client3", PasswordHash = PasswordHasher.HashPassword("client345"), Role = "Client", Balance = 65m, LoyaltyTier = "Silver" },
+            new User { Id = 7, FullName = "Elena Kuznetsova", Login = "client4", PasswordHash = PasswordHasher.HashPassword("client456"), Role = "Client", Balance = 27m, LoyaltyTier = "Silver" },
+            new User { Id = 8, FullName = "Nikita Zakharov", Login = "client5", PasswordHash = PasswordHasher.HashPassword("client567"), Role = "Client", Balance = 10m, LoyaltyTier = "Bronze" },
+            new User { Id = 9, FullName = "Olga Belova", Login = "client6", PasswordHash = PasswordHasher.HashPassword("client678"), Role = "Client", Balance = 33m, LoyaltyTier = "Silver" },
+            new User { Id = 10, FullName = "Sergey Antonov", Login = "client7", PasswordHash = PasswordHasher.HashPassword("client789"), Role = "Client", Balance = 75m, LoyaltyTier = "Gold" }
         };
 
         InsertMissingRange(dbContext, users, user => user.Id);
@@ -75,6 +143,23 @@ public static class DatabaseInitializer
         {
             dbContext.SaveChanges();
         }
+    }
+
+    private static void UpsertPromoCodes(AppDbContext dbContext)
+    {
+        var promoCodes = new[]
+        {
+            new PromoCode { Id = 1, Code = "ELITE-NIGHT", BookingDiscountRate = 0.1m, TopupBonusRate = 0.2m, MinTopupAmount = 50m, IsActive = true }
+        };
+
+        UpsertRange(dbContext, promoCodes, promoCode => promoCode.Id, (target, source) =>
+        {
+            target.Code = source.Code;
+            target.BookingDiscountRate = source.BookingDiscountRate;
+            target.TopupBonusRate = source.TopupBonusRate;
+            target.MinTopupAmount = source.MinTopupAmount;
+            target.IsActive = source.IsActive;
+        });
     }
 
     private static void UpsertComputers(AppDbContext dbContext)
@@ -151,16 +236,16 @@ public static class DatabaseInitializer
     {
         var bookings = new[]
         {
-            new Booking { Id = 1, UserId = 4, ComputerId = 17, StartTime = Today.AddHours(18), EndTime = Today.AddHours(20), Status = BookingStatuses.Confirmed, CreatedAt = Today.AddHours(10) },
-            new Booking { Id = 2, UserId = 5, ComputerId = 12, StartTime = Today.AddHours(19), EndTime = Today.AddHours(21), Status = BookingStatuses.Confirmed, CreatedAt = Today.AddHours(11) },
-            new Booking { Id = 3, UserId = 6, ComputerId = 26, StartTime = Today.AddHours(20), EndTime = Today.AddHours(22), Status = BookingStatuses.PendingPayment, CreatedAt = Today.AddHours(12) },
-            new Booking { Id = 4, UserId = 7, ComputerId = 30, StartTime = Today.AddHours(21), EndTime = Today.AddHours(23), Status = BookingStatuses.Confirmed, CreatedAt = Today.AddHours(13) },
-            new Booking { Id = 5, UserId = 8, ComputerId = 4, StartTime = Today.AddHours(17), EndTime = Today.AddHours(19), Status = BookingStatuses.Confirmed, CreatedAt = Today.AddHours(9) },
-            new Booking { Id = 6, UserId = 9, ComputerId = 22, StartTime = Today.AddHours(22), EndTime = Today.AddDays(1).AddHours(2), Status = BookingStatuses.PendingPayment, CreatedAt = Today.AddHours(14) },
-            new Booking { Id = 7, UserId = 10, ComputerId = 24, StartTime = Today.AddDays(1).AddHours(12), EndTime = Today.AddDays(1).AddHours(14), Status = BookingStatuses.Confirmed, CreatedAt = Today.AddHours(15) },
-            new Booking { Id = 8, UserId = 4, ComputerId = 2, StartTime = Today.AddDays(1).AddHours(16), EndTime = Today.AddDays(1).AddHours(18), Status = BookingStatuses.PendingPayment, CreatedAt = Today.AddHours(16) },
-            new Booking { Id = 9, UserId = 5, ComputerId = 7, StartTime = Today.AddDays(1).AddHours(18), EndTime = Today.AddDays(1).AddHours(20), Status = BookingStatuses.Cancelled, CreatedAt = Today.AddHours(17) },
-            new Booking { Id = 10, UserId = 6, ComputerId = 15, StartTime = Today.AddDays(2).AddHours(18), EndTime = Today.AddDays(2).AddHours(21), Status = BookingStatuses.Confirmed, CreatedAt = Today.AddHours(18) }
+            new Booking { Id = 1, UserId = 4, ComputerId = 17, StartTime = Today.AddHours(18), EndTime = Today.AddHours(20), Status = BookingStatuses.PendingPayment, Package = "regular", TotalPrice = 25.2m, CreatedAt = Today.AddHours(10) },
+            new Booking { Id = 2, UserId = 5, ComputerId = 12, StartTime = Today.AddHours(19), EndTime = Today.AddHours(21), Status = BookingStatuses.PendingPayment, Package = "regular", TotalPrice = 14.4m, CreatedAt = Today.AddHours(11) },
+            new Booking { Id = 3, UserId = 6, ComputerId = 26, StartTime = Today.AddHours(20), EndTime = Today.AddHours(22), Status = BookingStatuses.PendingPayment, Package = "regular", TotalPrice = 90m, CreatedAt = Today.AddHours(12) },
+            new Booking { Id = 4, UserId = 7, ComputerId = 30, StartTime = Today.AddHours(21), EndTime = Today.AddHours(23), Status = BookingStatuses.PendingPayment, Package = "regular", TotalPrice = 43.2m, CreatedAt = Today.AddHours(13) },
+            new Booking { Id = 5, UserId = 8, ComputerId = 4, StartTime = Today.AddHours(17), EndTime = Today.AddHours(19), Status = BookingStatuses.PendingPayment, Package = "regular", TotalPrice = 14.4m, CreatedAt = Today.AddHours(9) },
+            new Booking { Id = 6, UserId = 9, ComputerId = 22, StartTime = Today.AddHours(22), EndTime = Today.AddDays(1).AddHours(2), Status = BookingStatuses.PendingPayment, Package = "regular", TotalPrice = 50.4m, CreatedAt = Today.AddHours(14) },
+            new Booking { Id = 7, UserId = 10, ComputerId = 24, StartTime = Today.AddDays(1).AddHours(12), EndTime = Today.AddDays(1).AddHours(14), Status = BookingStatuses.PendingPayment, Package = "regular", TotalPrice = 90m, CreatedAt = Today.AddHours(15) },
+            new Booking { Id = 8, UserId = 4, ComputerId = 2, StartTime = Today.AddDays(1).AddHours(16), EndTime = Today.AddDays(1).AddHours(18), Status = BookingStatuses.PendingPayment, Package = "regular", TotalPrice = 14.4m, CreatedAt = Today.AddHours(16) },
+            new Booking { Id = 9, UserId = 5, ComputerId = 7, StartTime = Today.AddDays(1).AddHours(18), EndTime = Today.AddDays(1).AddHours(20), Status = BookingStatuses.Cancelled, Package = "regular", TotalPrice = 14.4m, CreatedAt = Today.AddHours(17) },
+            new Booking { Id = 10, UserId = 6, ComputerId = 15, StartTime = Today.AddDays(2).AddHours(18), EndTime = Today.AddDays(2).AddHours(21), Status = BookingStatuses.PendingPayment, Package = "regular", TotalPrice = 37.8m, CreatedAt = Today.AddHours(18) }
         };
 
         InsertMissingRange(dbContext, bookings, booking => booking.Id);

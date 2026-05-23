@@ -13,5 +13,6 @@ public class Booking
     public DateTime EndTime { get; set; }
     public string Status { get; set; } = string.Empty;
     public string Package { get; set; } = "regular";
+    public decimal TotalPrice { get; set; }
     public DateTime CreatedAt { get; set; }
 }

@@ -7,5 +7,6 @@ public class User
     public string Login { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
+    public string LoyaltyTier { get; set; } = "Bronze";
     public decimal Balance { get; set; }
 }
