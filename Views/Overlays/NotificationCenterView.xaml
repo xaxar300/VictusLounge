@@ -24,7 +24,7 @@
                             Style="{StaticResource GhostButtonStyle}"
                             MinHeight="34"
                             Padding="14,0"
-                            Click="MarkNotifications_Click" />
+                            Command="{Binding Notifications.MarkReadCommand}" />
                 </DockPanel>
 
                 <StackPanel x:Name="NotificationList" />

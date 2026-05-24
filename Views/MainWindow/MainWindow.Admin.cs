@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -38,7 +38,7 @@ public partial class MainWindow
             var hasComputerSessionConflict = unitOfWork.GameSessions.HasOpenSession(computer.Id, now);
             if (hasComputerSessionConflict)
             {
-                ShowStatus("РџРљ Р·Р°РЅСЏС‚", $"{computerName}: СѓР¶Рµ РµСЃС‚СЊ РЅРµР·Р°РєСЂС‹С‚Р°СЏ СЃРµСЃСЃРёСЏ РЅР° СЌС‚РѕРј РџРљ.");
+                ShowStatus("ПК занят", $"{computerName}: уже есть незакрытая сессия на этом ПК.");
                 return false;
             }
 
@@ -47,7 +47,7 @@ public partial class MainWindow
                 && NormalizeRole(currentUser.Role) == "client"
                 && HasActiveIndividualSession(unitOfWork, _currentUserId, out var activeSessionComputer))
             {
-                ShowStatus("РЎРµСЃСЃРёСЏ СѓР¶Рµ Р°РєС‚РёРІРЅР°", $"РЈ РєР»РёРµРЅС‚Р° СѓР¶Рµ РµСЃС‚СЊ Р°РєС‚РёРІРЅР°СЏ СЃРµСЃСЃРёСЏ РЅР° {activeSessionComputer}. РЎРЅР°С‡Р°Р»Р° Р·Р°РІРµСЂС€РёС‚Рµ РµРµ.");
+                ShowStatus("Сессия уже активна", $"У клиента уже есть активная сессия на {activeSessionComputer}. Сначала завершите ее.");
                 return false;
             }
 
@@ -85,7 +85,7 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ СЃРµСЃСЃРёРё", ex);
+            ShowDatabaseError("Ошибка сохранения сессии", ex);
             return false;
         }
     }
@@ -132,7 +132,7 @@ public partial class MainWindow
                 var paymentUserId = session?.UserId ?? booking?.UserId ?? ResolveCurrentOrAdminUserId(unitOfWork);
                 if (paymentUserId is null)
                 {
-                    ShowStatus("Р’РѕР№РґРёС‚Рµ РІ СЃРёСЃС‚РµРјСѓ", "РћРїР»Р°С‚Р° РЅРµ СЃРѕС…СЂР°РЅРµРЅР°: РЅРµ РЅР°Р№РґРµРЅ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РґР»СЏ Р·Р°РїРёСЃРё РїР»Р°С‚РµР¶Р°.");
+                    ShowStatus("Войдите в систему", "Оплата не сохранена: не найден пользователь для записи платежа.");
                     return;
                 }
 
@@ -158,7 +158,7 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("РћС€РёР±РєР° РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ РѕРїР»Р°С‚С‹", ex);
+            ShowDatabaseError("Ошибка подтверждения оплаты", ex);
         }
     }
 
@@ -219,7 +219,7 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("РћС€РёР±РєР° Р·Р°РєСЂС‹С‚РёСЏ РѕРїР»Р°С‚", ex);
+            ShowDatabaseError("Ошибка закрытия оплат", ex);
         }
     }
 
@@ -247,7 +247,7 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("РћС€РёР±РєР° Р·Р°РєСЂС‹С‚РёСЏ СЃРµСЃСЃРёРё", ex);
+            ShowDatabaseError("Ошибка закрытия сессии", ex);
         }
     }
 
@@ -265,7 +265,7 @@ public partial class MainWindow
             var session = unitOfWork.GameSessions.GetOpenForComputer(computer.Id);
             if (session is null)
             {
-                ShowStatus("РЎРµСЃСЃРёСЏ РЅРµ РЅР°Р№РґРµРЅР°", $"{computerName}: РЅРµС‚ РѕС‚РєСЂС‹С‚РѕР№ СЃРµСЃСЃРёРё РґР»СЏ РїСЂРѕРґР»РµРЅРёСЏ.");
+                ShowStatus("Сессия не найдена", $"{computerName}: нет открытой сессии для продления.");
                 return;
             }
 
@@ -287,7 +287,7 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("РћС€РёР±РєР° РїСЂРѕРґР»РµРЅРёСЏ СЃРµСЃСЃРёРё", ex);
+            ShowDatabaseError("Ошибка продления сессии", ex);
         }
     }
 
@@ -318,7 +318,7 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ СЃРјРµРЅС‹", ex);
+            ShowDatabaseError("Ошибка сохранения смены", ex);
         }
     }
 
@@ -330,7 +330,7 @@ public partial class MainWindow
             var paymentUserId = ResolveCurrentOrAdminUserId(unitOfWork);
             if (paymentUserId is null)
             {
-                ShowStatus("Р’РѕР№РґРёС‚Рµ РІ СЃРёСЃС‚РµРјСѓ", "Р Р°СЃС…РѕРґ СЃРјРµРЅС‹ РЅРµ СЃРѕС…СЂР°РЅРµРЅ: РЅРµ РЅР°Р№РґРµРЅ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РґР»СЏ Р·Р°РїРёСЃРё РїР»Р°С‚РµР¶Р°.");
+                ShowStatus("Войдите в систему", "Расход смены не сохранен: не найден пользователь для записи платежа.");
                 return;
             }
 
@@ -357,7 +357,7 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ СЂР°СЃС…РѕРґР°", ex);
+            ShowDatabaseError("Ошибка сохранения расхода", ex);
         }
     }
 
@@ -391,7 +391,7 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ С‚Р°СЂРёС„Р°", ex);
+            ShowDatabaseError("Ошибка сохранения тарифа", ex);
         }
     }
 
@@ -446,7 +446,7 @@ public partial class MainWindow
                             },
                             new Button
                             {
-                                Content = "РћС‚РјРµРЅР°",
+                                Content = "Отмена",
                                 IsCancel = true,
                                 MinWidth = 86,
                                 Style = (Style)FindResource("GhostButtonStyle")
@@ -487,7 +487,7 @@ public partial class MainWindow
             return true;
         }
 
-        ShowStatus("РќРµРєРѕСЂСЂРµРєС‚РЅР°СЏ СЃСѓРјРјР°", "Р’РІРµРґРёС‚Рµ РїРѕР»РѕР¶РёС‚РµР»СЊРЅРѕРµ С‡РёСЃР»Рѕ, РЅР°РїСЂРёРјРµСЂ 18 РёР»Рё 18,50.");
+        ShowStatus("Некорректная сумма", "Введите положительное число, например 18 или 18,50.");
         return false;
     }
 
@@ -510,14 +510,14 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("РћС€РёР±РєР° РїРѕРёСЃРєР° РѕРїР»Р°С‚С‹", ex);
+            ShowDatabaseError("Ошибка поиска оплаты", ex);
             return null;
         }
     }
 
     private void ChangeTariffManually(string tariffName, int currentRate)
     {
-        if (!PromptMoney($"{tariffName}: С‚Р°СЂРёС„", "Р’РІРµРґРёС‚Рµ РЅРѕРІСѓСЋ С†РµРЅСѓ BYN/С‡Р°СЃ:", currentRate.ToString(System.Globalization.CultureInfo.InvariantCulture), out var price))
+        if (!PromptMoney($"{tariffName}: тариф", "Введите новую цену BYN/час:", currentRate.ToString(System.Globalization.CultureInfo.InvariantCulture), out var price))
         {
             return;
         }
@@ -526,7 +526,7 @@ public partial class MainWindow
         SaveTariffRate(tariffName, roundedPrice);
         RefreshAdminUx();
         AddAdminLog($"{tariffName} rate changed to {roundedPrice:0} BYN/h");
-        ShowStatus($"{tariffName} РѕР±РЅРѕРІР»РµРЅ", $"РќРѕРІС‹Р№ С‚Р°СЂРёС„ {tariffName}: {roundedPrice:0} BYN/С‡Р°СЃ. РњРµС‚СЂРёРєРё РїРµСЂРµСЃС‡РёС‚Р°РЅС‹.");
+        ShowStatus($"{tariffName} обновлен", $"Новый тариф {tariffName}: {roundedPrice:0} BYN/час. Метрики пересчитаны.");
     }
 
     private void UpsertManualShift(string employeeName)
@@ -559,7 +559,7 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ СЂР°СЃРїРёСЃР°РЅРёСЏ", ex);
+            ShowDatabaseError("Ошибка сохранения расписания", ex);
         }
     }
 
@@ -602,21 +602,21 @@ public partial class MainWindow
 
     private void RescheduleBookingManually()
     {
-        var bookingIdText = PromptText("РџРµСЂРµРЅРµСЃС‚Рё Р±СЂРѕРЅСЊ", "Р’РІРµРґРёС‚Рµ ID Р±СЂРѕРЅРё:", GetLatestActiveBookingId().ToString(System.Globalization.CultureInfo.InvariantCulture));
+        var bookingIdText = PromptText("Перенести бронь", "Введите ID брони:", GetLatestActiveBookingId().ToString(System.Globalization.CultureInfo.InvariantCulture));
         if (!int.TryParse(bookingIdText, out var bookingId))
         {
-            ShowStatus("Р‘СЂРѕРЅСЊ РЅРµ РёР·РјРµРЅРµРЅР°", "Р’РІРµРґРёС‚Рµ С‡РёСЃР»РѕРІРѕР№ ID Р±СЂРѕРЅРё.");
+            ShowStatus("Бронь не изменена", "Введите числовой ID брони.");
             return;
         }
 
-        var startText = PromptText("РџРµСЂРµРЅРµСЃС‚Рё Р±СЂРѕРЅСЊ", "РќРѕРІРѕРµ РЅР°С‡Р°Р»Рѕ РІ С„РѕСЂРјР°С‚Рµ yyyy-MM-dd HH:mm:", DateTime.Now.AddHours(1).ToString("yyyy-MM-dd HH:00"));
+        var startText = PromptText("Перенести бронь", "Новое начало в формате yyyy-MM-dd HH:mm:", DateTime.Now.AddHours(1).ToString("yyyy-MM-dd HH:00"));
         if (!DateTime.TryParse(startText, out var newStart))
         {
-            ShowStatus("Р‘СЂРѕРЅСЊ РЅРµ РёР·РјРµРЅРµРЅР°", "РќРµ СѓРґР°Р»РѕСЃСЊ СЂР°СЃРїРѕР·РЅР°С‚СЊ РґР°С‚Сѓ Рё РІСЂРµРјСЏ РЅР°С‡Р°Р»Р°.");
+            ShowStatus("Бронь не изменена", "Не удалось распознать дату и время начала.");
             return;
         }
 
-        var durationText = PromptText("РџРµСЂРµРЅРµСЃС‚Рё Р±СЂРѕРЅСЊ", "Р”Р»РёС‚РµР»СЊРЅРѕСЃС‚СЊ РІ С‡Р°СЃР°С…:", "2");
+        var durationText = PromptText("Перенести бронь", "Длительность в часах:", "2");
         if (!double.TryParse(
                 durationText?.Replace(',', '.'),
                 System.Globalization.NumberStyles.Number,
@@ -624,7 +624,7 @@ public partial class MainWindow
                 out var durationHours)
             || durationHours <= 0)
         {
-            ShowStatus("Р‘СЂРѕРЅСЊ РЅРµ РёР·РјРµРЅРµРЅР°", "Р’РІРµРґРёС‚Рµ РїРѕР»РѕР¶РёС‚РµР»СЊРЅСѓСЋ РґР»РёС‚РµР»СЊРЅРѕСЃС‚СЊ РІ С‡Р°СЃР°С….");
+            ShowStatus("Бронь не изменена", "Введите положительную длительность в часах.");
             return;
         }
 
@@ -634,7 +634,7 @@ public partial class MainWindow
             var booking = unitOfWork.Bookings.GetById(bookingId);
             if (booking is null || booking.Status == BookingStatuses.Cancelled)
             {
-                ShowStatus("Р‘СЂРѕРЅСЊ РЅРµ РЅР°Р№РґРµРЅР°", $"Р‘СЂРѕРЅСЊ #{bookingId} РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚ РёР»Рё СѓР¶Рµ РѕС‚РјРµРЅРµРЅР°.");
+                ShowStatus("Бронь не найдена", $"Бронь #{bookingId} отсутствует или уже отменена.");
                 return;
             }
 
@@ -644,7 +644,7 @@ public partial class MainWindow
 
             if (hasConflict)
             {
-                ShowStatus("РљРѕРЅС„Р»РёРєС‚ СЂР°СЃРїРёСЃР°РЅРёСЏ", "РќР° РІС‹Р±СЂР°РЅРЅРѕРµ РІСЂРµРјСЏ СѓР¶Рµ РµСЃС‚СЊ Р±СЂРѕРЅСЊ РёР»Рё СЃРµСЃСЃРёСЏ РЅР° СЌС‚РѕРј РџРљ.");
+                ShowStatus("Конфликт расписания", "На выбранное время уже есть бронь или сессия на этом ПК.");
                 return;
             }
 
@@ -654,20 +654,20 @@ public partial class MainWindow
             unitOfWork.SaveChanges();
             LoadDatabaseState();
             AddAdminLog($"Booking #{bookingId} rescheduled");
-            ShowStatus("Р‘СЂРѕРЅСЊ РїРµСЂРµРЅРµСЃРµРЅР°", $"Р‘СЂРѕРЅСЊ #{bookingId}: {newStart:dd.MM HH:mm}-{newEnd:HH:mm}.");
+            ShowStatus("Бронь перенесена", $"Бронь #{bookingId}: {newStart:dd.MM HH:mm}-{newEnd:HH:mm}.");
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("РћС€РёР±РєР° РїРµСЂРµРЅРѕСЃР° Р±СЂРѕРЅРё", ex);
+            ShowDatabaseError("Ошибка переноса брони", ex);
         }
     }
 
     private void CancelBookingManually()
     {
-        var bookingIdText = PromptText("РћС‚РјРµРЅРёС‚СЊ Р±СЂРѕРЅСЊ", "Р’РІРµРґРёС‚Рµ ID Р±СЂРѕРЅРё:", GetLatestActiveBookingId().ToString(System.Globalization.CultureInfo.InvariantCulture));
+        var bookingIdText = PromptText("Отменить бронь", "Введите ID брони:", GetLatestActiveBookingId().ToString(System.Globalization.CultureInfo.InvariantCulture));
         if (!int.TryParse(bookingIdText, out var bookingId))
         {
-            ShowStatus("Р‘СЂРѕРЅСЊ РЅРµ РѕС‚РјРµРЅРµРЅР°", "Р’РІРµРґРёС‚Рµ С‡РёСЃР»РѕРІРѕР№ ID Р±СЂРѕРЅРё.");
+            ShowStatus("Бронь не отменена", "Введите числовой ID брони.");
             return;
         }
 
@@ -677,7 +677,7 @@ public partial class MainWindow
             var booking = unitOfWork.Bookings.GetById(bookingId);
             if (booking is null || booking.Status == BookingStatuses.Cancelled)
             {
-                ShowStatus("Р‘СЂРѕРЅСЊ РЅРµ РЅР°Р№РґРµРЅР°", $"Р‘СЂРѕРЅСЊ #{bookingId} РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚ РёР»Рё СѓР¶Рµ РѕС‚РјРµРЅРµРЅР°.");
+                ShowStatus("Бронь не найдена", $"Бронь #{bookingId} отсутствует или уже отменена.");
                 return;
             }
 
@@ -685,11 +685,11 @@ public partial class MainWindow
             unitOfWork.SaveChanges();
             LoadDatabaseState();
             AddAdminLog($"Booking #{bookingId} cancelled");
-            ShowStatus("Р‘СЂРѕРЅСЊ РѕС‚РјРµРЅРµРЅР°", $"Р‘СЂРѕРЅСЊ #{bookingId} РѕС‚РјРµРЅРµРЅР° Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂРѕРј.");
+            ShowStatus("Бронь отменена", $"Бронь #{bookingId} отменена администратором.");
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("РћС€РёР±РєР° РѕС‚РјРµРЅС‹ Р±СЂРѕРЅРё", ex);
+            ShowDatabaseError("Ошибка отмены брони", ex);
         }
     }
 
@@ -711,14 +711,9 @@ public partial class MainWindow
         }
     }
 
-    private void AdminAction_Click(object sender, RoutedEventArgs e)
+    private void ExecuteAdminAction(string action)
     {
-        if (sender is not FrameworkElement element)
-        {
-            return;
-        }
-
-        var action = element.Tag?.ToString() ?? "admin-action";
+        action = string.IsNullOrWhiteSpace(action) ? "admin-action" : action;
         if (HandleAdminSessionAction(action))
         {
             return;
@@ -727,13 +722,13 @@ public partial class MainWindow
         switch (action)
         {
             case "admin-new-session":
-                var sessionComputer = PromptText("РќРѕРІР°СЏ СЃРµСЃСЃРёСЏ", "Р’РІРµРґРёС‚Рµ РёРјСЏ РџРљ РґР»СЏ Р·Р°РїСѓСЃРєР° СЃРµСЃСЃРёРё:", GetFirstFreeComputerName());
+                var sessionComputer = PromptText("Новая сессия", "Введите имя ПК для запуска сессии:", GetFirstFreeComputerName());
                 if (string.IsNullOrWhiteSpace(sessionComputer))
                 {
                     break;
                 }
 
-                if (!PromptMoney("РќРѕРІР°СЏ СЃРµСЃСЃРёСЏ", "Р’РІРµРґРёС‚Рµ СЃСѓРјРјСѓ РѕРїР»Р°С‚С‹:", "8", out var sessionAmount))
+                if (!PromptMoney("Новая сессия", "Введите сумму оплаты:", "8", out var sessionAmount))
                 {
                     break;
                 }
@@ -744,13 +739,13 @@ public partial class MainWindow
                     SetPcStatus(sessionComputer, PcStatuses.Busy);
                     RefreshAdminUx();
                     AddAdminLog($"{sessionComputer} started as guest session");
-                    ShowStatus("РќРѕРІР°СЏ СЃРµСЃСЃРёСЏ", $"Р—Р°РїСѓС‰РµРЅР° РіРѕСЃС‚РµРІР°СЏ СЃРµСЃСЃРёСЏ РЅР° {sessionComputer}. РљР°СЂС‚Р° Рё Р±СЂРѕРЅСЊ РѕР±РЅРѕРІР»РµРЅС‹.");
+                    ShowStatus("Новая сессия", $"Запущена гостевая сессия на {sessionComputer}. Карта и бронь обновлены.");
                 }
                 break;
 
             case "admin-payment":
             case "admin-pay-std10":
-                var paymentComputer = PromptText("РћС‚РјРµС‚РёС‚СЊ РѕРїР»Р°С‚Сѓ", "Р’РІРµРґРёС‚Рµ РџРљ РѕР¶РёРґР°СЋС‰РµР№ РѕРїР»Р°С‚С‹:", GetFirstPendingPaymentComputerName() ?? string.Empty);
+                var paymentComputer = PromptText("Отметить оплату", "Введите ПК ожидающей оплаты:", GetFirstPendingPaymentComputerName() ?? string.Empty);
                 if (!string.IsNullOrWhiteSpace(paymentComputer))
                 {
                     PayAdminSession(paymentComputer);
@@ -758,7 +753,7 @@ public partial class MainWindow
                 break;
 
             case "admin-settle-all":
-                if (!PromptMoney("Р—Р°РєСЂС‹С‚СЊ РІСЃРµ РѕРїР»Р°С‚С‹", "РЎСѓРјРјР° РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РґР»СЏ РїР»Р°С‚РµР¶РµР№ Р±РµР· С†РµРЅС‹:", "18", out var settlementAmount))
+                if (!PromptMoney("Закрыть все оплаты", "Сумма по умолчанию для платежей без цены:", "18", out var settlementAmount))
                 {
                     break;
                 }
@@ -767,7 +762,7 @@ public partial class MainWindow
                 _adminPaymentQueue = 0;
                 RefreshAdminUx();
                 AddAdminLog("All pending payments settled");
-                ShowStatus("РћРїР»Р°С‚С‹ Р·Р°РєСЂС‹С‚С‹", "Р’СЃРµ РѕР¶РёРґР°СЋС‰РёРµ РїР»Р°С‚РµР¶Рё РѕС‚РјРµС‡РµРЅС‹ РєР°Рє РѕРїР»Р°С‡РµРЅРЅС‹Рµ, РєР°СЃСЃР° РїРµСЂРµСЃС‡РёС‚Р°РЅР°.");
+                ShowStatus("Оплаты закрыты", "Все ожидающие платежи отмечены как оплаченные, касса пересчитана.");
                 break;
 
             case "admin-reschedule-booking":
@@ -779,26 +774,26 @@ public partial class MainWindow
                 break;
 
             case "admin-service":
-                var serviceComputer = PromptText("РџРѕСЃС‚Р°РІРёС‚СЊ РџРљ РІ СЃРµСЂРІРёСЃ", "Р’РІРµРґРёС‚Рµ РёРјСЏ РџРљ:", _selectedMapPc ?? GetFirstFreeComputerName());
+                var serviceComputer = PromptText("Поставить ПК в сервис", "Введите имя ПК:", _selectedMapPc ?? GetFirstFreeComputerName());
                 if (!string.IsNullOrWhiteSpace(serviceComputer))
                 {
                     SetPcStatus(serviceComputer, PcStatuses.Service);
                     LoadDatabaseState();
                     RefreshAdminUx();
                     AddAdminLog($"{serviceComputer} moved to service");
-                    ShowStatus("РЎРµСЂРІРёСЃ", $"{serviceComputer} РїРµСЂРµРІРµРґРµРЅ РІ РѕР±СЃР»СѓР¶РёРІР°РЅРёРµ. РљР°СЂС‚Р° Рё РІС‹Р±РѕСЂ Р±СЂРѕРЅРё РѕР±РЅРѕРІР»РµРЅС‹.");
+                    ShowStatus("Сервис", $"{serviceComputer} переведен в обслуживание. Карта и выбор брони обновлены.");
                 }
                 break;
 
             case "admin-clear-service":
-                var clearServiceComputer = PromptText("РЎРЅСЏС‚СЊ СЃРµСЂРІРёСЃ СЃ РџРљ", "Р’РІРµРґРёС‚Рµ РёРјСЏ РџРљ:", GetFirstServiceComputerName());
+                var clearServiceComputer = PromptText("Снять сервис с ПК", "Введите имя ПК:", GetFirstServiceComputerName());
                 if (!string.IsNullOrWhiteSpace(clearServiceComputer))
                 {
                     SetPcStatus(clearServiceComputer, PcStatuses.Free);
                     LoadDatabaseState();
                     RefreshAdminUx();
                     AddAdminLog($"Service released {clearServiceComputer}");
-                    ShowStatus("РЎРµСЂРІРёСЃ СЃРЅСЏС‚", $"{clearServiceComputer} РІРµСЂРЅСѓР»СЃСЏ РёР· РѕР±СЃР»СѓР¶РёРІР°РЅРёСЏ Рё РґРѕСЃС‚СѓРїРµРЅ РґР»СЏ Р±СЂРѕРЅРё.");
+                    ShowStatus("Сервис снят", $"{clearServiceComputer} вернулся из обслуживания и доступен для брони.");
                 }
                 break;
 
@@ -807,21 +802,21 @@ public partial class MainWindow
                 SaveShiftState(_shiftClosed);
                 RefreshAdminUx();
                 AddAdminLog(_shiftClosed ? "Shift closed" : "Shift reopened");
-                ShowStatus(_shiftClosed ? "РЎРјРµРЅР° Р·Р°РєСЂС‹С‚Р°" : "РЎРјРµРЅР° СЃРЅРѕРІР° Р°РєС‚РёРІРЅР°", _shiftClosed ? "РљР°СЃСЃР° Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅР° РґР»СЏ РЅРѕРІС‹С… СЂР°СЃС…РѕРґРѕРІ, РѕС‚С‡РµС‚ РіРѕС‚РѕРІ." : "РћРїРµСЂР°С†РёРё СЃРјРµРЅС‹ СЃРЅРѕРІР° РґРѕСЃС‚СѓРїРЅС‹.");
+                ShowStatus(_shiftClosed ? "Смена закрыта" : "Смена снова активна", _shiftClosed ? "Касса заблокирована для новых расходов, отчет готов." : "Операции смены снова доступны.");
                 break;
 
             case "shift-expense":
                 if (_shiftClosed)
                 {
-                    ShowStatus("РЎРјРµРЅР° Р·Р°РєСЂС‹С‚Р°", "РќРµР»СЊР·СЏ РІРЅРµСЃС‚Рё СЂР°СЃС…РѕРґ РїРѕСЃР»Рµ Р·Р°РєСЂС‹С‚РёСЏ СЃРјРµРЅС‹.");
+                    ShowStatus("Смена закрыта", "Нельзя внести расход после закрытия смены.");
                     break;
                 }
-                if (!PromptMoney("Р’РЅРµСЃС‚Рё СЂР°СЃС…РѕРґ", "Р’РІРµРґРёС‚Рµ СЃСѓРјРјСѓ СЂР°СЃС…РѕРґР°:", "35", out var expenseAmount))
+                if (!PromptMoney("Внести расход", "Введите сумму расхода:", "35", out var expenseAmount))
                 {
                     break;
                 }
 
-                var expenseComment = PromptText("Р’РЅРµСЃС‚Рё СЂР°СЃС…РѕРґ", "РљРѕРјРјРµРЅС‚Р°СЂРёР№ Рє СЂР°СЃС…РѕРґСѓ:", "Shift expense: СЂР°СЃС…РѕРґРЅРёРєРё");
+                var expenseComment = PromptText("Внести расход", "Комментарий к расходу:", "Shift expense: расходники");
                 if (string.IsNullOrWhiteSpace(expenseComment))
                 {
                     break;
@@ -831,27 +826,27 @@ public partial class MainWindow
                 SaveShiftExpense(expenseAmount, expenseComment);
                 RefreshAdminUx();
                 AddAdminLog($"Expense added: -{expenseAmount:0.##} BYN");
-                ShowStatus("Р Р°СЃС…РѕРґ РІРЅРµСЃРµРЅ", $"Р’ РєР°СЃСЃСѓ РґРѕР±Р°РІР»РµРЅ СЂР°СЃС…РѕРґ: -{expenseAmount:0.##} BYN.");
+                ShowStatus("Расход внесен", $"В кассу добавлен расход: -{expenseAmount:0.##} BYN.");
                 break;
 
             case "shift-report":
                 var shiftReportPath = SaveShiftReport();
                 AddAdminLog("Shift report generated");
-                ShowStatus("РћС‚С‡РµС‚ СЃРјРµРЅС‹", $"РљР°СЃСЃР°: {_shiftCash:0} BYN, РѕРЅР»Р°Р№РЅ: {_shiftOnline:0} BYN. Р¤Р°Р№Р»: {shiftReportPath}");
+                ShowStatus("Отчет смены", $"Касса: {_shiftCash:0} BYN, онлайн: {_shiftOnline:0} BYN. Файл: {shiftReportPath}");
                 break;
 
             case "shift-incident":
-                var incidentText = PromptText("Р”РѕР±Р°РІРёС‚СЊ РёРЅС†РёРґРµРЅС‚", "Р’РІРµРґРёС‚Рµ С‚РµРєСЃС‚ Р·Р°РїРёСЃРё:", "Р СѓС‡РЅР°СЏ Р·Р°РїРёСЃСЊ СЃРјРµРЅС‹ РґРѕР±Р°РІР»РµРЅР° Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂРѕРј");
+                var incidentText = PromptText("Добавить инцидент", "Введите текст записи:", "Ручная запись смены добавлена администратором");
                 if (string.IsNullOrWhiteSpace(incidentText))
                 {
                     break;
                 }
 
-                AddIncident($"{DateTime.Now:HH:mm} В· {incidentText}");
+                AddIncident($"{DateTime.Now:HH:mm} · {incidentText}");
                 _adminSupportQueue++;
                 RefreshAdminUx();
                 AddAdminLog("Incident added to shift journal");
-                ShowStatus("РРЅС†РёРґРµРЅС‚ РґРѕР±Р°РІР»РµРЅ", "Р—Р°РїРёСЃСЊ РїРѕСЏРІРёР»Р°СЃСЊ РІ Р¶СѓСЂРЅР°Р»Рµ, РѕС‡РµСЂРµРґСЊ РїРѕРґРґРµСЂР¶РєРё СѓРІРµР»РёС‡РµРЅР°.");
+                ShowStatus("Инцидент добавлен", "Запись появилась в журнале, очередь поддержки увеличена.");
                 break;
 
             case "owner-peak":
@@ -865,7 +860,7 @@ public partial class MainWindow
                 }
                 RefreshAdminUx();
                 AddAdminLog($"Owner scenario applied: {_ownerDemandMode}");
-                ShowStatus("Р РµР¶РёРј СЃРїСЂРѕСЃР°", $"РђРєС‚РёРІРЅС‹Р№ СЂРµР¶РёРј: {_ownerDemandMode}. РњРµС‚СЂРёРєРё РїРµСЂРµСЃС‡РёС‚Р°РЅС‹ РёР· С‚Р°СЂРёС„РѕРІ Рё Р·Р°РіСЂСѓР·РєРё.");
+                ShowStatus("Режим спроса", $"Активный режим: {_ownerDemandMode}. Метрики пересчитаны из тарифов и загрузки.");
                 break;
 
             case "owner-night":
@@ -877,17 +872,17 @@ public partial class MainWindow
                 }
                 RefreshAdminUx();
                 AddAdminLog($"Owner scenario applied: {_ownerDemandMode}");
-                ShowStatus("Р РµР¶РёРј СЃРїСЂРѕСЃР°", $"РђРєС‚РёРІРЅС‹Р№ СЂРµР¶РёРј: {_ownerDemandMode}. РњРµС‚СЂРёРєРё РїРµСЂРµСЃС‡РёС‚Р°РЅС‹ Р±РµР· СЂСѓС‡РЅРѕРіРѕ РЅР°РєСЂСѓС‡РёРІР°РЅРёСЏ.");
+                ShowStatus("Режим спроса", $"Активный режим: {_ownerDemandMode}. Метрики пересчитаны без ручного накручивания.");
                 break;
 
             case "owner-export":
                 var ownerReportPath = SaveOwnerReport();
                 AddAdminLog("Owner report exported");
-                ShowStatus("РћС‚С‡РµС‚ РІР»Р°РґРµР»СЊС†Р°", $"РЎРІРѕРґРєР°: РІС‹СЂСѓС‡РєР° {_ownerRevenue} BYN, Р·Р°РіСЂСѓР·РєР° {_ownerLoad}%. Р¤Р°Р№Р»: {ownerReportPath}");
+                ShowStatus("Отчет владельца", $"Сводка: выручка {_ownerRevenue} BYN, загрузка {_ownerLoad}%. Файл: {ownerReportPath}");
                 break;
 
             case "owner-schedule":
-                var employeeName = PromptText("Р Р°СЃРїРёСЃР°РЅРёРµ СЃРјРµРЅ", "Р’РІРµРґРёС‚Рµ СЃРѕС‚СЂСѓРґРЅРёРєР° РґР»СЏ РЅРѕРІРѕР№/РѕР±РЅРѕРІР»РµРЅРЅРѕР№ СЃРјРµРЅС‹:", _currentUserFullName);
+                var employeeName = PromptText("Расписание смен", "Введите сотрудника для новой/обновленной смены:", _currentUserFullName);
                 if (string.IsNullOrWhiteSpace(employeeName))
                 {
                     break;
@@ -898,7 +893,7 @@ public partial class MainWindow
                 LoadDatabaseState();
                 RefreshAdminUx();
                 AddAdminLog($"Staff schedule updated for {employeeName}");
-                ShowStatus("Р Р°СЃРїРёСЃР°РЅРёРµ РѕР±РЅРѕРІР»РµРЅРѕ", $"РЎРјРµРЅР° РґР»СЏ {employeeName} СЃРѕС…СЂР°РЅРµРЅР° РІ Р±Р°Р·Рµ РґР°РЅРЅС‹С….");
+                ShowStatus("Расписание обновлено", $"Смена для {employeeName} сохранена в базе данных.");
                 break;
 
             case "owner-standard":
@@ -918,19 +913,21 @@ public partial class MainWindow
                 break;
 
             default:
-                ShowStatus("РљРѕРјР°РЅРґР° РЅРµ РІС‹РїРѕР»РЅРµРЅР°", $"РљРѕРјР°РЅРґР° РёРЅС‚РµСЂС„РµР№СЃР° РЅРµ СЂР°СЃРїРѕР·РЅР°РЅР°: {action}.");
+                ShowStatus("Команда не выполнена", $"Команда интерфейса не распознана: {action}.");
                 break;
         }
     }
-    private void ShiftTask_Click(object sender, RoutedEventArgs e)
+    private void ExecuteShiftTask(string taskKey)
     {
-        if (sender is not CheckBox checkBox)
+        var (done, text) = taskKey switch
         {
-            return;
-        }
+            "vip" => (_viewModel.Admin.IsVipTaskDone, "Проверить VIP-зону после 18:00"),
+            "bootcamp" => (_viewModel.Admin.IsBootcampTaskDone, "Подготовить Bootcamp к тренировке Team Alpha"),
+            "payment" => (_viewModel.Admin.IsPaymentTaskDone, "Проверить оплату ожидающих броней"),
+            _ => (false, "Задача смены")
+        };
 
-        var done = checkBox.IsChecked == true;
-        ShowStatus(done ? "Р—Р°РґР°С‡Р° РІС‹РїРѕР»РЅРµРЅР°" : "Р—Р°РґР°С‡Р° РІРѕР·РІСЂР°С‰РµРЅР°", checkBox.Content?.ToString() ?? "Р—Р°РґР°С‡Р° СЃРјРµРЅС‹");
+        ShowStatus(done ? "Задача выполнена" : "Задача возвращена", text);
     }
 
     private bool HandleAdminSessionAction(string action)
@@ -968,7 +965,7 @@ public partial class MainWindow
         SetPcStatus(computerName, PcStatuses.Free);
         RefreshAdminUx();
         AddAdminLog($"{computerName} closed and released");
-        ShowStatus("РЎРµСЃСЃРёСЏ Р·Р°РєСЂС‹С‚Р°", $"{computerName} РѕСЃРІРѕР±РѕР¶РґРµРЅ Рё СЃС‚Р°Р» РґРѕСЃС‚СѓРїРµРЅ РЅР° РєР°СЂС‚Рµ РєР»СѓР±Р°.");
+        ShowStatus("Сессия закрыта", $"{computerName} освобожден и стал доступен на карте клуба.");
     }
 
     private void PayAdminSession(string computerName)
@@ -976,7 +973,7 @@ public partial class MainWindow
         var amount = GetOpenSessionAmount(computerName) ?? 0m;
         if (amount <= 0)
         {
-            ShowStatus("РћРїР»Р°С‚Р° РЅРµ РЅР°Р№РґРµРЅР°", $"{computerName}: РЅРµС‚ РѕР¶РёРґР°СЋС‰РµР№ РѕРїР»Р°С‚С‹ РІ Р°РєС‚РёРІРЅС‹С… СЃРµСЃСЃРёСЏС….");
+            ShowStatus("Оплата не найдена", $"{computerName}: нет ожидающей оплаты в активных сессиях.");
             return;
         }
 
@@ -985,7 +982,7 @@ public partial class MainWindow
         SavePaymentConfirmation(computerName, amount);
         RefreshAdminUx();
         AddAdminLog($"{computerName} payment confirmed");
-        ShowStatus("РћРїР»Р°С‚Р° РїСЂРёРЅСЏС‚Р°", $"{computerName}: РєР°СЃСЃР° +{amount:0.##} BYN.");
+        ShowStatus("Оплата принята", $"{computerName}: касса +{amount:0.##} BYN.");
     }
 
     private void ExtendAdminSession(string computerName)
@@ -995,7 +992,7 @@ public partial class MainWindow
         SaveSessionExtension(computerName, extensionPrice);
         RefreshAdminUx();
         AddAdminLog($"{computerName} extended");
-        ShowStatus("РЎРµСЃСЃРёСЏ РїСЂРѕРґР»РµРЅР°", $"{computerName}: РѕРЅР»Р°Р№РЅ +{extensionPrice:0.##} BYN.");
+        ShowStatus("Сессия продлена", $"{computerName}: онлайн +{extensionPrice:0.##} BYN.");
     }
 
     private decimal? GetOpenSessionAmount(string computerName)
@@ -1007,7 +1004,7 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("РћС€РёР±РєР° С‡С‚РµРЅРёСЏ СЃРµСЃСЃРёРё", ex);
+            ShowDatabaseError("Ошибка чтения сессии", ex);
             return null;
         }
     }
@@ -1023,7 +1020,7 @@ public partial class MainWindow
         AdminActiveSessionsValue.Text = _adminActiveSessions.ToString();
         AdminPaymentQueueValue.Text = _adminPaymentQueue.ToString();
         AdminFreePcsValue.Text = _adminFreePcs.ToString();
-        AdminFreePcsHintText.Text = $"РёР· {_computers.Count} СЂР°Р±РѕС‡РёС… РјРµСЃС‚";
+        AdminFreePcsHintText.Text = $"из {_computers.Count} рабочих мест";
         AdminSupportValue.Text = _adminSupportQueue.ToString();
         ShiftCashValue.Text = $"{_shiftCash:0} BYN";
         ShiftOnlineValue.Text = $"{_shiftOnline:0} BYN";
@@ -1032,10 +1029,10 @@ public partial class MainWindow
         OwnerLoadBar.Value = _ownerLoad;
         OwnerAverageValue.Text = $"{_ownerAverageCheck} BYN";
         OwnerRepeatValue.Text = $"{_ownerRepeatRate}%";
-        OwnerStandardPriceText.Text = $"{_standardRate} BYN/С‡Р°СЃ В· 14 РџРљ";
-        OwnerVipPriceText.Text = $"{_vipRate} BYN/С‡Р°СЃ В· 8 РџРљ";
-        OwnerBootcampPriceText.Text = $"{_bootcampRate} BYN/С‡Р°СЃ В· 5 РџРљ";
-        OwnerRoyalPriceText.Text = $"{_royalRate} BYN/С‡Р°СЃ В· 5 РџРљ";
+        OwnerStandardPriceText.Text = $"{_standardRate} BYN/час · 14 ПК";
+        OwnerVipPriceText.Text = $"{_vipRate} BYN/час · 8 ПК";
+        OwnerBootcampPriceText.Text = $"{_bootcampRate} BYN/час · 5 ПК";
+        OwnerRoyalPriceText.Text = $"{_royalRate} BYN/час · 5 ПК";
         OwnerPeakModeButton.Style = (Style)FindResource(_ownerDemandMode == "peak" ? "PrimaryButtonStyle" : "GhostButtonStyle");
         OwnerNightModeButton.Style = (Style)FindResource(_ownerDemandMode == "night" ? "PrimaryButtonStyle" : "GhostButtonStyle");
     }
@@ -1069,7 +1066,7 @@ public partial class MainWindow
                 AdminSessionsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
                 var emptyText = new TextBlock
                 {
-                    Text = "РќРµС‚ Р°РєС‚РёРІРЅС‹С… СЃРµСЃСЃРёР№ РІ Р±Р°Р·Рµ РґР°РЅРЅС‹С….",
+                    Text = "Нет активных сессий в базе данных.",
                     Foreground = (Brush)FindResource("MutedBrush"),
                     Margin = new Thickness(0, 14, 0, 0),
                     TextWrapping = TextWrapping.Wrap
@@ -1087,9 +1084,9 @@ public partial class MainWindow
                 computers.TryGetValue(session.ComputerId, out var computer);
                 users.TryGetValue(session.UserId, out var user);
 
-                var computerName = computer?.Name ?? $"РџРљ-{session.ComputerId}";
+                var computerName = computer?.Name ?? $"ПК-{session.ComputerId}";
                 var clientName = user?.FullName ?? $"User #{session.UserId}";
-                var endText = session.EndTime?.ToString("HH:mm") ?? "РѕС‚РєСЂС‹С‚Р°";
+                var endText = session.EndTime?.ToString("HH:mm") ?? "открыта";
                 var statusText = FormatAdminSessionStatus(session.Status);
                 var statusBrush = ResolveAdminSessionStatusBrush(session.Status);
 
@@ -1103,7 +1100,7 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё СЃРµСЃСЃРёР№", ex);
+            ShowDatabaseError("Ошибка загрузки сессий", ex);
         }
     }
 
@@ -1128,7 +1125,7 @@ public partial class MainWindow
         var isTeamSession = string.Equals(status, SessionStatuses.Team, StringComparison.OrdinalIgnoreCase);
         var button = new Button
         {
-            Content = isAwaitingPayment ? "РћРїР»Р°С‚Р°" : isTeamSession ? "РџСЂРѕРґР»РёС‚СЊ" : "Р—Р°РєСЂС‹С‚СЊ",
+            Content = isAwaitingPayment ? "Оплата" : isTeamSession ? "Продлить" : "Закрыть",
             Style = (Style)FindResource(isAwaitingPayment ? "PrimaryButtonStyle" : "GhostButtonStyle"),
             Tag = isAwaitingPayment
                 ? $"admin-pay-session|{computerName}"
@@ -1137,9 +1134,10 @@ public partial class MainWindow
                     : $"admin-close-session|{computerName}",
             MinHeight = 30,
             Padding = new Thickness(14, 0, 14, 0),
-            Margin = new Thickness(10, 8, 0, 0)
+            Margin = new Thickness(10, 8, 0, 0),
+            Command = _viewModel.Admin.ActionCommand
         };
-        button.Click += AdminAction_Click;
+        button.CommandParameter = button.Tag;
         Grid.SetRow(button, row);
         Grid.SetColumn(button, 4);
         AdminSessionsGrid.Children.Add(button);
@@ -1149,9 +1147,9 @@ public partial class MainWindow
     {
         return status switch
         {
-            SessionStatuses.AwaitingPayment => "РћР¶РёРґР°РµС‚",
-            SessionStatuses.Team => "РљРѕРјР°РЅРґР°",
-            SessionStatuses.Active => "РћРїР»Р°С‡РµРЅРѕ",
+            SessionStatuses.AwaitingPayment => "Ожидает",
+            SessionStatuses.Team => "Команда",
+            SessionStatuses.Active => "Оплачено",
             _ => status
         };
     }
@@ -1221,7 +1219,7 @@ public partial class MainWindow
 
         var row = new TextBlock
         {
-            Text = $"{DateTime.Now:HH:mm} В· {text}",
+            Text = $"{DateTime.Now:HH:mm} · {text}",
             Foreground = (Brush)FindResource("MutedBrush"),
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 6)
@@ -1253,7 +1251,7 @@ public partial class MainWindow
             {
                 AdminOperationLogList.Children.Add(new TextBlock
                 {
-                    Text = "Р–СѓСЂРЅР°Р» РѕРїРµСЂР°С†РёР№ РїСѓСЃС‚",
+                    Text = "Журнал операций пуст",
                     Foreground = (Brush)FindResource("MutedBrush"),
                     TextWrapping = TextWrapping.Wrap
                 });
@@ -1264,7 +1262,7 @@ public partial class MainWindow
             {
                 AdminOperationLogList.Children.Add(new TextBlock
                 {
-                    Text = $"{log.CreatedAt:HH:mm} В· {FormatAdminLogComment(log.Comment)}",
+                    Text = $"{log.CreatedAt:HH:mm} · {FormatAdminLogComment(log.Comment)}",
                     Foreground = (Brush)FindResource("MutedBrush"),
                     TextWrapping = TextWrapping.Wrap,
                     Margin = new Thickness(0, 0, 0, 6)

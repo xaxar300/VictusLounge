@@ -2,6 +2,7 @@
 <Window x:Class="VictusLounge.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:helpers="clr-namespace:VictusLounge.Helpers"
         xmlns:views="clr-namespace:VictusLounge.Views"
         Title="Elite Gaming Lounge Control Center"
         Width="1480"
@@ -11,10 +12,10 @@
         WindowStartupLocation="CenterScreen"
         WindowStyle="SingleBorderWindow"
         Background="{DynamicResource WindowBackgroundBrush}"
-        PreviewKeyDown="Window_PreviewKeyDown">
+        helpers:EventCommandBinder.PreviewKeyDownCommand="{Binding Shell.PreviewKeyDownCommand}">
     <Grid x:Name="RootGrid"
           Background="{DynamicResource WindowBackgroundBrush}"
-          PreviewMouseDown="RootGrid_PreviewMouseDown">
+          helpers:EventCommandBinder.PreviewMouseDownCommand="{Binding Shell.PreviewMouseDownCommand}">
         <Border x:Name="ShellRoot" Background="{DynamicResource ShellBackgroundBrush}">
             <Grid>
                 <Grid.RowDefinitions>
@@ -47,7 +48,7 @@
                                        VerticalAlignment="Center" />
                             <TextBlock Text=" / " Foreground="{DynamicResource DimBrush}" FontSize="13" Margin="8,0" />
                             <TextBlock x:Name="CurrentViewText"
-                                       Text="Главная"
+                                       Text="{Binding Navigation.CurrentTitle}"
                                        Foreground="{DynamicResource GoldLightBrush}"
                                        FontSize="13"
                                        FontWeight="Bold"
@@ -66,12 +67,11 @@
                                 Padding="12,0"
                                 Margin="0,0,14,0">
                             <DockPanel LastChildFill="True">
-                                <TextBlock Text="⌕" Foreground="{DynamicResource GoldLightBrush}" VerticalAlignment="Center" Margin="0,0,9,0" />
+                                <TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" VerticalAlignment="Center" Margin="0,0,9,0" />
                                 <TextBox x:Name="GlobalSearchBox"
-                                         Text="Поиск: клиент, PC-04, бронь, турнир, платеж..."
-                                         Foreground="{DynamicResource MutedBrush}"
-                                         GotFocus="GlobalSearchBox_GotFocus"
-                                         TextChanged="GlobalSearchBox_TextChanged" />
+                                         Text="{Binding Shell.SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                         Foreground="{DynamicResource TextBrush}"
+                                         ToolTip="Поиск: клиент, PC-04, бронь, турнир, платеж..." />
                             </DockPanel>
                         </Border>
 
@@ -79,8 +79,8 @@
                             <TextBlock x:Name="TopLanguageLabel" Text="Language" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="0,0,8,0" />
                             <Border CornerRadius="13" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Background="{DynamicResource SurfaceBrush}" Padding="5">
                                 <StackPanel Orientation="Horizontal">
-                                    <Button x:Name="TopRuButton" Content="RU" Style="{StaticResource PrimaryButtonStyle}" MinHeight="28" Padding="12,0" Tag="ru" Click="LanguageButton_Click" />
-                                    <Button x:Name="TopEnButton" Content="EN" Style="{StaticResource GhostButtonStyle}" MinHeight="28" Padding="12,0" Tag="en" Click="LanguageButton_Click" Margin="6,0,0,0" />
+                                    <Button x:Name="TopRuButton" Content="RU" Style="{StaticResource PrimaryButtonStyle}" MinHeight="28" Padding="12,0" Tag="ru" Command="{Binding Settings.LanguageCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" />
+                                    <Button x:Name="TopEnButton" Content="EN" Style="{StaticResource GhostButtonStyle}" MinHeight="28" Padding="12,0" Tag="en" Command="{Binding Settings.LanguageCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="6,0,0,0" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>
@@ -93,7 +93,7 @@
                                 Padding="10,5"
                                 VerticalAlignment="Center"
                                 Margin="0,0,14,0">
-                            <TextBlock x:Name="WorkspaceText" Text="Client workspace" Foreground="{DynamicResource MutedBrush}" FontSize="12" />
+                            <TextBlock x:Name="WorkspaceText" Text="{Binding Navigation.WorkspaceTitle}" Foreground="{DynamicResource MutedBrush}" FontSize="12" />
                         </Border>
 
                         <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
@@ -103,9 +103,9 @@
                                     MinHeight="34"
                                     Padding="0"
                                     Margin="0,0,8,0"
-                                    Click="NotificationButton_Click">
+                                    Command="{Binding Notifications.ToggleCommand}">
                                 <Grid>
-                                    <TextBlock Text="●" Foreground="{DynamicResource GoldLightBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    <TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                     <Border x:Name="NotificationBadge" CornerRadius="7" Background="{DynamicResource DangerBrush}" Padding="4,0" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-3,-5,0" Visibility="Collapsed">
                                         <TextBlock x:Name="NotificationCountText" Text="0" FontSize="10" FontWeight="Bold" />
                                     </Border>
@@ -150,40 +150,160 @@
                                     Width="34"
                                     MinHeight="34"
                                     Padding="0"
-                                    Click="SidebarToggle_Click" />
+                                    Command="{Binding Navigation.ToggleSidebarCommand}" />
                         </Grid>
 
                         <ScrollViewer Grid.Row="1" Margin="0,18,0,18" VerticalScrollBarVisibility="Auto">
                             <StackPanel>
-                                <Button x:Name="DashboardNavButton" Style="{StaticResource SidebarButtonStyle}" Background="#2BD4AF37" Foreground="{DynamicResource TextBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Tag="dashboard" Click="NavigationButton_Click">
-                                    <StackPanel Orientation="Horizontal"><TextBlock Text="◆" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Главная" /></StackPanel>
+                                <Button x:Name="DashboardNavButton" Tag="dashboard" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource SidebarButtonStyle}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Navigation.IsDashboardActive}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+                                                    <Setter Property="Background" Value="#2BD4AF37" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+                                                    <Setter Property="BorderThickness" Value="1" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Главная" /></StackPanel>
                                 </Button>
-                                <Button x:Name="MapNavButton" Style="{StaticResource SidebarButtonStyle}" Margin="0,7,0,0" Tag="map" Click="NavigationButton_Click">
-                                    <StackPanel Orientation="Horizontal"><TextBlock Text="▦" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Схема клуба" /></StackPanel>
+                                <Button x:Name="MapNavButton" Margin="0,7,0,0" Tag="map" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource SidebarButtonStyle}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Navigation.IsMapActive}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+                                                    <Setter Property="Background" Value="#2BD4AF37" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+                                                    <Setter Property="BorderThickness" Value="1" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Схема клуба" /></StackPanel>
                                 </Button>
-                                <Button x:Name="BookingNavButton" Style="{StaticResource SidebarButtonStyle}" Margin="0,7,0,0" Tag="booking" Click="NavigationButton_Click">
-                                    <StackPanel Orientation="Horizontal"><TextBlock Text="▣" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Бронирование" /></StackPanel>
+                                <Button x:Name="BookingNavButton" Margin="0,7,0,0" Tag="booking" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Visibility="{Binding Navigation.CanOpenBooking, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource SidebarButtonStyle}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Navigation.IsBookingActive}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+                                                    <Setter Property="Background" Value="#2BD4AF37" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+                                                    <Setter Property="BorderThickness" Value="1" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Бронирование" /></StackPanel>
                                 </Button>
-                                <Button x:Name="CabinetNavButton" Style="{StaticResource SidebarButtonStyle}" Margin="0,7,0,0" Tag="cabinet" Click="NavigationButton_Click">
-                                    <StackPanel Orientation="Horizontal"><TextBlock Text="◈" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Кабинет" /></StackPanel>
+                                <Button x:Name="CabinetNavButton" Margin="0,7,0,0" Tag="cabinet" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Visibility="{Binding Navigation.CanOpenCabinet, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource SidebarButtonStyle}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Navigation.IsCabinetActive}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+                                                    <Setter Property="Background" Value="#2BD4AF37" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+                                                    <Setter Property="BorderThickness" Value="1" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Кабинет" /></StackPanel>
                                 </Button>
-                                <Button x:Name="BalanceNavButton" Style="{StaticResource SidebarButtonStyle}" Margin="0,7,0,0" Tag="balance" Click="NavigationButton_Click">
-                                    <StackPanel Orientation="Horizontal"><TextBlock Text="₽" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Баланс" /></StackPanel>
+                                <Button x:Name="BalanceNavButton" Margin="0,7,0,0" Tag="balance" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Visibility="{Binding Navigation.CanOpenBalance, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource SidebarButtonStyle}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Navigation.IsBalanceActive}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+                                                    <Setter Property="Background" Value="#2BD4AF37" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+                                                    <Setter Property="BorderThickness" Value="1" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Баланс" /></StackPanel>
                                 </Button>
-                                <Button x:Name="EventsNavButton" Style="{StaticResource SidebarButtonStyle}" Margin="0,7,0,0" Tag="events" Click="NavigationButton_Click">
-                                    <StackPanel Orientation="Horizontal"><TextBlock Text="◎" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="События" /></StackPanel>
+                                <Button x:Name="EventsNavButton" Margin="0,7,0,0" Tag="events" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource SidebarButtonStyle}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Navigation.IsEventsActive}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+                                                    <Setter Property="Background" Value="#2BD4AF37" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+                                                    <Setter Property="BorderThickness" Value="1" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="События" /></StackPanel>
                                 </Button>
-                                <Button x:Name="AdminNavButton" Style="{StaticResource SidebarButtonStyle}" Margin="0,7,0,0" Tag="admin" Click="NavigationButton_Click">
-                                    <StackPanel Orientation="Horizontal"><TextBlock Text="▤" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Админ" /></StackPanel>
+                                <Button x:Name="AdminNavButton" Margin="0,7,0,0" Tag="admin" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Visibility="{Binding Navigation.CanOpenAdmin, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource SidebarButtonStyle}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Navigation.IsAdminActive}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+                                                    <Setter Property="Background" Value="#2BD4AF37" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+                                                    <Setter Property="BorderThickness" Value="1" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Админ" /></StackPanel>
                                 </Button>
-                                <Button x:Name="ShiftNavButton" Style="{StaticResource SidebarButtonStyle}" Margin="0,7,0,0" Tag="shift" Click="NavigationButton_Click">
-                                    <StackPanel Orientation="Horizontal"><TextBlock Text="▥" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Смена" /></StackPanel>
+                                <Button x:Name="ShiftNavButton" Margin="0,7,0,0" Tag="shift" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Visibility="{Binding Navigation.CanOpenShift, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource SidebarButtonStyle}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Navigation.IsShiftActive}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+                                                    <Setter Property="Background" Value="#2BD4AF37" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+                                                    <Setter Property="BorderThickness" Value="1" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Смена" /></StackPanel>
                                 </Button>
-                                <Button x:Name="OwnerNavButton" Style="{StaticResource SidebarButtonStyle}" Margin="0,7,0,0" Tag="owner" Click="NavigationButton_Click">
-                                    <StackPanel Orientation="Horizontal"><TextBlock Text="◇" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Owner" /></StackPanel>
+                                <Button x:Name="OwnerNavButton" Margin="0,7,0,0" Tag="owner" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Visibility="{Binding Navigation.CanOpenOwner, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource SidebarButtonStyle}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Navigation.IsOwnerActive}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+                                                    <Setter Property="Background" Value="#2BD4AF37" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+                                                    <Setter Property="BorderThickness" Value="1" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Owner" /></StackPanel>
                                 </Button>
-                                <Button x:Name="SettingsNavButton" Style="{StaticResource SidebarButtonStyle}" Margin="0,7,0,0" Tag="settings" Click="NavigationButton_Click">
-                                    <StackPanel Orientation="Horizontal"><TextBlock Text="⚙" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Настройки" /></StackPanel>
+                                <Button x:Name="SettingsNavButton" Margin="0,7,0,0" Tag="settings" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource SidebarButtonStyle}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Navigation.IsSettingsActive}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+                                                    <Setter Property="Background" Value="#2BD4AF37" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+                                                    <Setter Property="BorderThickness" Value="1" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Настройки" /></StackPanel>
                                 </Button>
                             </StackPanel>
                         </ScrollViewer>
@@ -195,17 +315,21 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <Border Width="46" Height="46" CornerRadius="14" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Background="{DynamicResource SurfaceBrush}">
-                                    <TextBlock x:Name="ProfileInitialsText" Text="--" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Black" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="ProfileInitialsText" Text="{Binding CurrentUser.Initials}" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Black" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 </Border>
                                 <StackPanel x:Name="ProfileText" Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock x:Name="ProfileNameText" Text="Client" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
-                                    <TextBlock x:Name="ProfileRoleText" Text="Client" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,4,0,0" />
+                                    <TextBlock x:Name="ProfileNameText" Text="{Binding CurrentUser.FullName}" FontWeight="Bold" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock x:Name="ProfileRoleText" Text="{Binding CurrentUser.RoleAndLogin}" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,4,0,0" />
                                 </StackPanel>
                             </Grid>
                         </Border>
 
                         <Grid Grid.Row="3" Margin="0,14,0,0">
-                            <TextBlock x:Name="LogoutText" Text="Выйти" Foreground="{DynamicResource MutedBrush}" FontSize="12" HorizontalAlignment="Left" Cursor="Hand" MouseLeftButtonUp="LogoutText_MouseLeftButtonUp" />
+                            <TextBlock x:Name="LogoutText" Text="Выйти" Foreground="{DynamicResource MutedBrush}" FontSize="12" HorizontalAlignment="Left" Cursor="Hand">
+                                <TextBlock.InputBindings>
+                                    <MouseBinding MouseAction="LeftClick" Command="{Binding Navigation.LogoutCommand}" />
+                                </TextBlock.InputBindings>
+                            </TextBlock>
                             <TextBlock x:Name="SidebarVersionText" Text="v1.0" Foreground="{DynamicResource MutedBrush}" FontSize="12" HorizontalAlignment="Right" />
                         </Grid>
                     </Grid>
@@ -260,7 +384,7 @@
             </Grid>
         </Border>
 
-        <views:AuthOverlayView x:Name="AuthOverlay" />
+        <views:AuthOverlayView x:Name="AuthOverlay" Visibility="{Binding Navigation.IsAuthOverlayVisible, Converter={StaticResource BoolToVisibilityConverter}}" />
 
         <views:TopupOverlayView x:Name="TopupOverlay" Visibility="Collapsed" />
         <views:NotificationCenterView x:Name="NotificationCenter" Visibility="Collapsed" />

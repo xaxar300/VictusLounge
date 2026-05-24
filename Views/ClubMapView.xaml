@@ -1,4 +1,4 @@
-<UserControl x:Class="VictusLounge.Views.ClubMapView"
+﻿<UserControl x:Class="VictusLounge.Views.ClubMapView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="Transparent">
@@ -45,20 +45,20 @@
                                             <StackPanel>
                                                 <TextBlock Text="Standard Hall" FontWeight="Bold" Margin="0,0,0,10" />
                                                 <UniformGrid Columns="7">
-                                                    <Button Content="STD-01" Tag="STD-01|Standard|free" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
-                                                    <Button Content="STD-02" Tag="STD-02|Standard|busy" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
-                                                    <Button Content="STD-03" Tag="STD-03|Standard|free" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
-                                                    <Button Content="STD-04" Tag="STD-04|Standard|reserved" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
-                                                    <Button Content="STD-05" Tag="STD-05|Standard|free" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
-                                                    <Button Content="STD-06" Tag="STD-06|Standard|free" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
-                                                    <Button Content="STD-07" Tag="STD-07|Standard|service" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
-                                                    <Button Content="STD-08" Tag="STD-08|Standard|free" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
-                                                    <Button Content="STD-09" Tag="STD-09|Standard|free" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
-                                                    <Button Content="STD-10" Tag="STD-10|Standard|busy" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
-                                                    <Button Content="STD-11" Tag="STD-11|Standard|free" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
-                                                    <Button Content="STD-12" Tag="STD-12|Standard|reserved" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
-                                                    <Button Content="STD-13" Tag="STD-13|Standard|free" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
-                                                    <Button Content="STD-14" Tag="STD-14|Standard|free" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
+                                                    <Button Content="STD-01" Tag="STD-01|Standard|free" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
+                                                    <Button Content="STD-02" Tag="STD-02|Standard|busy" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
+                                                    <Button Content="STD-03" Tag="STD-03|Standard|free" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
+                                                    <Button Content="STD-04" Tag="STD-04|Standard|reserved" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
+                                                    <Button Content="STD-05" Tag="STD-05|Standard|free" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
+                                                    <Button Content="STD-06" Tag="STD-06|Standard|free" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
+                                                    <Button Content="STD-07" Tag="STD-07|Standard|service" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
+                                                    <Button Content="STD-08" Tag="STD-08|Standard|free" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
+                                                    <Button Content="STD-09" Tag="STD-09|Standard|free" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
+                                                    <Button Content="STD-10" Tag="STD-10|Standard|busy" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
+                                                    <Button Content="STD-11" Tag="STD-11|Standard|free" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
+                                                    <Button Content="STD-12" Tag="STD-12|Standard|reserved" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
+                                                    <Button Content="STD-13" Tag="STD-13|Standard|free" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
+                                                    <Button Content="STD-14" Tag="STD-14|Standard|free" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
                                                 </UniformGrid>
                                             </StackPanel>
                                         </Border>
@@ -67,14 +67,14 @@
                                             <StackPanel>
                                                 <TextBlock Text="VIP Zone" FontWeight="Bold" Margin="0,0,0,10" />
                                                 <UniformGrid Columns="2">
-                                                    <Button Content="VIP-01" Tag="VIP-01|VIP|free" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
-                                                    <Button Content="VIP-02" Tag="VIP-02|VIP|busy" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
-                                                    <Button Content="VIP-03" Tag="VIP-03|VIP|reserved" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
-                                                    <Button Content="VIP-04" Tag="VIP-04|VIP|free" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
-                                                    <Button Content="VIP-05" Tag="VIP-05|VIP|free" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
-                                                    <Button Content="VIP-06" Tag="VIP-06|VIP|service" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
-                                                    <Button Content="VIP-07" Tag="VIP-07|VIP|free" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
-                                                    <Button Content="VIP-08" Tag="VIP-08|VIP|reserved" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
+                                                    <Button Content="VIP-01" Tag="VIP-01|VIP|free" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
+                                                    <Button Content="VIP-02" Tag="VIP-02|VIP|busy" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
+                                                    <Button Content="VIP-03" Tag="VIP-03|VIP|reserved" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
+                                                    <Button Content="VIP-04" Tag="VIP-04|VIP|free" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
+                                                    <Button Content="VIP-05" Tag="VIP-05|VIP|free" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
+                                                    <Button Content="VIP-06" Tag="VIP-06|VIP|service" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
+                                                    <Button Content="VIP-07" Tag="VIP-07|VIP|free" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
+                                                    <Button Content="VIP-08" Tag="VIP-08|VIP|reserved" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,7" />
                                                 </UniformGrid>
                                             </StackPanel>
                                         </Border>
@@ -83,11 +83,11 @@
                                             <StackPanel>
                                                 <TextBlock Text="Bootcamp Room" FontWeight="Bold" Margin="0,0,0,10" />
                                                 <UniformGrid Columns="5">
-                                                    <Button Content="BA-01" Tag="BA-01|Bootcamp|busy" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
-                                                    <Button Content="BA-02" Tag="BA-02|Bootcamp|free" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
-                                                    <Button Content="BA-03" Tag="BA-03|Bootcamp|free" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
-                                                    <Button Content="BA-04" Tag="BA-04|Bootcamp|reserved" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
-                                                    <Button Content="BA-05" Tag="BA-05|Bootcamp|free" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
+                                                    <Button Content="BA-01" Tag="BA-01|Bootcamp|busy" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
+                                                    <Button Content="BA-02" Tag="BA-02|Bootcamp|free" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
+                                                    <Button Content="BA-03" Tag="BA-03|Bootcamp|free" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
+                                                    <Button Content="BA-04" Tag="BA-04|Bootcamp|reserved" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
+                                                    <Button Content="BA-05" Tag="BA-05|Bootcamp|free" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
                                                 </UniformGrid>
                                             </StackPanel>
                                         </Border>
@@ -96,11 +96,11 @@
                                             <StackPanel>
                                                 <TextBlock Text="Royal VIP" FontWeight="Bold" Margin="0,0,0,10" />
                                                 <UniformGrid Columns="5">
-                                                    <Button Content="RV-01" Tag="RV-01|Royal VIP|free" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
-                                                    <Button Content="RV-02" Tag="RV-02|Royal VIP|free" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
-                                                    <Button Content="RV-03" Tag="RV-03|Royal VIP|reserved" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
-                                                    <Button Content="RV-04" Tag="RV-04|Royal VIP|service" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
-                                                    <Button Content="RV-05" Tag="RV-05|Royal VIP|free" Click="PcButton_Click" Style="{StaticResource PcButtonStyle}" />
+                                                    <Button Content="RV-01" Tag="RV-01|Royal VIP|free" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
+                                                    <Button Content="RV-02" Tag="RV-02|Royal VIP|free" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
+                                                    <Button Content="RV-03" Tag="RV-03|Royal VIP|reserved" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
+                                                    <Button Content="RV-04" Tag="RV-04|Royal VIP|service" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" Margin="0,0,7,0" />
+                                                    <Button Content="RV-05" Tag="RV-05|Royal VIP|free" Command="{Binding ClubMap.SelectPcCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Style="{StaticResource PcButtonStyle}" />
                                                 </UniformGrid>
                                             </StackPanel>
                                         </Border>
@@ -110,8 +110,8 @@
                                 <Border Grid.Column="1" Style="{StaticResource PanelBorderStyle}" Width="500" Height="540" VerticalAlignment="Top" HorizontalAlignment="Right">
                                     <StackPanel>
                                         <TextBlock Text="PC DETAIL" Style="{StaticResource KickerTextStyle}" />
-                                        <TextBlock x:Name="PcDetailTitle" Text="Выберите ПК" FontSize="26" FontWeight="Black" Margin="0,8,0,8" TextWrapping="Wrap" />
-                                        <TextBlock x:Name="PcDetailSubtitle" Text="После выбора здесь появятся зона, статус, железо, тариф и ближайшие свободные интервалы." Style="{StaticResource MutedTextStyle}" MaxHeight="44" />
+                                        <TextBlock x:Name="PcDetailTitle" Text="{Binding ClubMap.DetailTitle}" FontSize="26" FontWeight="Black" Margin="0,8,0,8" TextWrapping="Wrap" />
+                                        <TextBlock x:Name="PcDetailSubtitle" Text="{Binding ClubMap.DetailSubtitle}" Style="{StaticResource MutedTextStyle}" MaxHeight="44" />
                                         <Border x:Name="PcPhotoFrame"
                                                 Height="170"
                                                 CornerRadius="12"
@@ -128,7 +128,7 @@
                                                 </Grid.Background>
                                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                                     <TextBlock Text="Фото места" Foreground="{DynamicResource GoldLightBrush}" FontSize="18" FontWeight="Black" HorizontalAlignment="Center" />
-                                                    <TextBlock x:Name="PcPhotoCaption" Text="Заглушка до загрузки реальных фото" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,8,0,0" HorizontalAlignment="Center" />
+                                                    <TextBlock x:Name="PcPhotoCaption" Text="{Binding ClubMap.PhotoCaption}" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,8,0,0" HorizontalAlignment="Center" />
                                                 </StackPanel>
                                             </Grid>
                                         </Border>
@@ -136,16 +136,16 @@
                                             <Grid.ColumnDefinitions><ColumnDefinition Width="1.1*" /><ColumnDefinition Width="0.9*" /></Grid.ColumnDefinitions>
                                             <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                                             <TextBlock Text="CPU" Foreground="{DynamicResource MutedBrush}" />
-                                            <TextBlock x:Name="PcCpuText" Grid.Column="1" Text="—" FontWeight="Bold" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock x:Name="PcCpuText" Grid.Column="1" Text="{Binding ClubMap.Cpu}" FontWeight="Bold" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" />
                                             <TextBlock Grid.Row="1" Text="GPU" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" />
-                                            <TextBlock x:Name="PcGpuText" Grid.Row="1" Grid.Column="1" Text="—" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock x:Name="PcGpuText" Grid.Row="1" Grid.Column="1" Text="{Binding ClubMap.Gpu}" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" TextTrimming="CharacterEllipsis" />
                                             <TextBlock Grid.Row="2" Text="RAM" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" />
-                                            <TextBlock x:Name="PcRamText" Grid.Row="2" Grid.Column="1" Text="—" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock x:Name="PcRamText" Grid.Row="2" Grid.Column="1" Text="{Binding ClubMap.Ram}" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" TextTrimming="CharacterEllipsis" />
                                             <TextBlock Grid.Row="3" Text="Monitor" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" />
-                                            <TextBlock x:Name="PcMonitorText" Grid.Row="3" Grid.Column="1" Text="—" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock x:Name="PcMonitorText" Grid.Row="3" Grid.Column="1" Text="{Binding ClubMap.Monitor}" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" TextTrimming="CharacterEllipsis" />
                                         </Grid>
-                                        <TextBlock x:Name="PcIntervalsText" Text="Свободные интервалы появятся после выбора места." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" MaxHeight="44" Margin="0,0,0,16" />
-                                        <Button x:Name="BookSelectedPcButton" Content="Забронировать выбранный ПК" Style="{StaticResource PrimaryButtonStyle}" Click="BookSelectedPc_Click" />
+                                        <TextBlock x:Name="PcIntervalsText" Text="{Binding ClubMap.Intervals}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" MaxHeight="44" Margin="0,0,0,16" />
+                                        <Button x:Name="BookSelectedPcButton" Content="{Binding ClubMap.BookButtonText}" IsEnabled="{Binding ClubMap.CanBookSelectedPc}" Opacity="{Binding ClubMap.BookButtonOpacity}" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding ClubMap.BookSelectedPcCommand}" />
                                     </StackPanel>
                                 </Border>
                             </Grid>

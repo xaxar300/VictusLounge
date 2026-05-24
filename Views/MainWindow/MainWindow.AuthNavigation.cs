@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -13,62 +13,14 @@ using VictusLounge.Data;
 using VictusLounge.Helpers;
 using VictusLounge.Models;
 using VictusLounge.Repositories;
+using VictusLounge.ViewModels;
 
 namespace VictusLounge;
 
 public partial class MainWindow
 {
-    private void NavigationButton_Click(object sender, RoutedEventArgs e)
+    private void SelectAuthRole(string role)
     {
-        if (sender is not FrameworkElement element)
-        {
-            return;
-        }
-
-        NavigateTo(element.Tag?.ToString() ?? "dashboard");
-    }
-
-    private void ShowLoginAuth_Click(object sender, RoutedEventArgs e)
-    {
-        ShowAuthView(isRegister: false);
-    }
-
-    private void ShowRegisterAuth_Click(object sender, RoutedEventArgs e)
-    {
-        ShowAuthView(isRegister: true);
-    }
-
-    private void AuthEnter_Click(object sender, RoutedEventArgs e)
-    {
-        if (RegisterAuthView.Visibility == Visibility.Visible)
-        {
-            RegisterAndLogin();
-            return;
-        }
-
-        LoginFromDatabase();
-    }
-
-    private void LogoutText_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-    {
-        _currentUserId = 0;
-        _currentUserFullName = "Not signed in";
-        _currentUserLogin = string.Empty;
-        _currentRole = "client";
-        UpdateCurrentUserUi();
-        UpdateAuthRoleButtons();
-        ApplyRoleAccess(false);
-        ShowAuthView(isRegister: false);
-        AuthOverlay.Visibility = Visibility.Visible;
-    }
-
-    private void AuthRole_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is not Button button || button.Tag is not string role)
-        {
-            return;
-        }
-
         _currentRole = role;
         UpdateAuthRoleButtons();
         ShowStatus("Role selected", $"After login: {GetRoleTitle(_currentRole)} mode.");
@@ -76,97 +28,21 @@ public partial class MainWindow
 
     private void ShowAuthView(bool isRegister)
     {
+        _viewModel.Auth.IsRegisterMode = isRegister;
+        ApplyAuthViewState();
+    }
+
+    private void ApplyAuthViewState()
+    {
+        var isRegister = _viewModel.Auth.IsRegisterMode;
         LoginAuthView.Visibility = isRegister ? Visibility.Collapsed : Visibility.Visible;
         RegisterAuthView.Visibility = isRegister ? Visibility.Visible : Visibility.Collapsed;
-        AuthErrorText.Visibility = Visibility.Collapsed;
-        RegisterErrorText.Visibility = Visibility.Collapsed;
-        AuthWindowTitleText.Text = isRegister
-            ? "Р РµРіРёСЃС‚СЂР°С†РёСЏ РІ Elite Gaming Lounge"
-            : "Р’С…РѕРґ РІ Elite Gaming Lounge";
+        AuthErrorText.Text = _viewModel.Auth.ErrorMessage;
+        RegisterErrorText.Text = _viewModel.Auth.RegisterErrorMessage;
+        AuthErrorText.Visibility = _viewModel.Auth.HasError ? Visibility.Visible : Visibility.Collapsed;
+        RegisterErrorText.Visibility = _viewModel.Auth.HasRegisterError ? Visibility.Visible : Visibility.Collapsed;
+        AuthWindowTitleText.Text = _viewModel.Auth.AuthTitle;
         UpdateAuthRoleButtons();
-    }
-
-    private void LoginFromDatabase()
-    {
-        var login = LoginBox.Text.Trim();
-        var password = LoginPasswordBox.Password;
-
-        if (string.IsNullOrWhiteSpace(login) || string.IsNullOrWhiteSpace(password))
-        {
-            ShowAuthError("Р’РІРµРґРёС‚Рµ Р»РѕРіРёРЅ Рё РїР°СЂРѕР»СЊ.");
-            return;
-        }
-
-        try
-        {
-            using var unitOfWork = new UnitOfWork();
-            var user = unitOfWork.Users.GetByLogin(login);
-            if (user is null)
-            {
-                ShowAuthError("РќРµРІРµСЂРЅС‹Р№ Р»РѕРіРёРЅ РёР»Рё РїР°СЂРѕР»СЊ.");
-                return;
-            }
-
-            if (!PasswordHasher.VerifyPassword(password, user.PasswordHash))
-            {
-                if (PasswordHasher.IsHashed(user.PasswordHash)
-                    || !string.Equals(user.PasswordHash, password, StringComparison.Ordinal))
-                {
-                    ShowAuthError("РќРµРІРµСЂРЅС‹Р№ Р»РѕРіРёРЅ РёР»Рё РїР°СЂРѕР»СЊ.");
-                    return;
-                }
-
-                user.PasswordHash = PasswordHasher.HashPassword(password);
-                unitOfWork.SaveChanges();
-            }
-
-            SignInUser(user);
-        }
-        catch (Exception ex)
-        {
-            ShowAuthError($"РќРµ СѓРґР°Р»РѕСЃСЊ РїРѕРґРєР»СЋС‡РёС‚СЊСЃСЏ Рє SQL Server: {ex.Message}");
-        }
-    }
-
-    private void RegisterAndLogin()
-    {
-        var fullName = RegisterFullNameBox.Text.Trim();
-        var login = RegisterLoginBox.Text.Trim();
-        var password = RegisterPasswordBox.Password;
-
-        if (string.IsNullOrWhiteSpace(fullName) || string.IsNullOrWhiteSpace(login) || string.IsNullOrWhiteSpace(password))
-        {
-            ShowRegisterError("Р—Р°РїРѕР»РЅРёС‚Рµ РёРјСЏ, Р»РѕРіРёРЅ Рё РїР°СЂРѕР»СЊ.");
-            return;
-        }
-
-        try
-        {
-            using var unitOfWork = new UnitOfWork();
-            if (unitOfWork.Users.Any(user => user.Login == login))
-            {
-                ShowRegisterError("РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃ С‚Р°РєРёРј Р»РѕРіРёРЅРѕРј СѓР¶Рµ РµСЃС‚СЊ.");
-                return;
-            }
-
-            var user = new User
-            {
-                Id = unitOfWork.Users.GetNextId(item => item.Id),
-                FullName = fullName,
-                Login = login,
-                PasswordHash = PasswordHasher.HashPassword(password),
-                Role = "Client",
-                Balance = 0m
-            };
-
-            unitOfWork.Users.Add(user);
-            unitOfWork.SaveChanges();
-            SignInUser(user);
-        }
-        catch (Exception ex)
-        {
-            ShowRegisterError($"РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РІ SQL Server: {ex.Message}");
-        }
     }
 
     private void SignInUser(User user)
@@ -179,25 +55,25 @@ public partial class MainWindow
 
         AuthErrorText.Visibility = Visibility.Collapsed;
         RegisterErrorText.Visibility = Visibility.Collapsed;
-        AuthOverlay.Visibility = Visibility.Collapsed;
+        _viewModel.Navigation.IsAuthOverlayVisible = false;
 
         LoadDatabaseState();
         UpdateCurrentUserUi();
         UpdateAuthRoleButtons();
         ApplyRoleAccess();
-        ShowStatus("Р’С…РѕРґ РІС‹РїРѕР»РЅРµРЅ", $"{_currentUserFullName}: РѕС‚РєСЂС‹С‚ СЂРµР¶РёРј {GetRoleTitle(_currentRole)}.");
+        ShowStatus("Вход выполнен", $"{_currentUserFullName}: открыт режим {GetRoleTitle(_currentRole)}.");
     }
 
     private void ShowAuthError(string message)
     {
-        AuthErrorText.Text = message;
-        AuthErrorText.Visibility = Visibility.Visible;
+        _viewModel.Auth.ErrorMessage = message;
+        ApplyAuthViewState();
     }
 
     private void ShowRegisterError(string message)
     {
-        RegisterErrorText.Text = message;
-        RegisterErrorText.Visibility = Visibility.Visible;
+        _viewModel.Auth.RegisterErrorMessage = message;
+        ApplyAuthViewState();
     }
 
     private void UpdateCurrentUserUi()
@@ -207,10 +83,6 @@ public partial class MainWindow
             return;
         }
 
-        ProfileNameText.Text = _currentUserFullName;
-        ProfileRoleText.Text = $"{GetRoleTitle(_currentRole)} В· {_currentUserLogin}";
-        ProfileInitialsText.Text = GetInitials(_currentUserFullName);
-        WorkspaceText.Text = $"{GetRoleTitle(_currentRole)} workspace";
         UpdateCurrentBalanceText();
         SyncCurrentUserViewModel();
     }
@@ -292,16 +164,6 @@ public partial class MainWindow
 
     private void ApplyRoleAccess(bool navigateIfNeeded = true)
     {
-        BookingNavButton.Visibility = _currentRole == "owner" ? Visibility.Collapsed : Visibility.Visible;
-        CabinetNavButton.Visibility = _currentRole == "client" ? Visibility.Visible : Visibility.Collapsed;
-        BalanceNavButton.Visibility = _currentRole is "client" or "admin" ? Visibility.Visible : Visibility.Collapsed;
-        AdminNavButton.Visibility = _currentRole is "admin" or "owner" ? Visibility.Visible : Visibility.Collapsed;
-        ShiftNavButton.Visibility = _currentRole is "admin" or "owner" ? Visibility.Visible : Visibility.Collapsed;
-        OwnerNavButton.Visibility = _currentRole == "owner" ? Visibility.Visible : Visibility.Collapsed;
-        SettingsNavButton.Visibility = Visibility.Visible;
-
-        WorkspaceText.Text = $"{GetRoleTitle(_currentRole)} workspace";
-
         if (navigateIfNeeded && !IsViewAllowedForRole(_currentView))
         {
             NavigateTo("dashboard");
@@ -330,6 +192,39 @@ public partial class MainWindow
             _ => "Client"
         };
     }
+
+    private void ConfigureNavigationCommands()
+    {
+        _viewModel.Navigation.NavigateCommand = new RelayCommand(view => NavigateTo(view?.ToString() ?? "dashboard"));
+        _viewModel.Navigation.LogoutCommand = new RelayCommand(_ => Logout());
+        _viewModel.Navigation.ToggleSidebarCommand = new RelayCommand(_ => ToggleSidebar());
+    }
+
+    private void Logout()
+    {
+        _currentUserId = 0;
+        _currentUserFullName = "Not signed in";
+        _currentUserLogin = string.Empty;
+        _currentRole = "client";
+        _viewModel.Navigation.IsAuthOverlayVisible = true;
+        UpdateCurrentUserUi();
+        UpdateAuthRoleButtons();
+        ApplyRoleAccess(false);
+        ShowAuthView(isRegister: false);
+    }
+
+    private void ToggleSidebar()
+    {
+        _isSidebarCollapsed = !_isSidebarCollapsed;
+        _viewModel.Navigation.IsSidebarCollapsed = _isSidebarCollapsed;
+
+        ApplySidebarState();
+
+        ShowStatus(
+            _isSidebarCollapsed ? "Меню свернуто" : "Меню раскрыто",
+            _isSidebarCollapsed ? "Навигация оставлена в компактном режиме." : "Полная навигация снова доступна.");
+    }
+
     private void ApplySidebarState(bool focusToggle = true)
     {
         SidebarColumn.Width = new GridLength(_isSidebarCollapsed ? 112 : 264);
@@ -400,6 +295,7 @@ public partial class MainWindow
         }
 
         _currentView = view;
+        _viewModel.Navigation.CurrentView = view;
         DashboardView.Visibility = view == "dashboard" ? Visibility.Visible : Visibility.Collapsed;
         MapView.Visibility = view == "map" ? Visibility.Visible : Visibility.Collapsed;
         BookingView.Visibility = view == "booking" ? Visibility.Visible : Visibility.Collapsed;
@@ -410,17 +306,6 @@ public partial class MainWindow
         ShiftView.Visibility = view == "shift" ? Visibility.Visible : Visibility.Collapsed;
         OwnerView.Visibility = view == "owner" ? Visibility.Visible : Visibility.Collapsed;
         SettingsView.Visibility = view == "settings" ? Visibility.Visible : Visibility.Collapsed;
-
-        SetNavState(DashboardNavButton, view == "dashboard");
-        SetNavState(MapNavButton, view == "map");
-        SetNavState(BookingNavButton, view == "booking");
-        SetNavState(CabinetNavButton, view == "cabinet");
-        SetNavState(BalanceNavButton, view == "balance");
-        SetNavState(EventsNavButton, view == "events");
-        SetNavState(AdminNavButton, view == "admin");
-        SetNavState(ShiftNavButton, view == "shift");
-        SetNavState(OwnerNavButton, view == "owner");
-        SetNavState(SettingsNavButton, view == "settings");
 
         var title = view switch
         {
@@ -435,7 +320,7 @@ public partial class MainWindow
             "settings" => T("Nav.Settings"),
             _ => T("Nav.Dashboard")
         };
-        CurrentViewText.Text = title;
+        _viewModel.Navigation.CurrentTitle = title;
         if (view is "map" or "cabinet" or "balance")
         {
             LoadDatabaseState();
@@ -444,32 +329,7 @@ public partial class MainWindow
         {
             Dispatcher.InvokeAsync(ApplyMapPcButtonStatuses, DispatcherPriority.Loaded);
         }
-        ShowStatus(title, $"РћС‚РєСЂС‹С‚ СЂР°Р·РґРµР»: {title}.");
-    }
-
-    private void SetNavState(Button button, bool isActive)
-    {
-        var accent = (Color)Application.Current.Resources["GoldColor"];
-        button.Background = isActive
-            ? new SolidColorBrush(Color.FromArgb(0x2B, accent.R, accent.G, accent.B))
-            : Brushes.Transparent;
-        button.Foreground = (Brush)FindResource(isActive ? "TextBrush" : "MutedBrush");
-    }
-
-    private void ThemeButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is Button button && button.Tag is string theme)
-        {
-            ApplyTheme(theme);
-        }
-    }
-
-    private void LanguageButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is Button button && button.Tag is string language)
-        {
-            ApplyLanguage(language);
-        }
+        ShowStatus(title, $"Открыт раздел: {title}.");
     }
 
     private void ApplyTheme(string theme, bool showToast = true)
@@ -477,17 +337,6 @@ public partial class MainWindow
         _currentTheme = theme;
         ApplyThemeResources(theme);
         UpdateThemeButtons();
-        SetNavState(DashboardNavButton, _currentView == "dashboard");
-        SetNavState(MapNavButton, _currentView == "map");
-        SetNavState(BookingNavButton, _currentView == "booking");
-        SetNavState(CabinetNavButton, _currentView == "cabinet");
-        SetNavState(BalanceNavButton, _currentView == "balance");
-        SetNavState(EventsNavButton, _currentView == "events");
-        SetNavState(AdminNavButton, _currentView == "admin");
-        SetNavState(ShiftNavButton, _currentView == "shift");
-        SetNavState(OwnerNavButton, _currentView == "owner");
-        SetNavState(SettingsNavButton, _currentView == "settings");
-
         if (showToast)
         {
             ShowStatus(T("Settings.Applied"), T("Settings.ThemeApplied"));
@@ -546,12 +395,7 @@ public partial class MainWindow
         _languageStrings = LoadDictionary($"Resources/Strings.{language}.xaml");
 
         TopLanguageLabel.Text = T("Top.Language");
-        WorkspaceText.Text = T("Top.Workspace");
-        if (GlobalSearchBox.Text == SearchPlaceholder ||
-            GlobalSearchBox.Text == "Search: client, PC-04, booking, tournament, payment...")
-        {
-            GlobalSearchBox.Text = T("Common.SearchPlaceholder");
-        }
+        GlobalSearchBox.ToolTip = T("Common.SearchPlaceholder");
 
         SettingsTitleText.Text = T("Settings.Title");
         SettingsSubtitleText.Text = T("Settings.Subtitle");
@@ -578,7 +422,7 @@ public partial class MainWindow
         EnLanguageButton.Style = (Style)FindResource(language == "en" ? "PrimaryButtonStyle" : "GhostButtonStyle");
         TopRuButton.Style = (Style)FindResource(language == "ru" ? "PrimaryButtonStyle" : "GhostButtonStyle");
         TopEnButton.Style = (Style)FindResource(language == "en" ? "PrimaryButtonStyle" : "GhostButtonStyle");
-        CurrentViewText.Text = _currentView switch
+        _viewModel.Navigation.CurrentTitle = _currentView switch
         {
             "map" => T("Nav.Map"),
             "booking" => T("Nav.Booking"),
@@ -625,22 +469,22 @@ public partial class MainWindow
         BalanceSubtitleText.Text = T("Balance.Subtitle");
         BalanceTopupCardButton.Content = T("Balance.Topup");
         BalanceCurrentLabelText.Text = T("Balance.Current");
-        BalanceBonusText.Text = "РџРѕР»СѓС‡РµРЅРѕ Р±РѕРЅСѓСЃРѕРІ: 0";
         BalancePromoLabelText.Text = T("Balance.Promo");
         BalanceApplyPromoButton.Content = T("Balance.Apply");
-        BalancePackagesTitleText.Text = T("Balance.Packages");
-        QuickGamePackageText.Text = T("Balance.QuickGame");
+        if (_viewModel.Balance.IsRegularPackagesVisible)
+        {
+            _viewModel.Balance.ShowDefaultPackageOffer(T("Balance.Packages"), T("Balance.QuickGame"), T("Balance.Buy"));
+        }
         EveningPackageText.Text = T("Balance.EveningPack");
         NightPackageText.Text = T("Balance.NightPack");
         BootcampPackageText.Text = T("Balance.BootcampTraining");
         WeekendPackageText.Text = T("Balance.WeekendPass");
-        QuickGameBuyButton.Content = T("Balance.Buy");
         EveningBuyButton.Content = T("Balance.Buy");
         NightBuyButton.Content = T("Balance.Buy");
         BootcampBuyButton.Content = T("Balance.Buy");
         WeekendBuyButton.Content = T("Balance.Buy");
         BalancePersonalOfferLabelText.Text = T("Balance.PersonalOffer");
-        BalancePersonalOfferText.Text = T("Balance.PersonalOfferText");
+        _viewModel.Balance.PersonalOfferText = T("Balance.PersonalOfferText");
         BalanceOfferButton.Content = T("Balance.Activate");
         BalanceHistoryTitleText.Text = T("Balance.History");
         BalanceReceiptButton.Content = T("Balance.Export");

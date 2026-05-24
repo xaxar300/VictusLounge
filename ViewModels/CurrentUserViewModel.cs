@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace VictusLounge.ViewModels;
 
 public sealed class CurrentUserViewModel : ViewModelBase
@@ -17,24 +19,67 @@ public sealed class CurrentUserViewModel : ViewModelBase
     public string FullName
     {
         get => _fullName;
-        set => SetProperty(ref _fullName, value);
+        set
+        {
+            if (SetProperty(ref _fullName, value))
+            {
+                OnPropertyChanged(nameof(Initials));
+            }
+        }
     }
 
     public string Login
     {
         get => _login;
-        set => SetProperty(ref _login, value);
+        set
+        {
+            if (SetProperty(ref _login, value))
+            {
+                OnPropertyChanged(nameof(RoleAndLogin));
+            }
+        }
     }
 
     public string Role
     {
         get => _role;
-        set => SetProperty(ref _role, value);
+        set
+        {
+            if (SetProperty(ref _role, value))
+            {
+                OnPropertyChanged(nameof(RoleTitle));
+                OnPropertyChanged(nameof(RoleAndLogin));
+            }
+        }
     }
 
     public decimal Balance
     {
         get => _balance;
         set => SetProperty(ref _balance, value);
+    }
+
+    public string RoleTitle => Role switch
+    {
+        "admin" => "Admin",
+        "owner" => "Owner",
+        _ => "Client"
+    };
+
+    public string RoleAndLogin => $"{RoleTitle} · {Login}";
+
+    public string Initials
+    {
+        get
+        {
+            var parts = FullName.Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0)
+            {
+                return "??";
+            }
+
+            var initials = string.Concat(parts.Take(2).Select(part => char.ToUpperInvariant(part[0])));
+            return initials.Length == 1 ? $"{initials}." : initials;
+        }
     }
 }

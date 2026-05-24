@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -18,14 +18,13 @@ namespace VictusLounge;
 
 public partial class MainWindow
 {
-    private void NotificationButton_Click(object sender, RoutedEventArgs e)
+    private void ToggleNotificationCenter()
     {
         _isNotificationCenterOpen = !_isNotificationCenterOpen;
         NotificationCenter.Visibility = _isNotificationCenterOpen ? Visibility.Visible : Visibility.Collapsed;
-        e.Handled = true;
     }
 
-    private void MarkNotifications_Click(object sender, RoutedEventArgs e)
+    private void MarkNotificationsRead()
     {
         _unreadNotifications = 0;
         UpdateNotificationBadge();
@@ -37,11 +36,15 @@ public partial class MainWindow
 
         NotificationEmptyText.Visibility = NotificationList.Children.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
-        ShowStatus("РЈРІРµРґРѕРјР»РµРЅРёСЏ РїСЂРѕС‡РёС‚Р°РЅС‹", "РќРѕРІС‹С… СѓРІРµРґРѕРјР»РµРЅРёР№ РЅРµС‚, СЃРїРёСЃРѕРє РѕСЃС‚Р°Р»СЃСЏ РєР°Рє РёСЃС‚РѕСЂРёСЏ РґРµР№СЃС‚РІРёР№.");
-        e.Handled = true;
+        ShowStatus("Уведомления прочитаны", "Новых уведомлений нет, список остался как история действий.");
     }
-    private void RootGrid_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+    private void HandleShellPreviewMouseDown(object? parameter)
     {
+        if (parameter is not MouseButtonEventArgs e)
+        {
+            return;
+        }
+
         if (!_isNotificationCenterOpen || e.OriginalSource is not DependencyObject source)
         {
             return;
@@ -55,8 +58,13 @@ public partial class MainWindow
         CloseNotificationCenter();
     }
 
-    private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+    private void HandleShellPreviewKeyDown(object? parameter)
     {
+        if (parameter is not KeyEventArgs e)
+        {
+            return;
+        }
+
         if (e.Key == Key.Escape && TopupOverlay.Visibility == Visibility.Visible)
         {
             CloseTopupOverlay();
@@ -94,25 +102,13 @@ public partial class MainWindow
 
         return false;
     }
-    private void GlobalSearchBox_GotFocus(object sender, RoutedEventArgs e)
+    private void ExecuteGlobalSearch(string query)
     {
-        if (GlobalSearchBox.Text != SearchPlaceholder)
+        if (!IsLoaded)
         {
             return;
         }
 
-        GlobalSearchBox.Text = string.Empty;
-        GlobalSearchBox.Foreground = (Brush)FindResource("TextBrush");
-    }
-
-    private void GlobalSearchBox_TextChanged(object sender, TextChangedEventArgs e)
-    {
-        if (!IsLoaded || GlobalSearchBox.Text == SearchPlaceholder)
-        {
-            return;
-        }
-
-        var query = GlobalSearchBox.Text.Trim();
         if (query.Length < 2)
         {
             return;
@@ -149,26 +145,26 @@ public partial class MainWindow
 
             result = normalizedQuery switch
             {
-                var text when text.Contains("pc") || text.Contains("РїРє") || text.Contains("vip") || matchingComputers > 0 =>
-                    $"РќР°Р№РґРµРЅРѕ РџРљ/Р·РѕРЅ: {matchingComputers}. РЎРІРѕР±РѕРґРЅС‹С… РџРљ СЃРµР№С‡Р°СЃ: {freePcs}.",
-                var text when text.Contains("Р±СЂРѕРЅ") || text.Contains("booking") =>
-                    $"РђРєС‚РёРІРЅС‹С… Р±СѓРґСѓС‰РёС… Р±СЂРѕРЅРµР№: {activeBookings}. РћР¶РёРґР°СЋС‚ РѕРїР»Р°С‚Сѓ: {pendingPayments}.",
-                var text when text.Contains("СЃРµСЃСЃ") || text.Contains("session") =>
-                    $"РђРєС‚РёРІРЅС‹С… СЃРµСЃСЃРёР№ СЃРµР№С‡Р°СЃ: {activeSessions}. РћР¶РёРґР°СЋС‚ РѕРїР»Р°С‚Сѓ: {pendingPayments}.",
-                var text when text.Contains("РєР»РёРµРЅС‚") || text.Contains("client") || matchingUsers > 0 =>
-                    $"РќР°Р№РґРµРЅРѕ РєР»РёРµРЅС‚РѕРІ: {matchingUsers}. РђРєС‚РёРІРЅС‹С… СЃРµСЃСЃРёР№ СЃРµР№С‡Р°СЃ: {activeSessions}.",
-                var text when text.Contains("РїР»Р°С‚") || text.Contains("Р±Р°Р»Р°РЅСЃ") || text.Contains("payment") =>
-                    $"РћР¶РёРґР°СЋС‚ РѕРїР»Р°С‚Сѓ: {pendingPayments}. РђРєС‚РёРІРЅС‹С… Р±СЂРѕРЅРµР№: {activeBookings}.",
-                _ => $"РќР°Р№РґРµРЅРѕ РєР»РёРµРЅС‚РѕРІ: {matchingUsers}, РџРљ/Р·РѕРЅ: {matchingComputers}, Р°РєС‚РёРІРЅС‹С… Р±СЂРѕРЅРµР№: {activeBookings}, СЃРµСЃСЃРёР№: {activeSessions}."
+                var text when text.Contains("pc") || text.Contains("пк") || text.Contains("vip") || matchingComputers > 0 =>
+                    $"Найдено ПК/зон: {matchingComputers}. Свободных ПК сейчас: {freePcs}.",
+                var text when text.Contains("брон") || text.Contains("booking") =>
+                    $"Активных будущих броней: {activeBookings}. Ожидают оплату: {pendingPayments}.",
+                var text when text.Contains("сесс") || text.Contains("session") =>
+                    $"Активных сессий сейчас: {activeSessions}. Ожидают оплату: {pendingPayments}.",
+                var text when text.Contains("клиент") || text.Contains("client") || matchingUsers > 0 =>
+                    $"Найдено клиентов: {matchingUsers}. Активных сессий сейчас: {activeSessions}.",
+                var text when text.Contains("плат") || text.Contains("баланс") || text.Contains("payment") =>
+                    $"Ожидают оплату: {pendingPayments}. Активных броней: {activeBookings}.",
+                _ => $"Найдено клиентов: {matchingUsers}, ПК/зон: {matchingComputers}, активных броней: {activeBookings}, сессий: {activeSessions}."
             };
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Search database lookup failed: {ex}");
-            result = $"РџРѕРёСЃРє РїРѕ Р»РѕРєР°Р»СЊРЅРѕРјСѓ СЃРѕСЃС‚РѕСЏРЅРёСЋ: СЃРІРѕР±РѕРґРЅС‹С… РџРљ {freePcs}, РѕС‡РµСЂРµРґСЊ РѕРїР»Р°С‚ {_adminPaymentQueue}.";
+            result = $"Поиск по локальному состоянию: свободных ПК {freePcs}, очередь оплат {_adminPaymentQueue}.";
         }
 
-        ShowStatus("Р РµР·СѓР»СЊС‚Р°С‚ РїРѕРёСЃРєР°", result);
+        ShowStatus("Результат поиска", result);
     }
 
     private void ShowStatus(string title, string body)

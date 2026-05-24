@@ -23,16 +23,7 @@ public partial class MainWindow
     private System.Windows.Controls.ProgressBar RoyalZoneLoadBar => DashboardView.RoyalZoneLoadBar;
     private System.Windows.Controls.TextBlock RoyalZoneLoadText => DashboardView.RoyalZoneLoadText;
     private System.Windows.Controls.StackPanel TodayClubList => DashboardView.TodayClubList;
-    private System.Windows.Controls.TextBlock PcDetailTitle => MapView.PcDetailTitle;
-    private System.Windows.Controls.TextBlock PcDetailSubtitle => MapView.PcDetailSubtitle;
     private System.Windows.Controls.Border PcPhotoFrame => MapView.PcPhotoFrame;
-    private System.Windows.Controls.TextBlock PcPhotoCaption => MapView.PcPhotoCaption;
-    private System.Windows.Controls.TextBlock PcCpuText => MapView.PcCpuText;
-    private System.Windows.Controls.TextBlock PcGpuText => MapView.PcGpuText;
-    private System.Windows.Controls.TextBlock PcRamText => MapView.PcRamText;
-    private System.Windows.Controls.TextBlock PcMonitorText => MapView.PcMonitorText;
-    private System.Windows.Controls.TextBlock PcIntervalsText => MapView.PcIntervalsText;
-    private System.Windows.Controls.Button BookSelectedPcButton => MapView.BookSelectedPcButton;
     private System.Windows.Controls.Button SingleModeButton => BookingView.SingleModeButton;
     private System.Windows.Controls.Button CompanyModeButton => BookingView.CompanyModeButton;
     private System.Windows.Controls.Button DateTodayButton => BookingView.DateTodayButton;
@@ -113,7 +104,6 @@ public partial class MainWindow
     private System.Windows.Controls.Button BalanceOfferButton => BalanceView.BalanceOfferButton;
     private System.Windows.Controls.TextBlock BalanceHistoryTitleText => BalanceView.BalanceHistoryTitleText;
     private System.Windows.Controls.Button BalanceReceiptButton => BalanceView.BalanceReceiptButton;
-    private System.Windows.Controls.Grid BalanceHistoryGrid => BalanceView.BalanceHistoryGrid;
     private System.Windows.Controls.TextBlock BalanceDateHeaderText => BalanceView.BalanceDateHeaderText;
     private System.Windows.Controls.TextBlock BalanceOperationHeaderText => BalanceView.BalanceOperationHeaderText;
     private System.Windows.Controls.TextBlock BalanceMethodHeaderText => BalanceView.BalanceMethodHeaderText;
@@ -188,17 +178,9 @@ public partial class MainWindow
     private System.Windows.Controls.Button TopupCardMethodButton => TopupOverlay.TopupCardMethodButton;
     private System.Windows.Controls.Button TopupEripMethodButton => TopupOverlay.TopupEripMethodButton;
     private System.Windows.Controls.Button TopupCashMethodButton => TopupOverlay.TopupCashMethodButton;
-    private System.Windows.Controls.Border TopupCardFields => TopupOverlay.TopupCardFields;
-    private System.Windows.Controls.TextBox TopupCardNumberBox => TopupOverlay.TopupCardNumberBox;
-    private System.Windows.Controls.TextBlock TopupMethodHintText => TopupOverlay.TopupMethodHintText;
-    private System.Windows.Controls.TextBlock TopupBonusText => TopupOverlay.TopupBonusText;
-    private System.Windows.Controls.TextBlock TopupSummaryText => TopupOverlay.TopupSummaryText;
-    private System.Windows.Controls.TextBlock TopupErrorText => TopupOverlay.TopupErrorText;
-    private System.Windows.Controls.Button ConfirmTopupButton => TopupOverlay.ConfirmTopupButton;
     private System.Windows.Controls.Button MarkNotificationsButton => NotificationCenter.MarkNotificationsButton;
     private System.Windows.Controls.StackPanel NotificationList => NotificationCenter.NotificationList;
     private System.Windows.Controls.TextBlock NotificationEmptyText => NotificationCenter.NotificationEmptyText;
     private System.Windows.Controls.TextBlock StatusTitleText => StatusToast.StatusTitleText;
     private System.Windows.Controls.TextBlock StatusBodyText => StatusToast.StatusBodyText;
-    private System.Windows.Controls.TextBlock BookingConfirmText => BookingConfirmOverlay.BookingConfirmText;
 }

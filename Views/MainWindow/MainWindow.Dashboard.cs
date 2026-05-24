@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -153,9 +153,9 @@ public partial class MainWindow
             .Count();
 
         DashboardFreePcsValue.Text = freePcs.ToString();
-        DashboardFreePcsHint.Text = $"РёР· {totalPcs}";
+        DashboardFreePcsHint.Text = $"из {totalPcs}";
         DashboardZonesValue.Text = $"{availableZones}/{totalZones}";
-        DashboardZonesHint.Text = "Р·РѕРЅС‹ СЃ РґРѕСЃС‚СѓРїРЅС‹РјРё РјРµСЃС‚Р°РјРё";
+        DashboardZonesHint.Text = "зоны с доступными местами";
 
         var now = DateTime.Now;
         var activeBookingQuery = unitOfWork.Bookings
@@ -168,22 +168,22 @@ public partial class MainWindow
                 .Where(booking => booking.UserId == _currentUserId)
                 .OrderBy(booking => booking.StartTime)
                 .ToList();
-            DashboardBookingLabel.Text = "РњРѕРё Р±СЂРѕРЅРё";
+            DashboardBookingLabel.Text = "Мои брони";
             DashboardBookingValue.Text = myBookings.Count.ToString();
             DashboardBookingHint.Text = myBookings.FirstOrDefault() is { } nextBooking
-                ? $"Р±Р»РёР¶Р°Р№С€Р°СЏ {nextBooking.StartTime:dd.MM HH:mm}"
-                : "РЅРµС‚ Р±Р»РёР¶Р°Р№С€РµР№ Р±СЂРѕРЅРё";
+                ? $"ближайшая {nextBooking.StartTime:dd.MM HH:mm}"
+                : "нет ближайшей брони";
         }
         else
         {
             var todayBookings = activeBookingQuery.Count(booking => booking.StartTime.Date == DateTime.Today);
-            DashboardBookingLabel.Text = "Р‘СЂРѕРЅРё СЃРµРіРѕРґРЅСЏ";
+            DashboardBookingLabel.Text = "Брони сегодня";
             DashboardBookingValue.Text = todayBookings.ToString();
-            DashboardBookingHint.Text = "РїРѕ РґР°РЅРЅС‹Рј SQL Server";
+            DashboardBookingHint.Text = "по данным SQL Server";
         }
 
         DashboardEventsValue.Text = "3";
-        DashboardEventsHint.Text = "Dota 2 В· CS2 В· LAN";
+        DashboardEventsHint.Text = "Dota 2 · CS2 · LAN";
     }
 
     private static string NormalizeZoneGroup(string zone)
@@ -225,7 +225,7 @@ public partial class MainWindow
         }
 
         bar.Value = total == 0 ? 0 : Math.Round((double)(total - free) / total * 100);
-        label.Text = $"{free}/{total} СЃРІРѕР±РѕРґРЅРѕ";
+        label.Text = $"{free}/{total} свободно";
     }
 
     private void UpdateAnnouncementText()
@@ -239,7 +239,7 @@ public partial class MainWindow
         var busyPcs = _computers.Count(computer => NormalizePcStatus(computer.Status) == PcStatuses.Busy);
         var servicePcs = _computers.Count(computer => NormalizePcStatus(computer.Status) == PcStatuses.Service);
         AnnouncementTextA.Text =
-            $"РЎРІРѕР±РѕРґРЅРѕ РџРљ: {freePcs} В· Р·Р°РЅСЏС‚Рѕ: {busyPcs} В· СЃРµСЂРІРёСЃ: {servicePcs} В· Standard {_standardRate} BYN/С‡ В· VIP {_vipRate} BYN/С‡ В· Royal {_royalRate} BYN/С‡ В·";
+            $"Свободно ПК: {freePcs} · занято: {busyPcs} · сервис: {servicePcs} · Standard {_standardRate} BYN/ч · VIP {_vipRate} BYN/ч · Royal {_royalRate} BYN/ч ·";
         AnnouncementTextB.Text = AnnouncementTextA.Text;
         ResetAnnouncementMarquee();
     }
@@ -255,8 +255,8 @@ public partial class MainWindow
         var regularFourHours = _standardRate * 4m;
         var saving = regularFourHours - eveningPackPrice;
         CabinetNextBenefitText.Text = saving > 0
-            ? $"Evening Pack РІС‹РіРѕРґРЅРµРµ РѕР±С‹С‡РЅРѕР№ РѕРїР»Р°С‚С‹ РЅР° {saving:0.##} BYN РїСЂРё РёРіСЂРµ 4 С‡Р°СЃР°."
-            : $"Р”Р»СЏ РёРіСЂС‹ РЅР° 4 С‡Р°СЃР° СЃРµР№С‡Р°СЃ РІС‹РіРѕРґРЅРµРµ РѕР±С‹С‡РЅС‹Р№ С‚Р°СЂРёС„ Standard: {regularFourHours:0.##} BYN.";
+            ? $"Evening Pack выгоднее обычной оплаты на {saving:0.##} BYN при игре 4 часа."
+            : $"Для игры на 4 часа сейчас выгоднее обычный тариф Standard: {regularFourHours:0.##} BYN.";
     }
 
     private void RebuildTodayClubList(IUnitOfWork unitOfWork)
@@ -298,8 +298,8 @@ public partial class MainWindow
                 users.TryGetValue(session.UserId, out var user);
                 AddTodayClubItem(
                     session.StartTime.ToString("HH:mm"),
-                    $"{computer?.Name ?? "РџРљ"} В· {user?.FullName ?? "РєР»РёРµРЅС‚"}",
-                    $"{computer?.Zone ?? "-"} В· Р°РєС‚РёРІРЅР°СЏ СЃРµСЃСЃРёСЏ");
+                    $"{computer?.Name ?? "ПК"} · {user?.FullName ?? "клиент"}",
+                    $"{computer?.Zone ?? "-"} · активная сессия");
             }
         }
         else
@@ -310,8 +310,8 @@ public partial class MainWindow
                 users.TryGetValue(booking.UserId, out var user);
                 AddTodayClubItem(
                     booking.StartTime.ToString("HH:mm"),
-                    $"{computer?.Name ?? "РџРљ"} В· {user?.FullName ?? "РєР»РёРµРЅС‚"}",
-                    $"{computer?.Zone ?? "-"} В· {booking.Status}");
+                    $"{computer?.Name ?? "ПК"} · {user?.FullName ?? "клиент"}",
+                    $"{computer?.Zone ?? "-"} · {booking.Status}");
             }
         }
 
@@ -319,7 +319,7 @@ public partial class MainWindow
         {
             TodayClubList.Children.Add(new TextBlock
             {
-                Text = "РќР° СЃРµРіРѕРґРЅСЏ РЅРµС‚ Р°РєС‚РёРІРЅС‹С… Р±СЂРѕРЅРµР№ Рё СЃРµСЃСЃРёР№.",
+                Text = "На сегодня нет активных броней и сессий.",
                 Foreground = (Brush)FindResource("MutedBrush"),
                 TextWrapping = TextWrapping.Wrap
             });
@@ -340,7 +340,7 @@ public partial class MainWindow
         {
             OwnerStaffList.Children.Add(new TextBlock
             {
-                Text = "РЎРјРµРЅС‹ РїРѕРєР° РЅРµ Р·Р°РІРµРґРµРЅС‹.",
+                Text = "Смены пока не заведены.",
                 Foreground = (Brush)FindResource("MutedBrush"),
                 TextWrapping = TextWrapping.Wrap
             });
@@ -349,10 +349,10 @@ public partial class MainWindow
 
         foreach (var shift in shifts)
         {
-            var endText = shift.EndTime?.ToString("HH:mm") ?? "РѕС‚РєСЂС‹С‚Р°";
+            var endText = shift.EndTime?.ToString("HH:mm") ?? "открыта";
             OwnerStaffList.Children.Add(new TextBlock
             {
-                Text = $"{shift.EmployeeName} В· {shift.StartTime:dd.MM HH:mm}-{endText} В· РєР°СЃСЃР° {shift.CashTotal:0.##} BYN",
+                Text = $"{shift.EmployeeName} · {shift.StartTime:dd.MM HH:mm}-{endText} · касса {shift.CashTotal:0.##} BYN",
                 Foreground = (Brush)FindResource("MutedBrush"),
                 Margin = new Thickness(0, 0, 0, 10),
                 TextWrapping = TextWrapping.Wrap

@@ -1,4 +1,4 @@
-<UserControl x:Class="VictusLounge.Views.AdminDashboardView"
+﻿<UserControl x:Class="VictusLounge.Views.AdminDashboardView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="Transparent">
@@ -9,7 +9,7 @@
                                     <TextBlock Text="Админ-панель" FontSize="38" FontWeight="Black" Margin="0,7,0,8" />
                                     <TextBlock Text="Сессии, платежи, статусы ПК и быстрые операции администратора." Style="{StaticResource MutedTextStyle}" />
                                 </StackPanel>
-                                <Button Content="Новая сессия" DockPanel.Dock="Right" Style="{StaticResource PrimaryButtonStyle}" Tag="admin-new-session" Click="AdminAction_Click" Width="180" VerticalAlignment="Top" />
+                                <Button Content="Новая сессия" DockPanel.Dock="Right" Style="{StaticResource PrimaryButtonStyle}" Tag="admin-new-session" Command="{Binding Admin.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Width="180" VerticalAlignment="Top" />
                             </DockPanel>
 
                             <UniformGrid Columns="4" Margin="0,0,0,16">
@@ -37,14 +37,14 @@
                                 <Border Grid.Column="1" Style="{StaticResource PanelBorderStyle}">
                                     <StackPanel x:Name="AdminQuickOpsPanel">
                                         <TextBlock Text="Быстрые операции" FontSize="26" FontWeight="Black" Margin="0,0,0,16" />
-                                        <Button Content="Открыть карту клуба" Style="{StaticResource GhostButtonStyle}" Tag="map" Click="NavigationButton_Click" Margin="0,0,0,10" />
-                                        <Button Content="Создать бронь" Style="{StaticResource GhostButtonStyle}" Tag="booking" Click="NavigationButton_Click" Margin="0,0,0,10" />
-                                        <Button Content="Перенести бронь" Style="{StaticResource GhostButtonStyle}" Tag="admin-reschedule-booking" Click="AdminAction_Click" Margin="0,0,0,10" />
-                                        <Button Content="Отменить бронь" Style="{StaticResource GhostButtonStyle}" Tag="admin-cancel-booking" Click="AdminAction_Click" Margin="0,0,0,10" />
-                                        <Button Content="Отметить оплату" Style="{StaticResource PrimaryButtonStyle}" Tag="admin-payment" Click="AdminAction_Click" Margin="0,0,0,10" />
-                                        <Button Content="Поставить ПК в сервис" Style="{StaticResource GhostButtonStyle}" Tag="admin-service" Click="AdminAction_Click" Margin="0,0,0,10" />
-                                        <Button Content="Закрыть все оплаты" Style="{StaticResource GhostButtonStyle}" Tag="admin-settle-all" Click="AdminAction_Click" Margin="0,0,0,10" />
-                                        <Button Content="Снять сервис с ПК" Style="{StaticResource GhostButtonStyle}" Tag="admin-clear-service" Click="AdminAction_Click" Margin="0,0,0,16" />
+                                        <Button Content="Открыть карту клуба" Style="{StaticResource GhostButtonStyle}" Tag="map" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="0,0,0,10" />
+                                        <Button Content="Создать бронь" Style="{StaticResource GhostButtonStyle}" Tag="booking" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="0,0,0,10" />
+                                        <Button Content="Перенести бронь" Style="{StaticResource GhostButtonStyle}" Tag="admin-reschedule-booking" Command="{Binding Admin.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="0,0,0,10" />
+                                        <Button Content="Отменить бронь" Style="{StaticResource GhostButtonStyle}" Tag="admin-cancel-booking" Command="{Binding Admin.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="0,0,0,10" />
+                                        <Button Content="Отметить оплату" Style="{StaticResource PrimaryButtonStyle}" Tag="admin-payment" Command="{Binding Admin.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="0,0,0,10" />
+                                        <Button Content="Поставить ПК в сервис" Style="{StaticResource GhostButtonStyle}" Tag="admin-service" Command="{Binding Admin.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="0,0,0,10" />
+                                        <Button Content="Закрыть все оплаты" Style="{StaticResource GhostButtonStyle}" Tag="admin-settle-all" Command="{Binding Admin.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="0,0,0,10" />
+                                        <Button Content="Снять сервис с ПК" Style="{StaticResource GhostButtonStyle}" Tag="admin-clear-service" Command="{Binding Admin.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="0,0,0,16" />
                                         <TextBlock Text="Журнал операций" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" Margin="0,0,0,8" />
                                         <StackPanel x:Name="AdminOperationLogList">
                                             <TextBlock Text="Журнал операций пуст" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />

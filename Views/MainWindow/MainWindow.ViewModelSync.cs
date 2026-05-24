@@ -11,7 +11,7 @@ public partial class MainWindow
 
     private void UpdateCurrentBalanceText()
     {
-        BalanceAmountText.Text = FormatMoney(_balanceAmount);
+        _viewModel.Balance.CurrentBalance = _balanceAmount;
     }
 
     private void SyncCurrentUserViewModel()
@@ -21,6 +21,8 @@ public partial class MainWindow
         _viewModel.CurrentUser.Login = _currentUserLogin;
         _viewModel.CurrentUser.Role = _currentRole;
         _viewModel.CurrentUser.Balance = _balanceAmount;
+        _viewModel.Navigation.CurrentRole = _currentRole;
+        _viewModel.Balance.CurrentBalance = _balanceAmount;
     }
 
     private void SyncBookingViewModel()
@@ -34,6 +36,8 @@ public partial class MainWindow
         _viewModel.Booking.Minute = _bookingMinute;
         _viewModel.Booking.Package = _bookingPackage;
         _viewModel.Booking.IsCompanyBooking = _isCompanyBooking;
+        _viewModel.Booking.SetSelectedSeats(_selectedSeats);
+        _viewModel.Booking.RefreshSummary();
     }
 
     private void SyncAdminViewModel()

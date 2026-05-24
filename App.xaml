@@ -4,6 +4,8 @@
              xmlns:po="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options"
              StartupUri="Views/MainWindow/MainWindow.xaml">
     <Application.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+
         <Color x:Key="BgColor">#070707</Color>
         <Color x:Key="ShellColor">#181818</Color>
         <Color x:Key="PanelColor">#1F1F1F</Color>

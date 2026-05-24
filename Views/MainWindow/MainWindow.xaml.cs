@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using VictusLounge.Models;
+using VictusLounge.Services;
 using VictusLounge.ViewModels;
 
 namespace VictusLounge;
@@ -16,7 +17,7 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _toastTimer;
     private readonly DispatcherTimer _announcementTimer;
     private readonly DispatcherTimer _liveRefreshTimer;
-    private readonly MainWindowViewModel _viewModel = new();
+    private readonly MainWindowViewModel _viewModel;
     private readonly HashSet<string> _selectedSeats = [];
     private ResourceDictionary _languageStrings = new();
     private DateTime _lastAnnouncementTick;
@@ -70,9 +71,36 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
+        _viewModel = new MainWindowViewModel(
+            new AuthViewModel(new AuthService(), SignInUser, ApplyAuthViewState, SelectAuthRole),
+            new BalanceViewModel(
+                new BalanceService(),
+                code => _appliedPromoCode = code,
+                ShowStatus,
+                () =>
+                {
+                    UpdateTopupSummary();
+                    LoadDatabaseState();
+                },
+                OpenTopupOverlay,
+                ExportBalanceHistory,
+                HandleBalancePackagePurchase,
+                ShowBalancePackageStatus),
+            new DashboardViewModel(ExecuteQuickAction, SelectDashboardZone),
+            new ClientCabinetViewModel(ExecuteCabinetAction, CancelCabinetBooking, EndCabinetSession),
+            new EventsViewModel(ApplyEventFilter, JoinEvent),
+            new SettingsViewModel(theme => ApplyTheme(theme), language => ApplyLanguage(language)),
+            new NotificationCenterViewModel(ToggleNotificationCenter, MarkNotificationsRead),
+            new ShellViewModel(ExecuteGlobalSearch, HandleShellPreviewKeyDown, HandleShellPreviewMouseDown),
+            ExecuteAdminAction,
+            ExecuteAdminAction,
+            ExecuteShiftTask);
         ApplyThemeResources(_currentTheme);
         InitializeComponent();
         DataContext = _viewModel;
+        ConfigureNavigationCommands();
+        ConfigureBookingCommands();
+        ConfigureTopupCommands();
 
         _toastTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
         _toastTimer.Tick += (_, _) =>
@@ -106,17 +134,6 @@ public partial class MainWindow : Window
             _liveRefreshTimer.Start();
         };
         AnnouncementBar.SizeChanged += (_, _) => ResetAnnouncementMarquee();
-    }
-
-    private void SidebarToggle_Click(object sender, RoutedEventArgs e)
-    {
-        _isSidebarCollapsed = !_isSidebarCollapsed;
-
-        ApplySidebarState();
-
-        ShowStatus(
-            _isSidebarCollapsed ? "Меню свернуто" : "Меню раскрыто",
-            _isSidebarCollapsed ? "Навигация оставлена в компактном режиме." : "Полная навигация снова доступна.");
     }
 
     private void InitializeBookingDates()

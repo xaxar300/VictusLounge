@@ -1,4 +1,4 @@
-<UserControl x:Class="VictusLounge.Views.ClientCabinetView"
+﻿<UserControl x:Class="VictusLounge.Views.ClientCabinetView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="Transparent">
@@ -12,7 +12,7 @@
                                 <Button Content="Забронировать ПК"
                                         Style="{StaticResource PrimaryButtonStyle}"
                                         Tag="booking"
-                                        Click="NavigationButton_Click"
+                                        Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}"
                                         Visibility="Collapsed" />
                             </DockPanel>
 
@@ -69,7 +69,7 @@
                                                     <TextBlock x:Name="CabinetActiveBookingText" Text="Нет активной брони" Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,0" />
                                                 </StackPanel>
                                                 <TextBlock x:Name="CabinetActiveBookingPriceText" Grid.Column="1" Text="0 BYN" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Black" VerticalAlignment="Center" Margin="0,0,12,0" />
-                                                <Button x:Name="CabinetCancelBookingButton" Grid.Column="2" Content="Отменить" Style="{StaticResource GhostButtonStyle}" Visibility="Collapsed" Click="CabinetCancelBooking_Click" Padding="16,8" />
+                                                <Button x:Name="CabinetCancelBookingButton" Grid.Column="2" Content="Отменить" Style="{StaticResource GhostButtonStyle}" Visibility="Collapsed" Command="{Binding Cabinet.CancelBookingCommand}" Padding="16,8" />
                                             </Grid>
                                         </Border>
 
@@ -102,10 +102,10 @@
                                         <StackPanel>
                                             <TextBlock Text="Быстрые действия" FontSize="22" FontWeight="Bold" Margin="0,0,0,14" />
                                             <UniformGrid Columns="4">
-                                                <Button Content="Забронировать ПК" Style="{StaticResource GhostButtonStyle}" Tag="booking" Click="NavigationButton_Click" Margin="0,0,10,0" />
-                                                <Button Content="Пополнить баланс" Style="{StaticResource GhostButtonStyle}" Tag="topup" Click="CabinetAction_Click" Margin="0,0,10,0" />
-                                                <Button Content="Оплатить бронь" Style="{StaticResource GhostButtonStyle}" Tag="package" Click="CabinetAction_Click" Margin="0,0,10,0" />
-                                                <Button Content="События" Style="{StaticResource GhostButtonStyle}" Tag="events" Click="CabinetAction_Click" />
+                                                <Button Content="Забронировать ПК" Style="{StaticResource GhostButtonStyle}" Tag="booking" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="0,0,10,0" />
+                                                <Button Content="Пополнить баланс" Style="{StaticResource GhostButtonStyle}" Tag="topup" Command="{Binding Cabinet.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="0,0,10,0" />
+                                                <Button Content="Оплатить бронь" Style="{StaticResource GhostButtonStyle}" Tag="package" Command="{Binding Cabinet.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="0,0,10,0" />
+                                                <Button Content="События" Style="{StaticResource GhostButtonStyle}" Tag="events" Command="{Binding Cabinet.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" />
                                             </UniformGrid>
                                         </StackPanel>
                                     </Border>
@@ -173,7 +173,7 @@
                                                         Content="Завершить сессию"
                                                         Style="{StaticResource GhostButtonStyle}"
                                                         Visibility="Collapsed"
-                                                        Click="CabinetEndSession_Click"
+                                                        Command="{Binding Cabinet.EndSessionCommand}"
                                                         Margin="0,16,0,0"
                                                         HorizontalAlignment="Right"
                                                         Padding="18,8" />

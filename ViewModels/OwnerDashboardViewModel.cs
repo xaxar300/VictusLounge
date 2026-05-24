@@ -1,7 +1,11 @@
+using System;
+using System.Windows.Input;
+
 namespace VictusLounge.ViewModels;
 
 public sealed class OwnerDashboardViewModel : ViewModelBase
 {
+    private readonly Action<string>? _executeAction;
     private int _revenue;
     private int _load;
     private int _averageCheck;
@@ -11,6 +15,20 @@ public sealed class OwnerDashboardViewModel : ViewModelBase
     private int _royalRate = 24;
     private int _bootcampRate = 50;
     private string _demandMode = "normal";
+
+    public OwnerDashboardViewModel(Action<string>? executeAction = null)
+    {
+        _executeAction = executeAction;
+        ActionCommand = new RelayCommand(parameter =>
+        {
+            if (parameter is string action && !string.IsNullOrWhiteSpace(action))
+            {
+                _executeAction?.Invoke(action);
+            }
+        });
+    }
+
+    public ICommand ActionCommand { get; }
 
     public int Revenue
     {

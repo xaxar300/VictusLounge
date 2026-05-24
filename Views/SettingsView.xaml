@@ -27,8 +27,8 @@
                                         <TextBlock x:Name="SettingsThemeTitleText" Text="Тема приложения" FontSize="24" FontWeight="Black" />
                                         <TextBlock x:Name="SettingsThemeDescriptionText" Grid.Row="1" Text="Black Gold оставляет премиальный стиль клуба, Graphite дает более холодный рабочий вид." Style="{StaticResource MutedTextStyle}" Margin="0,8,0,20" />
                                         <UniformGrid Grid.Row="2" Columns="2">
-                                            <Button x:Name="BlackGoldThemeButton" Content="Black Gold" Style="{StaticResource PrimaryButtonStyle}" Tag="BlackGold" Click="ThemeButton_Click" Margin="0,0,10,0" />
-                                            <Button x:Name="GraphiteThemeButton" Content="Graphite" Style="{StaticResource GhostButtonStyle}" Tag="Graphite" Click="ThemeButton_Click" />
+                                            <Button x:Name="BlackGoldThemeButton" Content="Black Gold" Style="{StaticResource PrimaryButtonStyle}" Tag="BlackGold" Command="{Binding Settings.ThemeCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="0,0,10,0" />
+                                            <Button x:Name="GraphiteThemeButton" Content="Graphite" Style="{StaticResource GhostButtonStyle}" Tag="Graphite" Command="{Binding Settings.ThemeCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" />
                                         </UniformGrid>
                                     </Grid>
                                 </Border>
@@ -43,8 +43,8 @@
                                         <TextBlock x:Name="SettingsLanguageTitleText" Text="Язык интерфейса" FontSize="24" FontWeight="Black" />
                                         <TextBlock x:Name="SettingsLanguageDescriptionText" Grid.Row="1" Text="Переключает основные элементы навигации и страницу настроек." Style="{StaticResource MutedTextStyle}" Margin="0,8,0,20" />
                                         <UniformGrid Grid.Row="2" Columns="2">
-                                            <Button x:Name="RuLanguageButton" Content="RU" Style="{StaticResource PrimaryButtonStyle}" Tag="ru" Click="LanguageButton_Click" Margin="0,0,10,0" />
-                                            <Button x:Name="EnLanguageButton" Content="EN" Style="{StaticResource GhostButtonStyle}" Tag="en" Click="LanguageButton_Click" />
+                                            <Button x:Name="RuLanguageButton" Content="RU" Style="{StaticResource PrimaryButtonStyle}" Tag="ru" Command="{Binding Settings.LanguageCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="0,0,10,0" />
+                                            <Button x:Name="EnLanguageButton" Content="EN" Style="{StaticResource GhostButtonStyle}" Tag="en" Command="{Binding Settings.LanguageCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" />
                                         </UniformGrid>
                                     </Grid>
                                 </Border>

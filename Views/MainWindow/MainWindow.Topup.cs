@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -18,6 +18,16 @@ namespace VictusLounge;
 
 public partial class MainWindow
 {
+    private void ConfigureTopupCommands()
+    {
+        _viewModel.Topup.ConfigureActions(
+            CloseTopupOverlay,
+            ConfirmTopup,
+            SelectTopupMethod,
+            SelectTopupAmountPreset,
+            UpdateTopupSummary);
+    }
+
     private void OpenTopupOverlay()
     {
         TopupOverlay.Visibility = Visibility.Visible;
@@ -28,93 +38,60 @@ public partial class MainWindow
         TopupAmountBox.SelectAll();
     }
 
-    private void CloseTopupOverlay_Click(object sender, RoutedEventArgs e)
-    {
-        CloseTopupOverlay();
-    }
-
     private void CloseTopupOverlay()
     {
         TopupOverlay.Visibility = Visibility.Collapsed;
         ShellRoot.Effect = null;
-        TopupErrorText.Visibility = Visibility.Collapsed;
-    }
-
-    private void TopupMethod_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is not Button button || button.Tag is not string method)
-        {
-            return;
-        }
-
-        SelectTopupMethod(method);
+        _viewModel.Topup.ClearError();
     }
 
     private void SelectTopupMethod(string method)
     {
         _topupMethod = method;
+        _viewModel.Topup.Method = method;
         TopupCardMethodButton.Style = (Style)FindResource(method == "card" ? "PrimaryButtonStyle" : "GhostButtonStyle");
         TopupEripMethodButton.Style = (Style)FindResource(method == "erip" ? "PrimaryButtonStyle" : "GhostButtonStyle");
         TopupCashMethodButton.Style = (Style)FindResource(method == "cash" ? "PrimaryButtonStyle" : "GhostButtonStyle");
-        TopupCardFields.Visibility = method == "card" ? Visibility.Visible : Visibility.Collapsed;
-        TopupMethodHintText.Text = method switch
+        _viewModel.Topup.MethodHint = method switch
         {
-            "erip" => "Р•Р РРџ: Р±СѓРґРµС‚ СЃРѕР·РґР°РЅ РєРѕРґ РѕРїР»Р°С‚С‹. Р‘Р°Р»Р°РЅСЃ РїРѕРїРѕР»РЅРёС‚СЃСЏ РїРѕСЃР»Рµ РІРЅРµС€РЅРµРіРѕ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ.",
-            "cash" => "РќР°Р»РёС‡РЅС‹Рµ: СЃРѕР·РґР°РµС‚СЃСЏ Р·Р°СЏРІРєР° РґР»СЏ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР° РєР°СЃСЃС‹ Р±РµР· РјРіРЅРѕРІРµРЅРЅРѕРіРѕ Р·Р°С‡РёСЃР»РµРЅРёСЏ.",
-            _ => "РљР°СЂС‚Р°: РїР»Р°С‚РµР¶ РїСЂРѕРІРµСЂСЏРµС‚СЃСЏ РїРѕ РЅРѕРјРµСЂСѓ РєР°СЂС‚С‹ Рё СЃСЂР°Р·Сѓ Р·Р°С‡РёСЃР»СЏРµС‚СЃСЏ РЅР° Р±Р°Р»Р°РЅСЃ."
+            "erip" => "ЕРИП: будет создан код оплаты. Баланс пополнится после внешнего подтверждения.",
+            "cash" => "Наличные: создается заявка для администратора кассы без мгновенного зачисления.",
+            _ => "Карта: платеж проверяется по номеру карты и сразу зачисляется на баланс."
         };
-        ConfirmTopupButton.Content = method == "card" ? "РџРѕРїРѕР»РЅРёС‚СЊ" : "РЎРѕР·РґР°С‚СЊ Р·Р°СЏРІРєСѓ";
-        TopupErrorText.Visibility = Visibility.Collapsed;
+        _viewModel.Topup.ConfirmText = method == "card" ? "Пополнить" : "Создать заявку";
+        _viewModel.Topup.ClearError();
         UpdateTopupSummary();
     }
 
-    private void TopupAmountPreset_Click(object sender, RoutedEventArgs e)
+    private void SelectTopupAmountPreset(string amount)
     {
-        if (sender is Button button && button.Tag is string amount)
-        {
-            TopupAmountBox.Text = amount;
-            UpdateTopupSummary();
-        }
-    }
-
-    private void TopupAmountBox_TextChanged(object sender, TextChangedEventArgs e)
-    {
-        if (TopupSummaryText is null)
-        {
-            return;
-        }
-
+        _viewModel.Topup.AmountText = amount;
         UpdateTopupSummary();
     }
 
     private void UpdateTopupSummary()
     {
-        if (TopupSummaryText is null)
-        {
-            return;
-        }
-
         if (!TryReadTopupAmount(out var amount))
         {
-            TopupSummaryText.Text = "0 BYN";
-            TopupBonusText.Text = "Р’РІРµРґРёС‚Рµ СЃСѓРјРјСѓ Р±РѕР»СЊС€Рµ 0";
+            _viewModel.Topup.SummaryText = "0 BYN";
+            _viewModel.Topup.BonusText = "Введите сумму больше 0";
             return;
         }
 
         var bonus = CalculateTopupBonus(amount);
         var tier = GetCurrentClientTier();
-        TopupSummaryText.Text = $"{amount:0.##} BYN";
-        TopupBonusText.Text = bonus > 0
+        _viewModel.Topup.SummaryText = $"{amount:0.##} BYN";
+        _viewModel.Topup.BonusText = bonus > 0
             ? IsPromoApplied()
-                ? $"+{bonus:0.##} Р±РѕРЅСѓСЃРѕРІ РїРѕ РїСЂРѕРјРѕРєРѕРґСѓ"
-                : $"+{bonus:0.##} Р±РѕРЅСѓСЃРѕРІ РїРѕ СЃС‚Р°С‚СѓСЃСѓ {tier}"
-            : "Р‘РѕРЅСѓСЃС‹ РЅР°С‡РёСЃР»СЏСЋС‚СЃСЏ РѕС‚ 50 BYN";
+                ? $"+{bonus:0.##} бонусов по промокоду"
+                : $"+{bonus:0.##} бонусов по статусу {tier}"
+            : "Бонусы начисляются от 50 BYN";
     }
 
     private bool TryReadTopupAmount(out decimal amount)
     {
         return decimal.TryParse(
-            TopupAmountBox.Text.Replace(',', '.'),
+            _viewModel.Topup.AmountText.Replace(',', '.'),
             System.Globalization.NumberStyles.Number,
             System.Globalization.CultureInfo.InvariantCulture,
             out amount) && amount > 0;
@@ -166,7 +143,7 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("РћС€РёР±РєР° РїРѕРїРѕР»РЅРµРЅРёСЏ Р±Р°Р»Р°РЅСЃР°", ex);
+            ShowDatabaseError("Ошибка пополнения баланса", ex);
             return false;
         }
     }
@@ -196,48 +173,44 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("РћС€РёР±РєР° Р·Р°СЏРІРєРё РЅР° РїРѕРїРѕР»РЅРµРЅРёРµ", ex);
+            ShowDatabaseError("Ошибка заявки на пополнение", ex);
             return false;
         }
     }
 
-    private void ConfirmTopup_Click(object sender, RoutedEventArgs e)
+    private void ConfirmTopup()
     {
         if (!TryReadTopupAmount(out var amount))
         {
-            TopupErrorText.Text = "Р’РІРµРґРёС‚Рµ РєРѕСЂСЂРµРєС‚РЅСѓСЋ СЃСѓРјРјСѓ РїРѕРїРѕР»РЅРµРЅРёСЏ.";
-            TopupErrorText.Visibility = Visibility.Visible;
+            _viewModel.Topup.ShowError("Введите корректную сумму пополнения.");
             return;
         }
 
         if (_topupMethod != "card")
         {
-            var requestType = _topupMethod == "erip" ? "Р•Р РРџ" : "РЅР°Р»РёС‡РЅС‹РјРё";
+            var requestType = _topupMethod == "erip" ? "ЕРИП" : "наличными";
             if (!SavePendingTopupRequest(amount, _topupMethod))
             {
-                TopupErrorText.Text = "РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ Р·Р°СЏРІРєСѓ РІ Р±Р°Р·Рµ РґР°РЅРЅС‹С….";
-                TopupErrorText.Visibility = Visibility.Visible;
+                _viewModel.Topup.ShowError("Не удалось сохранить заявку в базе данных.");
                 return;
             }
 
             CloseTopupOverlay();
             LoadDatabaseState();
-            ShowImportantStatus("Р—Р°СЏРІРєР° СЃРѕР·РґР°РЅР°", $"РџРѕРїРѕР»РЅРµРЅРёРµ {requestType} РЅР° {amount:0.##} BYN РѕР¶РёРґР°РµС‚ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ. Р‘Р°Р»Р°РЅСЃ РїРѕРєР° РЅРµ РёР·РјРµРЅРµРЅ.");
+            ShowImportantStatus("Заявка создана", $"Пополнение {requestType} на {amount:0.##} BYN ожидает подтверждения. Баланс пока не изменен.");
             return;
         }
 
-        if (!IsValidPaymentCardNumber(TopupCardNumberBox.Text))
+        if (!IsValidPaymentCardNumber(_viewModel.Topup.CardNumber))
         {
-            TopupErrorText.Text = "Р’РІРµРґРёС‚Рµ РєРѕСЂСЂРµРєС‚РЅС‹Р№ РЅРѕРјРµСЂ РєР°СЂС‚С‹.";
-            TopupErrorText.Visibility = Visibility.Visible;
+            _viewModel.Topup.ShowError("Введите корректный номер карты.");
             return;
         }
 
         var bonus = CalculateTopupBonus(amount);
         if (!SaveBalanceTopup(amount, bonus))
         {
-            TopupErrorText.Text = "РќРµ СѓРґР°Р»РѕСЃСЊ РѕР±РЅРѕРІРёС‚СЊ Р±Р°Р»Р°РЅСЃ РІ Р±Р°Р·Рµ РґР°РЅРЅС‹С….";
-            TopupErrorText.Visibility = Visibility.Visible;
+            _viewModel.Topup.ShowError("Не удалось обновить баланс в базе данных.");
             return;
         }
 
@@ -246,7 +219,7 @@ public partial class MainWindow
         RefreshAdminUx();
         SyncCurrentUserViewModel();
         CloseTopupOverlay();
-        ShowImportantStatus("Р‘Р°Р»Р°РЅСЃ РїРѕРїРѕР»РЅРµРЅ", $"РљР°СЂС‚РѕР№ Р·Р°С‡РёСЃР»РµРЅРѕ {amount:0.##} BYN. Р‘РѕРЅСѓСЃС‹: +{bonus:0.##}. РќРѕРІС‹Р№ Р±Р°Р»Р°РЅСЃ: {_balanceAmount:0.##} BYN.");
+        ShowImportantStatus("Баланс пополнен", $"Картой зачислено {amount:0.##} BYN. Бонусы: +{bonus:0.##}. Новый баланс: {_balanceAmount:0.##} BYN.");
     }
 
 }

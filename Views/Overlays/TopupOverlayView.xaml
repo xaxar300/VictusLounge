@@ -14,13 +14,13 @@
                             <TextBlock Text="BALANCE TOP-UP" Style="{StaticResource KickerTextStyle}" />
                             <TextBlock Text="Пополнение баланса" FontSize="28" FontWeight="Black" Margin="0,6,0,0" />
                         </StackPanel>
-                        <Button Content="×"
+                        <Button Content="?"
                                 DockPanel.Dock="Right"
                                 Style="{StaticResource GhostButtonStyle}"
                                 Width="38"
                                 MinHeight="34"
                                 Padding="0"
-                                Click="CloseTopupOverlay_Click" />
+                                Command="{Binding Topup.CloseCommand}" />
                     </DockPanel>
 
                     <TextBlock Text="Сумма пополнения" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,7" />
@@ -32,17 +32,17 @@
                             Padding="12,0"
                             Margin="0,0,0,10">
                         <TextBox x:Name="TopupAmountBox"
-                                 Text="50"
+                                 Text="{Binding Topup.AmountText, UpdateSourceTrigger=PropertyChanged}"
                                  FontWeight="Bold"
-                                 TextChanged="TopupAmountBox_TextChanged"
+                                 
                                  VerticalContentAlignment="Center" />
                     </Border>
 
                     <UniformGrid Columns="4" Margin="0,0,0,14">
-                        <Button Content="25 BYN" Style="{StaticResource GhostButtonStyle}" Tag="25" Click="TopupAmountPreset_Click" MinHeight="34" Padding="0" Margin="0,0,8,0" />
-                        <Button Content="50 BYN" Style="{StaticResource PrimaryButtonStyle}" Tag="50" Click="TopupAmountPreset_Click" MinHeight="34" Padding="0" Margin="0,0,8,0" />
-                        <Button Content="100 BYN" Style="{StaticResource GhostButtonStyle}" Tag="100" Click="TopupAmountPreset_Click" MinHeight="34" Padding="0" Margin="0,0,8,0" />
-                        <Button Content="200 BYN" Style="{StaticResource GhostButtonStyle}" Tag="200" Click="TopupAmountPreset_Click" MinHeight="34" Padding="0" />
+                        <Button Content="25 BYN" Style="{StaticResource GhostButtonStyle}" Tag="25" Command="{Binding Topup.SelectAmountPresetCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="34" Padding="0" Margin="0,0,8,0" />
+                        <Button Content="50 BYN" Style="{StaticResource PrimaryButtonStyle}" Tag="50" Command="{Binding Topup.SelectAmountPresetCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="34" Padding="0" Margin="0,0,8,0" />
+                        <Button Content="100 BYN" Style="{StaticResource GhostButtonStyle}" Tag="100" Command="{Binding Topup.SelectAmountPresetCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="34" Padding="0" Margin="0,0,8,0" />
+                        <Button Content="200 BYN" Style="{StaticResource GhostButtonStyle}" Tag="200" Command="{Binding Topup.SelectAmountPresetCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="34" Padding="0" />
                     </UniformGrid>
 
                     <TextBlock Text="Способ пополнения" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,8" />
@@ -51,22 +51,23 @@
                                 Content="Карта"
                                 Style="{StaticResource PrimaryButtonStyle}"
                                 Tag="card"
-                                Click="TopupMethod_Click"
+                                Command="{Binding Topup.SelectMethodCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}"
                                 Margin="0,0,8,0" />
                         <Button x:Name="TopupEripMethodButton"
                                 Content="ЕРИП"
                                 Style="{StaticResource GhostButtonStyle}"
                                 Tag="erip"
-                                Click="TopupMethod_Click"
+                                Command="{Binding Topup.SelectMethodCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}"
                                 Margin="0,0,8,0" />
                         <Button x:Name="TopupCashMethodButton"
                                 Content="Наличные"
                                 Style="{StaticResource GhostButtonStyle}"
                                 Tag="cash"
-                                Click="TopupMethod_Click" />
+                                Command="{Binding Topup.SelectMethodCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" />
                     </UniformGrid>
 
                     <Border x:Name="TopupCardFields"
+                            Visibility="{Binding Topup.CardFieldsVisibility}"
                             CornerRadius="12"
                             BorderBrush="{DynamicResource LineSoftBrush}"
                             BorderThickness="1"
@@ -82,7 +83,7 @@
                                     <ColumnDefinition Width="0.7*" />
                                 </Grid.ColumnDefinitions>
                                 <Border Height="40" CornerRadius="11" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Background="{DynamicResource PanelBrush}" Padding="10,0" Margin="0,0,8,0">
-                                    <TextBox x:Name="TopupCardNumberBox" Text="4242 4242 4242 4242" VerticalContentAlignment="Center" />
+                                    <TextBox x:Name="TopupCardNumberBox" Text="{Binding Topup.CardNumber, UpdateSourceTrigger=PropertyChanged}" VerticalContentAlignment="Center" />
                                 </Border>
                                 <Border Grid.Column="1" Height="40" CornerRadius="11" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Background="{DynamicResource PanelBrush}" Padding="10,0" Margin="0,0,8,0">
                                     <TextBox Text="12/28" VerticalContentAlignment="Center" />
@@ -95,7 +96,7 @@
                     </Border>
 
                     <TextBlock x:Name="TopupMethodHintText"
-                               Text="Оплата картой проверяется и зачисляется сразу. ЕРИП и наличные создают заявку без зачисления."
+                               Text="{Binding Topup.MethodHint}"
                                Style="{StaticResource MutedTextStyle}"
                                Margin="0,0,0,10" />
                     <Border CornerRadius="12"
@@ -111,26 +112,27 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel>
                                 <TextBlock Text="Итого к зачислению" FontWeight="Bold" />
-                                <TextBlock x:Name="TopupBonusText" Text="+5 бонусов по Gold" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,4,0,0" />
+                                <TextBlock x:Name="TopupBonusText" Text="{Binding Topup.BonusText}" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,4,0,0" />
                             </StackPanel>
-                            <TextBlock x:Name="TopupSummaryText" Grid.Column="1" Text="50 BYN" Foreground="{DynamicResource GoldLightBrush}" FontSize="22" FontWeight="Black" VerticalAlignment="Center" />
+                            <TextBlock x:Name="TopupSummaryText" Grid.Column="1" Text="{Binding Topup.SummaryText}" Foreground="{DynamicResource GoldLightBrush}" FontSize="22" FontWeight="Black" VerticalAlignment="Center" />
                         </Grid>
                     </Border>
                     <TextBlock x:Name="TopupErrorText"
+                               Text="{Binding Topup.ErrorText}"
                                Foreground="{DynamicResource DangerBrush}"
                                TextWrapping="Wrap"
                                Margin="0,0,0,10"
-                               Visibility="Collapsed" />
+                               Visibility="{Binding Topup.ErrorVisibility}" />
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Content="Отмена"
                                 Style="{StaticResource GhostButtonStyle}"
-                                Click="CloseTopupOverlay_Click"
+                                Command="{Binding Topup.CloseCommand}"
                                 Margin="0,0,10,0" />
                         <Button x:Name="ConfirmTopupButton"
-                                Content="Пополнить"
+                                Content="{Binding Topup.ConfirmText}"
                                 Style="{StaticResource PrimaryButtonStyle}"
-                                Click="ConfirmTopup_Click" />
+                                Command="{Binding Topup.ConfirmCommand}" />
                     </StackPanel>
                 </StackPanel>
             </Border>

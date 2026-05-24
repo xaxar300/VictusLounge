@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using VictusLounge.Data;
@@ -51,7 +51,7 @@ public partial class MainWindow
             UpdateDashboardSummary(unitOfWork);
             if (IsLoaded)
             {
-                AdminPaymentQueueHintText.Text = $"{pendingBookings} Р±СЂРѕРЅРµР№, {pendingSessions} СЃРµСЃСЃРёР№, {pendingTopups} РїРѕРїРѕР»РЅРµРЅРёР№";
+                AdminPaymentQueueHintText.Text = $"{pendingBookings} броней, {pendingSessions} сессий, {pendingTopups} пополнений";
             }
 
             if (_currentUserId > 0)
@@ -85,7 +85,7 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            ShowDatabaseError("РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё Р‘Р”", ex);
+            ShowDatabaseError("Ошибка загрузки БД", ex);
             // If SQL Server is unavailable, the screen keeps the last loaded values.
         }
     }
@@ -94,7 +94,7 @@ public partial class MainWindow
     {
         if (IsLoaded)
         {
-            ShowStatus(title, $"РќРµ СѓРґР°Р»РѕСЃСЊ РІС‹РїРѕР»РЅРёС‚СЊ РѕРїРµСЂР°С†РёСЋ SQL Server. РџСЂРѕРІРµСЂСЊ СЃС‚СЂРѕРєСѓ РїРѕРґРєР»СЋС‡РµРЅРёСЏ Рё РґРѕСЃС‚СѓРїРЅРѕСЃС‚СЊ СЃРµСЂРІРµСЂР°. {ex.Message}");
+            ShowStatus(title, $"Не удалось выполнить операцию SQL Server. Проверь строку подключения и доступность сервера. {ex.Message}");
         }
         else
         {
@@ -117,7 +117,7 @@ public partial class MainWindow
             return true;
         }
 
-        ShowStatus("Р’РѕР№РґРёС‚Рµ РІ СЃРёСЃС‚РµРјСѓ", "РћРїРµСЂР°С†РёСЏ РЅРµ СЃРѕС…СЂР°РЅРµРЅР°: РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РЅРµ Р°РІС‚РѕСЂРёР·РѕРІР°РЅ.");
+        ShowStatus("Войдите в систему", "Операция не сохранена: пользователь не авторизован.");
         return false;
     }
 

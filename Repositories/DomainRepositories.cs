@@ -267,7 +267,7 @@ public class GameSessionRepository : Repository<GameSession>, IGameSessionReposi
             })
             .FirstOrDefault();
 
-        computerName = sessionInfo?.ComputerName ?? "РґСЂСѓРіРѕРј РџРљ";
+        computerName = sessionInfo?.ComputerName ?? "другом ПК";
         return sessionInfo is not null;
     }
 
