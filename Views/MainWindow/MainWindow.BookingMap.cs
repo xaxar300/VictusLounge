@@ -203,7 +203,7 @@ public partial class MainWindow
 
     private void SelectBookingMinute(int minute)
     {
-        if (!IsMinuteAllowedForCurrentPackage(minute))
+        if (!BookingRules.IsMinuteAllowed(_bookingPackage, minute))
         {
             ShowStatus("Минуты недоступны", "Пакетные тарифы стартуют ровно в выбранный час.");
             return;
@@ -223,7 +223,7 @@ public partial class MainWindow
                 _bookingPackage = "night";
                 _bookingDuration = 8;
                 _bookingMinute = 0;
-                if (!IsNightPackHour(_bookingHour))
+                if (!BookingRules.IsNightPackHour(_bookingHour))
                 {
                     _bookingHour = 22;
                 }
@@ -232,7 +232,7 @@ public partial class MainWindow
                 _bookingPackage = "morning";
                 _bookingDuration = 3;
                 _bookingMinute = 0;
-                if (!IsMorningPackHour(_bookingHour))
+                if (!BookingRules.IsMorningPackHour(_bookingHour))
                 {
                     _bookingHour = 6;
                 }
@@ -276,7 +276,7 @@ public partial class MainWindow
         {
             _selectedSeats.Clear();
         }
-        else if (!_selectedSeats.Contains(seat) && _selectedSeats.Count >= 5)
+        else if (!_selectedSeats.Contains(seat) && _selectedSeats.Count >= BookingRules.MaxCompanySeats)
         {
             _viewModel.Booking.ShowError("Групповая бронь ограничена 5 ПК.");
             ShowStatus("Лимит брони", "Для компании можно выбрать максимум 5 ПК.");
@@ -296,37 +296,25 @@ public partial class MainWindow
 
     private void ConfirmBooking()
     {
-        if (_selectedSeats.Count == 0)
+        var start = _bookingDate.Date.AddHours(_bookingHour).AddMinutes(_bookingMinute);
+        var end = start.AddHours(_bookingDuration);
+        var validation = BookingRules.Validate(
+            _selectedSeats.ToArray(),
+            _isCompanyBooking,
+            start,
+            end,
+            _bookingPackage,
+            _bookingDuration,
+            DateTime.Now);
+        if (!validation.Success)
         {
-            _viewModel.Booking.ShowError("Выберите хотя бы один свободный ПК перед подтверждением.");
-            ShowStatus("Нужен ПК", "Выберите хотя бы один свободный ПК перед подтверждением.");
-            return;
-        }
-
-        if (!_isCompanyBooking && _selectedSeats.Count > 1)
-        {
-            _viewModel.Booking.ShowError("Одиночная бронь может содержать только 1 ПК.");
-            ShowStatus("Лимит брони", "Переключитесь на групповую бронь, если нужно несколько ПК.");
-            return;
-        }
-
-        if (_isCompanyBooking && _selectedSeats.Count > 5)
-        {
-            _viewModel.Booking.ShowError("Групповая бронь ограничена 5 ПК.");
-            ShowStatus("Лимит брони", "Уберите лишние ПК перед подтверждением.");
+            var message = validation.ErrorMessage ?? "Бронь не прошла проверку правил.";
+            _viewModel.Booking.ShowError(message);
+            ShowStatus("Проверьте бронь", message);
             return;
         }
 
         _viewModel.Booking.ClearError();
-
-        var start = _bookingDate.Date.AddHours(_bookingHour).AddMinutes(_bookingMinute);
-        var end = start.AddHours(_bookingDuration);
-        if (start <= DateTime.Now.AddMinutes(-15) || end <= start)
-        {
-            _viewModel.Booking.ShowError("Нельзя создать бронь на прошедшее или некорректное время.");
-            ShowStatus("Некорректное время", "Выберите актуальное время начала и длительность брони.");
-            return;
-        }
 
         _viewModel.Booking.RefreshConfirmationText();
 
@@ -449,7 +437,7 @@ public partial class MainWindow
                 Tag = hour,
                 Style = (Style)FindResource(hour == _bookingHour ? "SelectedTimeButtonStyle" : "TimeButtonStyle"),
                 Margin = new Thickness(0, 0, 8, 8),
-                IsEnabled = IsHourAllowedForCurrentPackage(hour)
+                IsEnabled = BookingRules.IsHourAllowed(_bookingPackage, hour)
             };
             if (!button.IsEnabled)
             {
@@ -483,7 +471,7 @@ public partial class MainWindow
             if (child is Button button)
             {
                 var hour = int.TryParse(button.Tag?.ToString(), out var parsedHour) ? parsedHour : -1;
-                button.IsEnabled = IsHourAllowedForCurrentPackage(hour);
+                button.IsEnabled = BookingRules.IsHourAllowed(_bookingPackage, hour);
                 button.Style = (Style)FindResource(!button.IsEnabled
                     ? "UnavailablePcButtonStyle"
                     : hour == _bookingHour ? "SelectedTimeButtonStyle" : "TimeButtonStyle");
@@ -495,7 +483,7 @@ public partial class MainWindow
             if (child is Button button)
             {
                 var minute = int.TryParse(button.Tag?.ToString(), out var parsedMinute) ? parsedMinute : -1;
-                button.IsEnabled = IsMinuteAllowedForCurrentPackage(minute);
+                button.IsEnabled = BookingRules.IsMinuteAllowed(_bookingPackage, minute);
                 button.Style = (Style)FindResource(!button.IsEnabled
                     ? "UnavailablePcButtonStyle"
                     : minute == _bookingMinute ? "SelectedTimeButtonStyle" : "TimeButtonStyle");
@@ -579,39 +567,9 @@ public partial class MainWindow
         return $"{_bookingHour:00}:{_bookingMinute:00}";
     }
 
-    private bool IsHourAllowedForCurrentPackage(int hour)
-    {
-        return _bookingPackage switch
-        {
-            "night" => IsNightPackHour(hour),
-            "morning" => IsMorningPackHour(hour),
-            _ => true
-        };
-    }
-
-    private bool IsMinuteAllowedForCurrentPackage(int minute)
-    {
-        return _bookingPackage == "regular" || minute == 0;
-    }
-
-    private static bool IsNightPackHour(int hour)
-    {
-        return hour is 22 or 23 or 0;
-    }
-
-    private static bool IsMorningPackHour(int hour)
-    {
-        return hour is 6 or 7 or 8;
-    }
-
     private string GetPackageDescription()
     {
-        return _bookingPackage switch
-        {
-            "night" => "Night Pack: 8 часов, старт только 22:00, 23:00 или 00:00, скидка 25%.",
-            "morning" => "Morning Pack: 3 часа, старт только 06:00, 07:00 или 08:00, скидка 20%.",
-            _ => $"Обычный тариф: {_bookingDuration} ч, скидка Gold 10%."
-        };
+        return BookingRules.GetPackageDescription(_bookingPackage, _bookingDuration);
     }
 
     private void UpdateBookingSeatButtons()

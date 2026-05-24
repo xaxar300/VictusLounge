@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
+using VictusLounge.Services;
+using VictusLounge.Services.Pricing;
 
 namespace VictusLounge.ViewModels;
 
@@ -287,9 +289,10 @@ public sealed class BookingStateViewModel : ViewModelBase
         var end = start.AddHours(Duration);
         var seatsCount = Math.Max(_selectedSeats.Length, 1);
         var baseTotal = Tariff * Duration * seatsCount;
-        var total = baseTotal * GetDiscountFactor();
+        var pricingStrategy = BookingPricingStrategyFactory.Create(Package);
+        var total = pricingStrategy.Calculate(new BookingPriceContext(Tariff, Duration, seatsCount));
         var discount = baseTotal - total;
-        var tariffLabel = GetTariffLabel();
+        var tariffLabel = pricingStrategy.Label;
 
         SeatsText = _selectedSeats.Length == 0 ? "—" : string.Join(", ", _selectedSeats);
         TimeText = $"{start:HH:mm}-{end:HH:mm}";
@@ -327,33 +330,8 @@ public sealed class BookingStateViewModel : ViewModelBase
         }
     }
 
-    private decimal GetDiscountFactor()
-    {
-        return Package switch
-        {
-            "night" => 0.75m,
-            "morning" => 0.8m,
-            _ => 0.9m
-        };
-    }
-
-    private string GetTariffLabel()
-    {
-        return Package switch
-        {
-            "night" => "Night Pack -25%",
-            "morning" => "Morning Pack -20%",
-            _ => "Gold -10%"
-        };
-    }
-
     private string GetPackageDescription()
     {
-        return Package switch
-        {
-            "night" => "Night Pack: 8 часов, старт только 22:00, 23:00 или 00:00, скидка 25%.",
-            "morning" => "Morning Pack: 3 часа, старт только 06:00, 07:00 или 08:00, скидка 20%.",
-            _ => $"Обычный тариф: {Duration} ч, скидка Gold 10%."
-        };
+        return BookingRules.GetPackageDescription(Package, Duration);
     }
 }
