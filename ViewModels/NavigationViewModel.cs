@@ -44,9 +44,12 @@ public sealed class NavigationViewModel : ViewModelBase
         {
             if (SetProperty(ref _currentRole, value))
             {
+                OnPropertyChanged(nameof(CanOpenDashboard));
+                OnPropertyChanged(nameof(CanOpenMap));
                 OnPropertyChanged(nameof(CanOpenBooking));
                 OnPropertyChanged(nameof(CanOpenCabinet));
                 OnPropertyChanged(nameof(CanOpenBalance));
+                OnPropertyChanged(nameof(CanOpenEvents));
                 OnPropertyChanged(nameof(CanOpenAdmin));
                 OnPropertyChanged(nameof(CanOpenShift));
                 OnPropertyChanged(nameof(CanOpenOwner));
@@ -57,9 +60,12 @@ public sealed class NavigationViewModel : ViewModelBase
 
     public string WorkspaceTitle => $"{GetRoleTitle(CurrentRole)} workspace";
 
-    public bool CanOpenBooking => CurrentRole != "owner";
+    public bool CanOpenDashboard => CurrentRole == "client";
+    public bool CanOpenMap => CurrentRole is "client" or "admin";
+    public bool CanOpenBooking => CurrentRole == "client";
     public bool CanOpenCabinet => CurrentRole == "client";
-    public bool CanOpenBalance => CurrentRole is "client" or "admin";
+    public bool CanOpenBalance => CurrentRole == "client";
+    public bool CanOpenEvents => CurrentRole == "client";
     public bool CanOpenAdmin => CurrentRole is "admin" or "owner";
     public bool CanOpenShift => CurrentRole is "admin" or "owner";
     public bool CanOpenOwner => CurrentRole == "owner";

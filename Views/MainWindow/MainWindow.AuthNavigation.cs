@@ -60,7 +60,8 @@ public partial class MainWindow
         LoadDatabaseState();
         UpdateCurrentUserUi();
         UpdateAuthRoleButtons();
-        ApplyRoleAccess();
+        NavigateTo(GetDefaultViewForRole(_currentRole));
+        ApplySidebarState(false);
         ShowStatus("Вход выполнен", $"{_currentUserFullName}: открыт режим {GetRoleTitle(_currentRole)}.");
     }
 
@@ -166,7 +167,7 @@ public partial class MainWindow
     {
         if (navigateIfNeeded && !IsViewAllowedForRole(_currentView))
         {
-            NavigateTo("dashboard");
+            NavigateTo(GetDefaultViewForRole(_currentRole));
         }
 
         ApplySidebarState(false);
@@ -177,9 +178,19 @@ public partial class MainWindow
         return _currentRole switch
         {
             "client" => view is "dashboard" or "map" or "booking" or "cabinet" or "balance" or "events" or "settings",
-            "admin" => view is "dashboard" or "map" or "booking" or "balance" or "events" or "admin" or "shift" or "settings",
-            "owner" => view is "dashboard" or "map" or "events" or "admin" or "shift" or "owner" or "settings",
-            _ => view is "dashboard" or "settings"
+            "admin" => view is "map" or "admin" or "shift" or "settings",
+            "owner" => view is "owner" or "admin" or "shift" or "settings",
+            _ => view is "settings"
+        };
+    }
+
+    private static string GetDefaultViewForRole(string role)
+    {
+        return role switch
+        {
+            "admin" => "admin",
+            "owner" => "owner",
+            _ => "dashboard"
         };
     }
 
@@ -237,7 +248,7 @@ public partial class MainWindow
         ProfileText.Visibility = _isSidebarCollapsed ? Visibility.Collapsed : Visibility.Visible;
         LogoutText.Visibility = _isSidebarCollapsed ? Visibility.Collapsed : Visibility.Visible;
         SidebarVersionText.HorizontalAlignment = _isSidebarCollapsed ? HorizontalAlignment.Center : HorizontalAlignment.Right;
-        SidebarToggle.Content = _isSidebarCollapsed ? ">" : "<";
+        SidebarToggle.Content = _isSidebarCollapsed ? "\uE76C" : "\uE76B";
 
         foreach (var button in new[]
         {
@@ -290,7 +301,7 @@ public partial class MainWindow
     {
         if (!IsViewAllowedForRole(view))
         {
-            ShowStatus("Access denied", $"{GetRoleTitle(_currentRole)} role cannot open this section.");
+            ShowStatus("Раздел недоступен", $"{GetRoleTitle(_currentRole)} работает только со своими рабочими инструментами.");
             return;
         }
 
@@ -638,4 +649,3 @@ public partial class MainWindow
     }
 
 }
-

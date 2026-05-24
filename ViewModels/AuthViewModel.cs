@@ -63,8 +63,8 @@ public sealed class AuthViewModel : ViewModelBase
     }
 
     public string AuthTitle => IsRegisterMode
-        ? "Регистрация в Elite Gaming Lounge"
-        : "Вход в Elite Gaming Lounge";
+        ? "Регистрация в VictusLounge"
+        : "Вход в VictusLounge";
 
     public string Login
     {

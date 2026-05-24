@@ -4,7 +4,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:helpers="clr-namespace:VictusLounge.Helpers"
         xmlns:views="clr-namespace:VictusLounge.Views"
-        Title="Elite Gaming Lounge Control Center"
+        Title="VictusLounge Control Center"
         Width="1480"
         Height="860"
         MinWidth="1120"
@@ -42,7 +42,7 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,24,0">
-                            <TextBlock Text="Elite Gaming Lounge Control Center"
+                            <TextBlock Text="VictusLounge Control Center"
                                        Foreground="{DynamicResource MutedBrush}"
                                        FontSize="13"
                                        VerticalAlignment="Center" />
@@ -67,7 +67,7 @@
                                 Padding="12,0"
                                 Margin="0,0,14,0">
                             <DockPanel LastChildFill="True">
-                                <TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" VerticalAlignment="Center" Margin="0,0,9,0" />
+                                <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource GoldLightBrush}" VerticalAlignment="Center" Margin="0,0,9,0" />
                                 <TextBox x:Name="GlobalSearchBox"
                                          Text="{Binding Shell.SearchQuery, UpdateSourceTrigger=PropertyChanged}"
                                          Foreground="{DynamicResource TextBrush}"
@@ -105,7 +105,7 @@
                                     Margin="0,0,8,0"
                                     Command="{Binding Notifications.ToggleCommand}">
                                 <Grid>
-                                    <TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    <TextBlock Text="&#xE7F4;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource GoldLightBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                     <Border x:Name="NotificationBadge" CornerRadius="7" Background="{DynamicResource DangerBrush}" Padding="4,0" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-3,-5,0" Visibility="Collapsed">
                                         <TextBlock x:Name="NotificationCountText" Text="0" FontSize="10" FontWeight="Bold" />
                                     </Border>
@@ -137,15 +137,16 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <Border Width="46" Height="46" CornerRadius="14" Background="{DynamicResource GoldButtonBrush}">
-                                <TextBlock Text="E" Foreground="#111111" FontSize="22" FontWeight="Black" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                <TextBlock Text="VL" Foreground="#111111" FontSize="18" FontWeight="Black" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <StackPanel x:Name="BrandTextPanel" Grid.Column="1" Margin="12,0,8,0" VerticalAlignment="Center">
-                                <TextBlock x:Name="BrandTitle" Text="Elite Gaming" FontWeight="Bold" />
-                                <TextBlock x:Name="BrandSubtitle" Text="Premium PC Club" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,4,0,0" />
+                                <TextBlock x:Name="BrandTitle" Text="VictusLounge" FontWeight="Bold" />
+                                <TextBlock x:Name="BrandSubtitle" Text="Gaming lounge workspace" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,4,0,0" />
                             </StackPanel>
                             <Button Grid.Column="2"
                                     x:Name="SidebarToggle"
-                                    Content="‹"
+                                    Content="&#xE76B;"
+                                    FontFamily="Segoe MDL2 Assets"
                                     Style="{StaticResource GhostButtonStyle}"
                                     Width="34"
                                     MinHeight="34"
@@ -155,7 +156,7 @@
 
                         <ScrollViewer Grid.Row="1" Margin="0,18,0,18" VerticalScrollBarVisibility="Auto">
                             <StackPanel>
-                                <Button x:Name="DashboardNavButton" Tag="dashboard" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}">
+                                <Button x:Name="DashboardNavButton" Tag="dashboard" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Visibility="{Binding Navigation.CanOpenDashboard, Converter={StaticResource BoolToVisibilityConverter}}">
                                     <Button.Style>
                                         <Style TargetType="Button" BasedOn="{StaticResource SidebarButtonStyle}">
                                             <Style.Triggers>
@@ -168,9 +169,9 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Button.Style>
-                                    <StackPanel Orientation="Horizontal"><TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Главная" /></StackPanel>
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE80F;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Главная" /></StackPanel>
                                 </Button>
-                                <Button x:Name="MapNavButton" Margin="0,7,0,0" Tag="map" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}">
+                                <Button x:Name="MapNavButton" Margin="0,7,0,0" Tag="map" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Visibility="{Binding Navigation.CanOpenMap, Converter={StaticResource BoolToVisibilityConverter}}">
                                     <Button.Style>
                                         <Style TargetType="Button" BasedOn="{StaticResource SidebarButtonStyle}">
                                             <Style.Triggers>
@@ -183,7 +184,7 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Button.Style>
-                                    <StackPanel Orientation="Horizontal"><TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Схема клуба" /></StackPanel>
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE707;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Схема клуба" /></StackPanel>
                                 </Button>
                                 <Button x:Name="BookingNavButton" Margin="0,7,0,0" Tag="booking" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Visibility="{Binding Navigation.CanOpenBooking, Converter={StaticResource BoolToVisibilityConverter}}">
                                     <Button.Style>
@@ -198,7 +199,7 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Button.Style>
-                                    <StackPanel Orientation="Horizontal"><TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Бронирование" /></StackPanel>
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE787;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Бронирование" /></StackPanel>
                                 </Button>
                                 <Button x:Name="CabinetNavButton" Margin="0,7,0,0" Tag="cabinet" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Visibility="{Binding Navigation.CanOpenCabinet, Converter={StaticResource BoolToVisibilityConverter}}">
                                     <Button.Style>
@@ -213,7 +214,7 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Button.Style>
-                                    <StackPanel Orientation="Horizontal"><TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Кабинет" /></StackPanel>
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE77B;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Кабинет" /></StackPanel>
                                 </Button>
                                 <Button x:Name="BalanceNavButton" Margin="0,7,0,0" Tag="balance" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Visibility="{Binding Navigation.CanOpenBalance, Converter={StaticResource BoolToVisibilityConverter}}">
                                     <Button.Style>
@@ -228,9 +229,9 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Button.Style>
-                                    <StackPanel Orientation="Horizontal"><TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Баланс" /></StackPanel>
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8D4;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Баланс" /></StackPanel>
                                 </Button>
-                                <Button x:Name="EventsNavButton" Margin="0,7,0,0" Tag="events" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}">
+                                <Button x:Name="EventsNavButton" Margin="0,7,0,0" Tag="events" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Visibility="{Binding Navigation.CanOpenEvents, Converter={StaticResource BoolToVisibilityConverter}}">
                                     <Button.Style>
                                         <Style TargetType="Button" BasedOn="{StaticResource SidebarButtonStyle}">
                                             <Style.Triggers>
@@ -243,7 +244,7 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Button.Style>
-                                    <StackPanel Orientation="Horizontal"><TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="События" /></StackPanel>
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xEC92;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="События" /></StackPanel>
                                 </Button>
                                 <Button x:Name="AdminNavButton" Margin="0,7,0,0" Tag="admin" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Visibility="{Binding Navigation.CanOpenAdmin, Converter={StaticResource BoolToVisibilityConverter}}">
                                     <Button.Style>
@@ -258,7 +259,7 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Button.Style>
-                                    <StackPanel Orientation="Horizontal"><TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Админ" /></StackPanel>
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE7EF;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Админ" /></StackPanel>
                                 </Button>
                                 <Button x:Name="ShiftNavButton" Margin="0,7,0,0" Tag="shift" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Visibility="{Binding Navigation.CanOpenShift, Converter={StaticResource BoolToVisibilityConverter}}">
                                     <Button.Style>
@@ -273,7 +274,7 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Button.Style>
-                                    <StackPanel Orientation="Horizontal"><TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Смена" /></StackPanel>
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE823;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Смена" /></StackPanel>
                                 </Button>
                                 <Button x:Name="OwnerNavButton" Margin="0,7,0,0" Tag="owner" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Visibility="{Binding Navigation.CanOpenOwner, Converter={StaticResource BoolToVisibilityConverter}}">
                                     <Button.Style>
@@ -288,7 +289,7 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Button.Style>
-                                    <StackPanel Orientation="Horizontal"><TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Owner" /></StackPanel>
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE7FD;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Владелец" /></StackPanel>
                                 </Button>
                                 <Button x:Name="SettingsNavButton" Margin="0,7,0,0" Tag="settings" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}">
                                     <Button.Style>
@@ -303,7 +304,7 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Button.Style>
-                                    <StackPanel Orientation="Horizontal"><TextBlock Text="?" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Настройки" /></StackPanel>
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource GoldLightBrush}" Width="30" /><TextBlock Text="Настройки" /></StackPanel>
                                 </Button>
                             </StackPanel>
                         </ScrollViewer>
@@ -394,5 +395,3 @@
         <views:BookingConfirmOverlayView x:Name="BookingConfirmOverlay" Visibility="Collapsed" />
     </Grid>
 </Window>
-
-

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
@@ -21,11 +21,13 @@
     <sys:String x:Key="Nav.Events">События</sys:String>
     <sys:String x:Key="Nav.Admin">Админ</sys:String>
     <sys:String x:Key="Nav.Shift">Смена</sys:String>
-    <sys:String x:Key="Nav.Owner">Owner</sys:String>
+    <sys:String x:Key="Nav.Owner">Владелец</sys:String>
     <sys:String x:Key="Nav.Settings">Настройки</sys:String>
     <sys:String x:Key="Top.Language">Язык</sys:String>
     <sys:String x:Key="Top.Workspace">Рабочее место клиента</sys:String>
-    <sys:String x:Key="Common.AppTitle">Elite Gaming Lounge Control Center</sys:String>
+    <sys:String x:Key="Common.AppTitle">VictusLounge Control Center</sys:String>
+    <sys:String x:Key="Brand.Name">VictusLounge</sys:String>
+    <sys:String x:Key="Brand.Subtitle">Рабочее пространство клуба</sys:String>
     <sys:String x:Key="Common.SearchPlaceholder">Поиск: клиент, PC-04, бронь, турнир, платеж...</sys:String>
     <sys:String x:Key="Common.Logout">Выйти</sys:String>
     <sys:String x:Key="Common.BookPc">Забронировать ПК</sys:String>
@@ -33,6 +35,40 @@
     <sys:String x:Key="Common.Events">События</sys:String>
     <sys:String x:Key="Common.ClubMapShort">Схема</sys:String>
     <sys:String x:Key="Common.QuickActions">Быстрые действия</sys:String>
+    <sys:String x:Key="Auth.LoginTitle">Вход в VictusLounge</sys:String>
+    <sys:String x:Key="Auth.RegisterTitle">Регистрация в VictusLounge</sys:String>
+    <sys:String x:Key="Auth.GuestAccess">ГОСТЕВОЙ ДОСТУП</sys:String>
+    <sys:String x:Key="Auth.ClientPanelTitle">Все для визита в клуб в одном профиле</sys:String>
+    <sys:String x:Key="Auth.ClientPanelText">Бронируйте ПК, следите за балансом, получайте бонусы и возвращайтесь к любимым зонам без лишних звонков администратору.</sys:String>
+    <sys:String x:Key="Auth.PhotoFrame">Фрейм для фото клуба</sys:String>
+    <sys:String x:Key="Auth.PhotoFrameHint">Сюда можно добавить фото игровой зоны, ресепшена или VIP-комнаты.</sys:String>
+    <sys:String x:Key="Auth.LoginKicker">ВХОД ДЛЯ ГОСТЯ</sys:String>
+    <sys:String x:Key="Auth.LoginHeading">Вернитесь в VictusLounge</sys:String>
+    <sys:String x:Key="Auth.LoginSubtitle">Войдите, чтобы продолжить бронь, проверить баланс и увидеть ближайшие события клуба.</sys:String>
+    <sys:String x:Key="Auth.LoginField">Логин или email</sys:String>
+    <sys:String x:Key="Auth.Password">Пароль</sys:String>
+    <sys:String x:Key="Auth.SignIn">Войти</sys:String>
+    <sys:String x:Key="Auth.CreateAccount">Создать аккаунт</sys:String>
+    <sys:String x:Key="Auth.RegisterKicker">НОВЫЙ ПРОФИЛЬ</sys:String>
+    <sys:String x:Key="Auth.RegisterHeading">Создайте профиль гостя</sys:String>
+    <sys:String x:Key="Auth.RegisterSubtitle">Сохраним ваши брони, бонусы и любимые зоны, чтобы следующий визит занимал меньше времени.</sys:String>
+    <sys:String x:Key="Auth.Name">Имя</sys:String>
+    <sys:String x:Key="Auth.Username">Логин</sys:String>
+    <sys:String x:Key="Auth.CreateAndEnter">Создать и войти</sys:String>
+    <sys:String x:Key="Auth.AlreadyHaveAccount">Уже есть аккаунт</sys:String>
+    <sys:String x:Key="Auth.ProfileKicker">ПРОФИЛЬ ГОСТЯ</sys:String>
+    <sys:String x:Key="Auth.ProfilePanelTitle">После регистрации сервис запомнит ваши предпочтения</sys:String>
+    <sys:String x:Key="Auth.ProfilePanelText">Кабинет поможет быстрее бронировать места, видеть бонусы и получать приглашения на турниры и LAN-вечера.</sys:String>
+    <sys:String x:Key="Auth.PromoPhotoFrame">Фрейм для промо-фото</sys:String>
+    <sys:String x:Key="Auth.PromoPhotoFrameHint">Добавьте сюда изображение клуба, команды или зоны, которую хотите показать новым гостям.</sys:String>
+    <sys:String x:Key="Auth.FastBooking">Быстрая бронь</sys:String>
+    <sys:String x:Key="Auth.FastBookingText">Выбирайте дату, зону и ПК заранее</sys:String>
+    <sys:String x:Key="Auth.PersonalBalance">Личный баланс</sys:String>
+    <sys:String x:Key="Auth.PersonalBalanceText">Пакеты времени, бонусы и история операций</sys:String>
+    <sys:String x:Key="Auth.FavoriteZones">Любимые зоны</sys:String>
+    <sys:String x:Key="Auth.FavoriteZonesText">Standard, VIP, Bootcamp или Royal</sys:String>
+    <sys:String x:Key="Auth.ClubEvents">События клуба</sys:String>
+    <sys:String x:Key="Auth.ClubEventsText">Турниры, командные брони и LAN-вечера</sys:String>
     <sys:String x:Key="Dashboard.Kicker">CLUB STATUS</sys:String>
     <sys:String x:Key="Dashboard.Title">Рабочая панель клуба</sys:String>
     <sys:String x:Key="Dashboard.Subtitle">Состояние зала, броней и смены на сегодня.</sys:String>
