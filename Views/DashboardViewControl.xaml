@@ -4,6 +4,9 @@
              Background="Transparent">
 <StackPanel>
                         <Border Style="{StaticResource PanelBorderStyle}" Padding="24" Margin="0,0,0,16">
+                            <Border.Background>
+                                <ImageBrush ImageSource="pack://application:,,,/Assets/Dashboard.png" Stretch="UniformToFill" Opacity="0.34" />
+                            </Border.Background>
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -13,6 +16,7 @@
                                     <ColumnDefinition Width="1.05*" />
                                     <ColumnDefinition Width="1.5*" />
                                 </Grid.ColumnDefinitions>
+                                <Rectangle Grid.RowSpan="2" Grid.ColumnSpan="2" Fill="#CC111111" RadiusX="12" RadiusY="12" />
 
                                 <StackPanel Grid.Row="0" Grid.Column="0">
                                     <TextBlock Text="CLUB STATUS" Style="{StaticResource KickerTextStyle}" />
@@ -105,17 +109,57 @@
                                     <TextBlock Text="QUICK ACTIONS" Style="{StaticResource KickerTextStyle}" />
                                     <TextBlock Text="Быстрые действия" FontSize="22" FontWeight="Bold" Margin="0,6,0,16" />
                                     <UniformGrid Columns="4">
-                                        <Button Style="{StaticResource SidebarButtonStyle}" Height="116" Background="{DynamicResource PanelGradientBrush}" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Margin="0,0,10,0" Tag="booking" Command="{Binding Dashboard.QuickActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}">
-                                            <StackPanel VerticalAlignment="Bottom"><TextBlock Text="Новая бронь" FontWeight="Bold" /><TextBlock Text="Дата, зона, ПК, summary" Foreground="{DynamicResource MutedBrush}" Margin="0,7,0,0" TextWrapping="Wrap" /></StackPanel>
+                                        <Button Style="{StaticResource SidebarButtonStyle}" Height="142" Background="#18D4AF37" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Margin="0,0,10,0" Tag="booking" Command="{Binding Dashboard.QuickActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}">
+                                            <Grid>
+                                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                                <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource GoldButtonBrush}" HorizontalAlignment="Left">
+                                                    <TextBlock Text="&#xE787;" FontFamily="Segoe MDL2 Assets" Foreground="#111111" FontSize="17" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Border>
+                                                <StackPanel Grid.Row="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="Новая бронь" FontWeight="Black" TextWrapping="Wrap" />
+                                                    <TextBlock Text="Timeline, зона, ПК" Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,0" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                                <TextBlock Grid.Row="2" Text="Открыть форму" Foreground="{DynamicResource GoldLightBrush}" FontSize="12" FontWeight="Bold" />
+                                            </Grid>
                                         </Button>
-                                        <Button Style="{StaticResource SidebarButtonStyle}" Height="116" Background="{DynamicResource PanelGradientBrush}" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Margin="0,0,10,0" Tag="tournament" Command="{Binding Dashboard.QuickActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}">
-                                            <StackPanel VerticalAlignment="Bottom"><TextBlock Text="Записаться на турнир" FontWeight="Bold" TextWrapping="Wrap" /><TextBlock Text="Dota 2, CS2, LAN Party" Foreground="{DynamicResource MutedBrush}" Margin="0,7,0,0" TextWrapping="Wrap" /></StackPanel>
+                                        <Button Style="{StaticResource SidebarButtonStyle}" Height="142" Background="#142F6F48" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Margin="0,0,10,0" Tag="tournament" Command="{Binding Dashboard.QuickActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}">
+                                            <Grid>
+                                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                                <Border Width="36" Height="36" CornerRadius="10" Background="#2268D889" BorderBrush="{DynamicResource OkBrush}" BorderThickness="1" HorizontalAlignment="Left">
+                                                    <TextBlock Text="&#xE7C1;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource OkBrush}" FontSize="17" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Border>
+                                                <StackPanel Grid.Row="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="Турнир" FontWeight="Black" TextWrapping="Wrap" />
+                                                    <TextBlock Text="Dota 2, CS2, LAN" Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,0" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                                <TextBlock Grid.Row="2" Text="3 события" Foreground="{DynamicResource OkBrush}" FontSize="12" FontWeight="Bold" />
+                                            </Grid>
                                         </Button>
-                                        <Button Style="{StaticResource SidebarButtonStyle}" Height="116" Background="{DynamicResource PanelGradientBrush}" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Margin="0,0,10,0" Tag="package" Command="{Binding Dashboard.QuickActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}">
-                                            <StackPanel VerticalAlignment="Bottom"><TextBlock Text="Купить пакет" FontWeight="Bold" /><TextBlock Text="Quick Game / Night Pack" Foreground="{DynamicResource MutedBrush}" Margin="0,7,0,0" TextWrapping="Wrap" /></StackPanel>
+                                        <Button Style="{StaticResource SidebarButtonStyle}" Height="142" Background="#18EDC86B" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Margin="0,0,10,0" Tag="package" Command="{Binding Dashboard.QuickActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}">
+                                            <Grid>
+                                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                                <Border Width="36" Height="36" CornerRadius="10" Background="#22EDC86B" BorderBrush="{DynamicResource WaitBrush}" BorderThickness="1" HorizontalAlignment="Left">
+                                                    <TextBlock Text="&#xE8C7;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource WaitBrush}" FontSize="17" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Border>
+                                                <StackPanel Grid.Row="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="Пакеты" FontWeight="Black" TextWrapping="Wrap" />
+                                                    <TextBlock Text="Quick Game / Night" Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,0" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                                <TextBlock Grid.Row="2" Text="Пополнить баланс" Foreground="{DynamicResource WaitBrush}" FontSize="12" FontWeight="Bold" />
+                                            </Grid>
                                         </Button>
-                                        <Button Style="{StaticResource SidebarButtonStyle}" Height="116" Background="{DynamicResource PanelGradientBrush}" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Tag="profile" Command="{Binding Dashboard.QuickActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}">
-                                            <StackPanel VerticalAlignment="Bottom"><TextBlock Text="Открыть профиль" FontWeight="Bold" /><TextBlock Text="Бонусы, сессии, брони" Foreground="{DynamicResource MutedBrush}" Margin="0,7,0,0" TextWrapping="Wrap" /></StackPanel>
+                                        <Button Style="{StaticResource SidebarButtonStyle}" Height="142" Background="#12FFFFFF" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Tag="profile" Command="{Binding Dashboard.QuickActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}">
+                                            <Grid>
+                                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                                <Border Width="36" Height="36" CornerRadius="10" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" HorizontalAlignment="Left">
+                                                    <TextBlock Text="&#xE77B;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource GoldLightBrush}" FontSize="17" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Border>
+                                                <StackPanel Grid.Row="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="Профиль" FontWeight="Black" TextWrapping="Wrap" />
+                                                    <TextBlock Text="Бонусы и брони" Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,0" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                                <TextBlock Grid.Row="2" Text="Client workspace" Foreground="{DynamicResource GoldLightBrush}" FontSize="12" FontWeight="Bold" />
+                                            </Grid>
                                         </Button>
                                     </UniformGrid>
                                 </StackPanel>
@@ -138,29 +182,121 @@
                                         </StackPanel>
                                     </DockPanel>
                                     <UniformGrid Columns="4">
-                                        <Border CornerRadius="12" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Background="#21D4AF37" Padding="14" Height="104" Margin="0,0,10,0" Cursor="Hand" Tag="Standard">
+                                        <Border CornerRadius="14" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Height="178" Margin="0,0,10,0" Cursor="Hand" Tag="Standard" ClipToBounds="True">
+                                            <Border.Background>
+                                                <ImageBrush ImageSource="pack://application:,,,/Assets/Standard.png" Stretch="UniformToFill" Opacity="0.46" />
+                                            </Border.Background>
                                             <Border.InputBindings>
                                                 <MouseBinding MouseAction="LeftClick" Command="{Binding Dashboard.SelectZoneCommand}" CommandParameter="Standard" />
                                             </Border.InputBindings>
-                                            <StackPanel VerticalAlignment="Bottom"><TextBlock Text="Standard" /><TextBlock Text="28 ПК" Foreground="{DynamicResource GoldLightBrush}" FontSize="23" FontWeight="Black" Margin="0,5,0,4" /><TextBlock Text="8 BYN/час · 18 свободно" Foreground="{DynamicResource MutedBrush}" FontSize="12" TextWrapping="Wrap" /></StackPanel>
+                                            <Grid>
+                                                <Rectangle Fill="#B0101010" RadiusX="14" RadiusY="14" />
+                                                <Grid Margin="16">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="44" />
+                                                        <RowDefinition Height="56" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+                                                    <DockPanel>
+                                                        <Border DockPanel.Dock="Right" CornerRadius="9" Background="#22D4AF37" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Padding="8,4">
+                                                            <TextBlock Text="18 free" Foreground="{DynamicResource GoldLightBrush}" FontSize="11" FontWeight="Bold" />
+                                                        </Border>
+                                                        <StackPanel>
+                                                            <TextBlock Text="Standard" FontSize="16" FontWeight="Bold" />
+                                                            <TextBlock Text="Main hall" Foreground="{DynamicResource MutedBrush}" FontSize="11" Margin="0,3,0,0" />
+                                                        </StackPanel>
+                                                    </DockPanel>
+                                                    <TextBlock Grid.Row="1" Text="28 ПК" Foreground="{DynamicResource GoldLightBrush}" FontSize="34" FontWeight="Black" VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Row="2" Text="8 BYN/час · высокая доступность" Foreground="{DynamicResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
+                                                </Grid>
+                                            </Grid>
                                         </Border>
-                                        <Border CornerRadius="12" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Background="#2EF2D57A" Padding="14" Height="104" Margin="0,0,10,0" Cursor="Hand" Tag="VIP">
+                                        <Border CornerRadius="14" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Height="178" Margin="0,0,10,0" Cursor="Hand" Tag="VIP" ClipToBounds="True">
+                                            <Border.Background>
+                                                <ImageBrush ImageSource="pack://application:,,,/Assets/VIP.png" Stretch="UniformToFill" Opacity="0.44" />
+                                            </Border.Background>
                                             <Border.InputBindings>
                                                 <MouseBinding MouseAction="LeftClick" Command="{Binding Dashboard.SelectZoneCommand}" CommandParameter="VIP" />
                                             </Border.InputBindings>
-                                            <StackPanel VerticalAlignment="Bottom"><TextBlock Text="VIP" /><TextBlock Text="10 ПК" Foreground="{DynamicResource GoldLightBrush}" FontSize="23" FontWeight="Black" Margin="0,5,0,4" /><TextBlock Text="14 BYN/час · 4 свободно" Foreground="{DynamicResource MutedBrush}" FontSize="12" TextWrapping="Wrap" /></StackPanel>
+                                            <Grid>
+                                                <Rectangle Fill="#B0121010" RadiusX="14" RadiusY="14" />
+                                                <Grid Margin="16">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="44" />
+                                                        <RowDefinition Height="56" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+                                                    <DockPanel>
+                                                        <Border DockPanel.Dock="Right" CornerRadius="9" Background="#22EDC86B" BorderBrush="{DynamicResource WaitBrush}" BorderThickness="1" Padding="8,4">
+                                                            <TextBlock Text="4 free" Foreground="{DynamicResource WaitBrush}" FontSize="11" FontWeight="Bold" />
+                                                        </Border>
+                                                        <StackPanel>
+                                                            <TextBlock Text="VIP" FontSize="16" FontWeight="Bold" />
+                                                            <TextBlock Text="Quiet seats" Foreground="{DynamicResource MutedBrush}" FontSize="11" Margin="0,3,0,0" />
+                                                        </StackPanel>
+                                                    </DockPanel>
+                                                    <TextBlock Grid.Row="1" Text="10 ПК" Foreground="{DynamicResource GoldLightBrush}" FontSize="34" FontWeight="Black" VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Row="2" Text="14 BYN/час · 4 свободно" Foreground="{DynamicResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
+                                                </Grid>
+                                            </Grid>
                                         </Border>
-                                        <Border CornerRadius="12" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Background="#2268D889" Padding="14" Height="104" Margin="0,0,10,0" Cursor="Hand" Tag="Bootcamp">
+                                        <Border CornerRadius="14" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Height="178" Margin="0,0,10,0" Cursor="Hand" Tag="Bootcamp" ClipToBounds="True">
+                                            <Border.Background>
+                                                <ImageBrush ImageSource="pack://application:,,,/Assets/Bootcamp.png" Stretch="UniformToFill" Opacity="0.46" />
+                                            </Border.Background>
                                             <Border.InputBindings>
                                                 <MouseBinding MouseAction="LeftClick" Command="{Binding Dashboard.SelectZoneCommand}" CommandParameter="Bootcamp" />
                                             </Border.InputBindings>
-                                            <StackPanel VerticalAlignment="Bottom"><TextBlock Text="Bootcamp" /><TextBlock Text="2 комнаты" Foreground="{DynamicResource GoldLightBrush}" FontSize="23" FontWeight="Black" Margin="0,5,0,4" /><TextBlock Text="50 BYN/час · 1 свободна" Foreground="{DynamicResource MutedBrush}" FontSize="12" TextWrapping="Wrap" /></StackPanel>
+                                            <Grid>
+                                                <Rectangle Fill="#B00C1510" RadiusX="14" RadiusY="14" />
+                                                <Grid Margin="16">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="44" />
+                                                        <RowDefinition Height="56" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+                                                    <DockPanel>
+                                                        <Border DockPanel.Dock="Right" CornerRadius="9" Background="#2268D889" BorderBrush="{DynamicResource OkBrush}" BorderThickness="1" Padding="8,4">
+                                                            <TextBlock Text="1 room" Foreground="{DynamicResource OkBrush}" FontSize="11" FontWeight="Bold" />
+                                                        </Border>
+                                                        <StackPanel>
+                                                            <TextBlock Text="Bootcamp" FontSize="16" FontWeight="Bold" />
+                                                            <TextBlock Text="Team room" Foreground="{DynamicResource MutedBrush}" FontSize="11" Margin="0,3,0,0" />
+                                                        </StackPanel>
+                                                    </DockPanel>
+                                                    <TextBlock Grid.Row="1" Text="2 комнаты" Foreground="{DynamicResource GoldLightBrush}" FontSize="24" FontWeight="Black" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Grid.Row="2" Text="50 BYN/час · 1 свободна" Foreground="{DynamicResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
+                                                </Grid>
+                                            </Grid>
                                         </Border>
-                                        <Border CornerRadius="12" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Background="#22FFFFFF" Padding="14" Height="104" Cursor="Hand" Tag="Royal VIP">
+                                        <Border CornerRadius="14" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Height="178" Cursor="Hand" Tag="Royal VIP" ClipToBounds="True">
+                                            <Border.Background>
+                                                <ImageBrush ImageSource="pack://application:,,,/Assets/RoyalVip.png" Stretch="UniformToFill" Opacity="0.46" />
+                                            </Border.Background>
                                             <Border.InputBindings>
                                                 <MouseBinding MouseAction="LeftClick" Command="{Binding Dashboard.SelectZoneCommand}" CommandParameter="Royal VIP" />
                                             </Border.InputBindings>
-                                            <StackPanel VerticalAlignment="Bottom"><TextBlock Text="Royal VIP" /><TextBlock Text="4 ПК" Foreground="{DynamicResource GoldLightBrush}" FontSize="23" FontWeight="Black" Margin="0,5,0,4" /><TextBlock Text="24 BYN/час · 3 свободно" Foreground="{DynamicResource MutedBrush}" FontSize="12" TextWrapping="Wrap" /></StackPanel>
+                                            <Grid>
+                                                <Rectangle Fill="#B0101010" RadiusX="14" RadiusY="14" />
+                                                <Grid Margin="16">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="44" />
+                                                        <RowDefinition Height="56" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+                                                    <DockPanel>
+                                                        <Border DockPanel.Dock="Right" CornerRadius="9" Background="#22FFFFFF" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Padding="8,4">
+                                                            <TextBlock Text="3 free" Foreground="{DynamicResource GoldLightBrush}" FontSize="11" FontWeight="Bold" />
+                                                        </Border>
+                                                        <StackPanel>
+                                                            <TextBlock Text="Royal VIP" FontSize="16" FontWeight="Bold" />
+                                                            <TextBlock Text="Premium" Foreground="{DynamicResource MutedBrush}" FontSize="11" Margin="0,3,0,0" />
+                                                        </StackPanel>
+                                                    </DockPanel>
+                                                    <TextBlock Grid.Row="1" Text="4 ПК" Foreground="{DynamicResource GoldLightBrush}" FontSize="34" FontWeight="Black" VerticalAlignment="Center" />
+                                                    <TextBlock Grid.Row="2" Text="24 BYN/час · 3 свободно" Foreground="{DynamicResource MutedBrush}" FontSize="12" TextWrapping="Wrap" />
+                                                </Grid>
+                                            </Grid>
                                         </Border>
                                     </UniformGrid>
                                 </StackPanel>

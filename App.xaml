@@ -110,6 +110,70 @@
             <Setter Property="VerticalContentAlignment" Value="Center" />
         </Style>
 
+        <Style x:Key="ScrollBarThumbStyle" TargetType="Thumb">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Border x:Name="ThumbChrome"
+                                CornerRadius="4"
+                                Background="#55A9A092"
+                                BorderBrush="{DynamicResource LineSoftBrush}"
+                                BorderThickness="1" />
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ThumbChrome" Property="Background" Value="{DynamicResource GoldBrush}" />
+                                <Setter TargetName="ThumbChrome" Property="BorderBrush" Value="{DynamicResource GoldLightBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsDragging" Value="True">
+                                <Setter TargetName="ThumbChrome" Property="Background" Value="{DynamicResource GoldLightBrush}" />
+                                <Setter TargetName="ThumbChrome" Property="BorderBrush" Value="{DynamicResource GoldLightBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="ScrollBar">
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Background" Value="#12111111" />
+            <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+            <Setter Property="Width" Value="10" />
+            <Setter Property="MinWidth" Value="10" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Border x:Name="TrackChrome"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="5"
+                                BorderBrush="{DynamicResource LineSoftBrush}"
+                                BorderThickness="1">
+                            <Track x:Name="PART_Track"
+                                   IsDirectionReversed="True"
+                                   Focusable="False">
+                                <Track.Thumb>
+                                    <Thumb Style="{StaticResource ScrollBarThumbStyle}" />
+                                </Track.Thumb>
+                            </Track>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Orientation" Value="Horizontal">
+                                <Setter Property="Width" Value="Auto" />
+                                <Setter Property="MinWidth" Value="0" />
+                                <Setter Property="Height" Value="10" />
+                                <Setter Property="MinHeight" Value="10" />
+                                <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="TrackChrome" Property="Background" Value="#1CFFFFFF" />
+                                <Setter TargetName="TrackChrome" Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="PanelBorderStyle" TargetType="Border">
             <Setter Property="CornerRadius" Value="12" />
             <Setter Property="BorderBrush" Value="{DynamicResource LineSoftBrush}" />

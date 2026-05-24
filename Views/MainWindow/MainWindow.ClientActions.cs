@@ -271,7 +271,7 @@ public partial class MainWindow
             }
 
             var bookingAmount = CalculateBookingTotal(booking, computer);
-            var bookingLabel = GetBookingPackageLabel(booking);
+            var bookingLabel = GetBookingPackageLabel(booking, GetStoredClientTier(user.Id));
             amount = ApplyBookingPromo(bookingAmount);
             packageName = bookingLabel;
             if (user.Balance < amount)

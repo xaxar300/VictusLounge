@@ -130,6 +130,7 @@ public partial class MainWindow
         }
 
         UpdateBookingSeatButtons();
+        RebuildBookingSeatGrid();
         UpdateBookingSummary();
         ShowStatus(
             _isCompanyBooking ? "Бронь для компании" : "Одиночная бронь",
@@ -156,6 +157,7 @@ public partial class MainWindow
             SetActiveButton(activeButton, DateTodayButton, DateTomorrowButton, DateThirdButton, DateCustomButton);
         }
 
+        RebuildBookingSeatGrid();
         UpdateBookingSummary();
         ShowStatus("Дата изменена", $"Бронь перенесена на {_bookingDate:yyyy-MM-dd}.");
     }
@@ -200,6 +202,7 @@ public partial class MainWindow
     {
         _bookingHour = hour;
         UpdateBookingTimeButtons();
+        RebuildBookingSeatGrid();
         UpdateBookingSummary();
         ShowStatus("Время изменено", $"Начало брони: {GetBookingStartTime()}.");
     }
@@ -214,6 +217,7 @@ public partial class MainWindow
 
         _bookingMinute = minute;
         UpdateBookingTimeButtons();
+        RebuildBookingSeatGrid();
         UpdateBookingSummary();
         ShowStatus("Минуты изменены", $"Начало брони: {GetBookingStartTime()}.");
     }
@@ -264,6 +268,7 @@ public partial class MainWindow
         }
 
         UpdateBookingTimeButtons();
+        RebuildBookingSeatGrid();
         UpdateBookingSummary();
         ShowStatus("Тариф обновлен", GetPackageDescription());
     }
@@ -376,37 +381,275 @@ public partial class MainWindow
         }
 
         BookingSeatGrid.Children.Clear();
-        BookingSeatGrid.Columns = _bookingZoneKey switch
-        {
-            "VIP" => 4,
-            "Bootcamp" => 5,
-            "Royal VIP" => 5,
-            _ => 7
-        };
+        BookingSeatGrid.RowDefinitions.Clear();
+        BookingSeatGrid.ColumnDefinitions.Clear();
 
-        foreach (var seat in GetSeatsForZone(_bookingZoneKey))
+        var seats = GetSeatsForZone(_bookingZoneKey);
+        var timelineStarts = GetTimelineStarts();
+        var seatNames = seats.Select(seat => seat.Name).ToArray();
+        var selectedSlotBlocks = GetSelectedSlotBlocks(seats.Select(seat => seat.Name));
+        var slotBlocksByStart = timelineStarts.ToDictionary(
+            slotStart => slotStart,
+            slotStart => GetSlotBlocks(seatNames, slotStart, slotStart.AddHours(_bookingDuration)));
+        var bookableSeats = new HashSet<string>(StringComparer.Ordinal);
+
+        BookingSeatGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(112) });
+        foreach (var _ in timelineStarts)
         {
-            var button = new Button
-            {
-                Content = seat.IsAvailable ? seat.Name : $"{seat.Name}\n{GetStatusText(seat.Status)}",
-                Tag = seat.Name,
-                Uid = seat.Status,
-                Style = (Style)FindResource("PcButtonStyle"),
-                Margin = new Thickness(0, 0, 8, 8),
-                IsEnabled = seat.IsAvailable,
-                ToolTip = seat.IsAvailable ? T("Status.AvailableTooltip") : $"{T("Status.UnavailableTooltip")}: {GetStatusText(seat.Status)}"
-            };
-            if (!seat.IsAvailable)
-            {
-                button.Style = (Style)FindResource("UnavailablePcButtonStyle");
-            }
-            ApplyPcStatusVisual(button, seat.Status, seat.IsAvailable);
-            button.Command = _viewModel.Booking.SelectSeatCommand;
-            button.CommandParameter = seat.Name;
-            BookingSeatGrid.Children.Add(button);
+            BookingSeatGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(112) });
         }
 
+        BookingSeatGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        AddTimelineText("ПК", 0, 0, FontWeights.Black, (Brush)FindResource("MutedBrush"));
+        for (var column = 0; column < timelineStarts.Length; column++)
+        {
+            AddTimelineText(GetTimelineSlotLabel(timelineStarts[column]), 0, column + 1, FontWeights.Bold, (Brush)FindResource("MutedBrush"));
+        }
+
+        for (var row = 0; row < seats.Length; row++)
+        {
+            var seat = seats[row];
+            BookingSeatGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            AddSeatTimelineLabel(seat, row + 1);
+
+            var selectedHasSlotBlock = selectedSlotBlocks.ContainsKey(seat.Name);
+            if (!selectedHasSlotBlock && seat.Status != PcStatuses.Service)
+            {
+                bookableSeats.Add(seat.Name);
+            }
+
+            for (var column = 0; column < timelineStarts.Length; column++)
+            {
+                var slotStart = timelineStarts[column];
+                var slotBlocks = slotBlocksByStart[slotStart];
+                var slotBlock = slotBlocks.TryGetValue(seat.Name, out var block) ? block : null;
+                var cell = BuildSeatTimelineCell(seat, slotStart, slotBlock);
+                Grid.SetRow(cell, row + 1);
+                Grid.SetColumn(cell, column + 1);
+                BookingSeatGrid.Children.Add(cell);
+            }
+        }
+
+        _selectedSeats.RemoveWhere(seat => !bookableSeats.Contains(seat));
         UpdateBookingSeatButtons();
+    }
+
+    private DateTime[] GetTimelineStarts()
+    {
+        var firstSlot = GetBookingStartDateTime();
+        return Enumerable.Range(0, 6)
+            .Select(offset => firstSlot.AddHours(offset))
+            .ToArray();
+    }
+
+    private static string GetTimelineSlotLabel(DateTime start)
+    {
+        return $"{start:HH:mm}\n{start.AddHours(1):HH:mm}";
+    }
+
+    private void AddTimelineText(string text, int row, int column, FontWeight weight, Brush foreground)
+    {
+        var textBlock = new TextBlock
+        {
+            Text = text,
+            FontWeight = weight,
+            Foreground = foreground,
+            FontSize = 12,
+            TextAlignment = TextAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 8, 8)
+        };
+        Grid.SetRow(textBlock, row);
+        Grid.SetColumn(textBlock, column);
+        BookingSeatGrid.Children.Add(textBlock);
+    }
+
+    private void AddSeatTimelineLabel(SeatInfo seat, int row)
+    {
+        var statusText = seat.Status == PcStatuses.Free
+            ? "свободен сейчас"
+            : $"сейчас {GetStatusText(seat.Status)}";
+
+        var panel = new StackPanel
+        {
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 8, 8)
+        };
+        panel.Children.Add(new TextBlock
+        {
+            Text = seat.Name,
+            FontWeight = FontWeights.Black,
+            Foreground = (Brush)FindResource("TextBrush")
+        });
+        panel.Children.Add(new TextBlock
+        {
+            Text = statusText,
+            FontSize = 11,
+            Foreground = (Brush)FindResource("MutedBrush"),
+            TextWrapping = TextWrapping.Wrap
+        });
+
+        Grid.SetRow(panel, row);
+        Grid.SetColumn(panel, 0);
+        BookingSeatGrid.Children.Add(panel);
+    }
+
+    private Button BuildSeatTimelineCell(SeatInfo seat, DateTime slotStart, string? slotBlock)
+    {
+        var isService = seat.Status == PcStatuses.Service;
+        var isBookable = !isService && string.IsNullOrWhiteSpace(slotBlock);
+        var isSelected = _selectedSeats.Contains(seat.Name) && slotStart == GetBookingStartDateTime();
+        var button = new Button
+        {
+            Content = GetTimelineCellContent(seat, slotStart, slotBlock),
+            Tag = seat.Name,
+            DataContext = slotStart,
+            Uid = string.IsNullOrWhiteSpace(slotBlock) ? seat.Status : PcStatuses.Reserved,
+            Style = (Style)FindResource(isSelected ? "PrimaryButtonStyle" : "PcButtonStyle"),
+            Margin = new Thickness(0, 0, 8, 8),
+            MinHeight = 58,
+            Padding = new Thickness(8, 6, 8, 6),
+            IsEnabled = isBookable,
+            ToolTip = GetBookingSeatTooltip(seat, slotBlock)
+        };
+
+        if (!isBookable)
+        {
+            button.Style = (Style)FindResource("UnavailablePcButtonStyle");
+        }
+
+        ApplyPcStatusVisual(button, string.IsNullOrWhiteSpace(slotBlock) ? seat.Status : PcStatuses.Reserved, isBookable);
+        button.Click += (_, _) => SelectBookingTimelineSlot(seat.Name, slotStart);
+        return button;
+    }
+
+    private string GetTimelineCellContent(SeatInfo seat, DateTime slotStart, string? slotBlock)
+    {
+        if (!string.IsNullOrWhiteSpace(slotBlock))
+        {
+            return "занято";
+        }
+
+        if (seat.Status == PcStatuses.Service)
+        {
+            return "сервис";
+        }
+
+        var selectedStart = GetBookingStartDateTime();
+        return slotStart == selectedStart
+            ? "выбрать"
+            : $"{slotStart:HH:mm}";
+    }
+
+    private void SelectBookingTimelineSlot(string seatName, DateTime slotStart)
+    {
+        _bookingDate = slotStart.Date;
+        _bookingHour = slotStart.Hour;
+        _bookingMinute = slotStart.Minute;
+        UpdateBookingTimeButtons();
+        SelectBookingSeat(seatName);
+        RebuildBookingSeatGrid();
+        UpdateBookingSummary();
+    }
+
+    private Dictionary<string, string> GetSelectedSlotBlocks(IEnumerable<string> seatNames)
+    {
+        var start = GetBookingStartDateTime();
+        return GetSlotBlocks(seatNames, start, start.AddHours(_bookingDuration));
+    }
+
+    private Dictionary<string, string> GetSlotBlocks(IEnumerable<string> seatNames, DateTime start, DateTime end)
+    {
+        var seatNameSet = seatNames.ToHashSet(StringComparer.Ordinal);
+        if (seatNameSet.Count == 0)
+        {
+            return new Dictionary<string, string>(StringComparer.Ordinal);
+        }
+
+        var blocks = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        try
+        {
+            using var unitOfWork = new UnitOfWork();
+            var computersById = unitOfWork.Computers
+                .QueryNoTracking()
+                .Where(computer => seatNameSet.Contains(computer.Name))
+                .ToDictionary(computer => computer.Id);
+            var computerIds = computersById.Keys.ToArray();
+
+            var bookedComputerIds = unitOfWork.Bookings
+                .QueryNoTracking()
+                .Where(booking => computerIds.Contains(booking.ComputerId)
+                    && booking.Status != BookingStatuses.Cancelled
+                    && booking.StartTime < end
+                    && booking.EndTime > start)
+                .Select(booking => booking.ComputerId)
+                .Distinct()
+                .ToArray();
+
+            foreach (var computerId in bookedComputerIds)
+            {
+                if (computersById.TryGetValue(computerId, out var computer))
+                {
+                    blocks[computer.Name] = "бронь на выбранное время";
+                }
+            }
+
+            var sessionComputerIds = unitOfWork.GameSessions
+                .QueryNoTracking()
+                .Where(session => computerIds.Contains(session.ComputerId)
+                    && session.Status != SessionStatuses.Closed
+                    && session.StartTime < end
+                    && ((session.EndTime != null && session.EndTime > start)
+                        || (session.EndTime == null && start.Date == DateTime.Today)))
+                .Select(session => session.ComputerId)
+                .Distinct()
+                .ToArray();
+
+            foreach (var computerId in sessionComputerIds)
+            {
+                if (computersById.TryGetValue(computerId, out var computer))
+                {
+                    blocks[computer.Name] = "сессия на выбранное время";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowDatabaseError("Ошибка проверки доступности ПК", ex);
+        }
+
+        return blocks;
+    }
+
+    private string GetBookingSeatContent(SeatInfo seat, string? slotBlock)
+    {
+        if (!string.IsNullOrWhiteSpace(slotBlock))
+        {
+            return $"{seat.Name}\nзанят в слот";
+        }
+
+        return seat.Status switch
+        {
+            PcStatuses.Free => seat.Name,
+            PcStatuses.Service => $"{seat.Name}\nсервис",
+            _ => $"{seat.Name}\nсейчас {GetStatusText(seat.Status)}"
+        };
+    }
+
+    private string GetBookingSeatTooltip(SeatInfo seat, string? slotBlock)
+    {
+        if (!string.IsNullOrWhiteSpace(slotBlock))
+        {
+            return $"{T("Status.UnavailableTooltip")}: {slotBlock}.";
+        }
+
+        return seat.Status switch
+        {
+            PcStatuses.Free => T("Status.AvailableTooltip"),
+            PcStatuses.Service => $"{T("Status.UnavailableTooltip")}: {GetStatusText(seat.Status)}",
+            _ => $"ПК сейчас {GetStatusText(seat.Status)}, но доступен для выбранной даты и времени."
+        };
     }
 
     private void RebuildBookingTimePicker()
@@ -550,6 +793,11 @@ public partial class MainWindow
         return $"{_bookingHour:00}:{_bookingMinute:00}";
     }
 
+    private DateTime GetBookingStartDateTime()
+    {
+        return _bookingDate.Date.AddHours(_bookingHour).AddMinutes(_bookingMinute);
+    }
+
     private string GetPackageDescription()
     {
         return BookingRules.GetPackageDescription(_bookingPackage, _bookingDuration);
@@ -568,8 +816,14 @@ public partial class MainWindow
                     continue;
                 }
 
-                var isSelected = _selectedSeats.Contains(button.Tag?.ToString() ?? string.Empty);
+                var isSelected = _selectedSeats.Contains(button.Tag?.ToString() ?? string.Empty)
+                    && button.DataContext is DateTime slotStart
+                    && slotStart == GetBookingStartDateTime();
                 button.Style = (Style)FindResource(isSelected ? "PrimaryButtonStyle" : "PcButtonStyle");
+                if (!isSelected)
+                {
+                    ApplyPcStatusVisual(button, button.Uid, isAvailable: true);
+                }
             }
         }
     }
@@ -771,7 +1025,7 @@ public partial class MainWindow
     {
         PcPhotoFrame.Background = new ImageBrush
         {
-            ImageSource = new BitmapImage(new Uri(GetZonePhotoPath(zone), UriKind.Relative)),
+            ImageSource = new BitmapImage(new Uri(GetZonePhotoPath(zone), UriKind.Absolute)),
             Stretch = Stretch.UniformToFill
         };
     }
@@ -780,10 +1034,10 @@ public partial class MainWindow
     {
         return zone switch
         {
-            "VIP" => "/assets/VIP.png",
-            "Bootcamp" => "/assets/Bootcamp.png",
-            "Royal VIP" => "/assets/RoyalVip.png",
-            _ => "/assets/Standard.png"
+            "VIP" => "pack://application:,,,/Assets/VIP.png",
+            "Bootcamp" => "pack://application:,,,/Assets/Bootcamp.png",
+            "Royal VIP" => "pack://application:,,,/Assets/RoyalVip.png",
+            _ => "pack://application:,,,/Assets/Standard.png"
         };
     }
 

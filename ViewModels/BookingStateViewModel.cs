@@ -18,17 +18,18 @@ public sealed class BookingStateViewModel : ViewModelBase
     private int _hour = 18;
     private int _minute;
     private string _package = "regular";
+    private string _loyaltyTier = "Bronze";
     private bool _isCompanyBooking;
     private string[] _selectedSeats = [];
     private string _seatsText = "ПК не выбран";
     private string _timeText = "18:00-19:00";
     private string _durationText = "1 ч";
-    private string _tariffText = "8 BYN/час · Gold -10%";
+    private string _tariffText = "8 BYN/час · Без скидки статуса";
     private string _baseTotalText = "0 BYN";
-    private string _discountText = "Gold -10%";
+    private string _discountText = "Без скидки статуса";
     private string _totalText = "0 BYN";
     private string _timePickerText = "Выбрать время: 18:00";
-    private string _packageHintText = "Обычный тариф: 1 ч, скидка Gold 10%.";
+    private string _packageHintText = "Обычный тариф: 1 ч, скидка статуса пока не открыта.";
     private string _warningText = string.Empty;
     private string _errorText = string.Empty;
     private string _confirmationText = string.Empty;
@@ -109,6 +110,12 @@ public sealed class BookingStateViewModel : ViewModelBase
     {
         get => _package;
         set => SetProperty(ref _package, value);
+    }
+
+    public string LoyaltyTier
+    {
+        get => _loyaltyTier;
+        set => SetProperty(ref _loyaltyTier, string.IsNullOrWhiteSpace(value) ? "Bronze" : value);
     }
 
     public bool IsCompanyBooking
@@ -289,7 +296,7 @@ public sealed class BookingStateViewModel : ViewModelBase
         var end = start.AddHours(Duration);
         var seatsCount = Math.Max(_selectedSeats.Length, 1);
         var baseTotal = Tariff * Duration * seatsCount;
-        var pricingStrategy = BookingPricingStrategyFactory.Create(Package);
+        var pricingStrategy = BookingPricingStrategyFactory.Create(Package, LoyaltyTier);
         var total = pricingStrategy.Calculate(new BookingPriceContext(Tariff, Duration, seatsCount));
         var discount = baseTotal - total;
         var tariffLabel = pricingStrategy.Label;
@@ -332,6 +339,6 @@ public sealed class BookingStateViewModel : ViewModelBase
 
     private string GetPackageDescription()
     {
-        return BookingRules.GetPackageDescription(Package, Duration);
+        return BookingRules.GetPackageDescription(Package, Duration, LoyaltyTier);
     }
 }

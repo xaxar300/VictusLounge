@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using VictusLounge.Helpers;
 using VictusLounge.Models;
+using VictusLounge.Services;
 
 namespace VictusLounge.Data;
 
@@ -64,12 +65,12 @@ public static class DatabaseInitializer
     {
         UpsertUsers(dbContext);
         MigratePlainTextPasswords(dbContext);
-        MigrateUserLoyaltyTiers(dbContext);
         UpsertComputers(dbContext);
         UpsertTariffs(dbContext);
         UpsertPromoCodes(dbContext);
         UpsertBookings(dbContext);
         UpsertGameSessions(dbContext);
+        MigrateUserLoyaltyTiers(dbContext);
         UpsertPayments(dbContext);
         UpsertShifts(dbContext);
 
@@ -78,37 +79,18 @@ public static class DatabaseInitializer
 
     private static void MigrateUserLoyaltyTiers(AppDbContext dbContext)
     {
+        var playedHoursByUser = dbContext.GameSessions
+            .AsEnumerable()
+            .GroupBy(session => session.UserId)
+            .ToDictionary(
+                group => group.Key,
+                group => LoyaltyTierService.CalculatePlayedHours(group));
+
         foreach (var user in dbContext.Users)
         {
-            user.LoyaltyTier = BetterTier(user.LoyaltyTier, TierFromBalance(user.Balance));
+            user.LoyaltyTier = LoyaltyTierService.GetTier(
+                playedHoursByUser.TryGetValue(user.Id, out var playedHours) ? playedHours : 0);
         }
-    }
-
-    private static string BetterTier(string current, string candidate)
-    {
-        return TierRank(candidate) > TierRank(current) ? candidate : current;
-    }
-
-    private static int TierRank(string tier)
-    {
-        return tier switch
-        {
-            "Elite" => 3,
-            "Gold" => 2,
-            "Silver" => 1,
-            _ => 0
-        };
-    }
-
-    private static string TierFromBalance(decimal balance)
-    {
-        return balance switch
-        {
-            >= 150 => "Elite",
-            >= 75 => "Gold",
-            >= 25 => "Silver",
-            _ => "Bronze"
-        };
     }
 
     private static void UpsertUsers(AppDbContext dbContext)

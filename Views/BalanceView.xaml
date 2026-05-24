@@ -123,7 +123,7 @@
                                         </UniformGrid>
                                         <Border CornerRadius="12" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Background="{DynamicResource SurfaceBrush}" Padding="14" Margin="0,16,0,0">
                                             <StackPanel>
-                                                <TextBlock Text="Статусы клиентов" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" Margin="0,0,0,10" />
+                                                <TextBlock Text="Статусы по наигранным часам" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" Margin="0,0,0,10" />
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="0.9*" />
@@ -137,19 +137,19 @@
                                                         <RowDefinition Height="Auto" />
                                                     </Grid.RowDefinitions>
                                                     <TextBlock Text="Bronze" FontWeight="Bold" />
-                                                    <TextBlock Grid.Column="1" Text="0 BYN" Foreground="{DynamicResource MutedBrush}" />
-                                                    <TextBlock Grid.Column="2" Text="Базовый доступ, без бонуса к пополнению" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />
+                                                    <TextBlock Grid.Column="1" Text="0 ч" Foreground="{DynamicResource MutedBrush}" />
+                                                    <TextBlock Grid.Column="2" Text="Базовый доступ, без бонуса к пополнению и брони" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />
                                                     <TextBlock Grid.Row="1" Text="Silver" FontWeight="Bold" Margin="0,8,0,0" />
-                                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="25 BYN" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,0" />
-                                                    <TextBlock Grid.Row="1" Grid.Column="2" Text="+5% бонусов при пополнении от 50 BYN" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,0" />
+                                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="10 ч" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,0" />
+                                                    <TextBlock Grid.Row="1" Grid.Column="2" Text="+5% к пополнению от 50 BYN и −5% на обычную бронь" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,0" />
                                                     <TextBlock Grid.Row="2" Text="Gold" FontWeight="Bold" Margin="0,8,0,0" />
-                                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="75 BYN" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,0" />
-                                                    <TextBlock Grid.Row="2" Grid.Column="2" Text="+10% бонусов при пополнении от 50 BYN" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,0" />
+                                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="30 ч" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,0" />
+                                                    <TextBlock Grid.Row="2" Grid.Column="2" Text="+10% к пополнению от 50 BYN и −10% на обычную бронь" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,0" />
                                                     <TextBlock Grid.Row="3" Text="Elite" FontWeight="Bold" Margin="0,8,0,0" />
-                                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="150 BYN" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,0" />
-                                                    <TextBlock Grid.Row="3" Grid.Column="2" Text="+15% бонусов при пополнении от 50 BYN" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,0" />
+                                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="60 ч" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,0" />
+                                                    <TextBlock Grid.Row="3" Grid.Column="2" Text="+15% к пополнению от 50 BYN и −15% на обычную бронь" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,0" />
                                                 </Grid>
-                                                <TextBlock Text="Промокод имеет приоритет: если он активен, бонус статуса не суммируется." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,12,0,0" />
+                                                <TextBlock Text="Статус считается только по закрытым игровым сессиям. Промокод имеет приоритет: если он активен, бонус статуса не суммируется." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,12,0,0" />
                                             </StackPanel>
                                         </Border>
                                     </StackPanel>

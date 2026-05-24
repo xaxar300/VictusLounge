@@ -2,52 +2,111 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="Transparent">
-<StackPanel>
-                            <DockPanel Margin="0,0,0,18">
-                                <StackPanel>
-                                    <TextBlock Text="SETTINGS" Style="{StaticResource KickerTextStyle}" />
-                                    <TextBlock x:Name="SettingsTitleText" Text="Настройки" FontSize="38" FontWeight="Black" Margin="0,7,0,8" />
-                                    <TextBlock x:Name="SettingsSubtitleText" Text="Смена темы приложения и языка интерфейса." Style="{StaticResource MutedTextStyle}" />
-                                </StackPanel>
-                            </DockPanel>
+    <StackPanel>
+        <DockPanel Margin="0,0,0,18">
+            <StackPanel>
+                <TextBlock Text="SETTINGS" Style="{StaticResource KickerTextStyle}" />
+                <TextBlock x:Name="SettingsTitleText" Text="Настройки" FontSize="38" FontWeight="Black" Margin="0,7,0,8" />
+                <TextBlock x:Name="SettingsSubtitleText" Text="Смена темы приложения и языка интерфейса." Style="{StaticResource MutedTextStyle}" />
+            </StackPanel>
+        </DockPanel>
 
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
+        <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock x:Name="SettingsThemeTitleText" Text="Тема приложения" FontSize="24" FontWeight="Black" />
+                <TextBlock x:Name="SettingsThemeDescriptionText"
+                           Text="Black Gold оставляет премиальный стиль клуба, Graphite дает более холодный рабочий вид, Light подходит для дневной смены."
+                           Style="{StaticResource MutedTextStyle}"
+                           Margin="0,8,0,18" />
 
-                                <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,16,0">
-                                    <Grid>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                        </Grid.RowDefinitions>
-                                        <TextBlock x:Name="SettingsThemeTitleText" Text="Тема приложения" FontSize="24" FontWeight="Black" />
-                                        <TextBlock x:Name="SettingsThemeDescriptionText" Grid.Row="1" Text="Black Gold оставляет премиальный стиль клуба, Graphite дает более холодный рабочий вид." Style="{StaticResource MutedTextStyle}" Margin="0,8,0,20" />
-                                        <UniformGrid Grid.Row="2" Columns="2">
-                                            <Button x:Name="BlackGoldThemeButton" Content="Black Gold" Style="{StaticResource PrimaryButtonStyle}" Tag="BlackGold" Command="{Binding Settings.ThemeCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="0,0,10,0" />
-                                            <Button x:Name="GraphiteThemeButton" Content="Graphite" Style="{StaticResource GhostButtonStyle}" Tag="Graphite" Command="{Binding Settings.ThemeCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" />
-                                        </UniformGrid>
-                                    </Grid>
-                                </Border>
+                <UniformGrid Columns="3" Margin="0,0,0,6">
+                    <Button x:Name="BlackGoldThemeButton"
+                            Content="Black Gold"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Tag="BlackGold"
+                            Command="{Binding Settings.ThemeCommand}"
+                            CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}"
+                            Margin="0,0,10,0" />
+                    <Button x:Name="GraphiteThemeButton"
+                            Content="Graphite"
+                            Style="{StaticResource GhostButtonStyle}"
+                            Tag="Graphite"
+                            Command="{Binding Settings.ThemeCommand}"
+                            CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}"
+                            Margin="0,0,10,0" />
+                    <Button x:Name="LightThemeButton"
+                            Content="Light"
+                            Style="{StaticResource GhostButtonStyle}"
+                            Tag="Light"
+                            Command="{Binding Settings.ThemeCommand}"
+                            CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" />
+                </UniformGrid>
+            </StackPanel>
+        </Border>
 
-                                <Border Grid.Column="1" Style="{StaticResource PanelBorderStyle}">
-                                    <Grid>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                        </Grid.RowDefinitions>
-                                        <TextBlock x:Name="SettingsLanguageTitleText" Text="Язык интерфейса" FontSize="24" FontWeight="Black" />
-                                        <TextBlock x:Name="SettingsLanguageDescriptionText" Grid.Row="1" Text="Переключает основные элементы навигации и страницу настроек." Style="{StaticResource MutedTextStyle}" Margin="0,8,0,20" />
-                                        <UniformGrid Grid.Row="2" Columns="2">
-                                            <Button x:Name="RuLanguageButton" Content="RU" Style="{StaticResource PrimaryButtonStyle}" Tag="ru" Command="{Binding Settings.LanguageCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="0,0,10,0" />
-                                            <Button x:Name="EnLanguageButton" Content="EN" Style="{StaticResource GhostButtonStyle}" Tag="en" Command="{Binding Settings.LanguageCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" />
-                                        </UniformGrid>
-                                    </Grid>
-                                </Border>
-                            </Grid>
-                        </StackPanel>
+        <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock x:Name="SettingsInterfaceSizeTitleText" Text="Размер интерфейса" FontSize="24" FontWeight="Black" />
+                <TextBlock x:Name="SettingsInterfaceSizeDescriptionText"
+                           Text="Настройте плотность экрана под ноутбук, монитор или сенсорный режим."
+                           Style="{StaticResource MutedTextStyle}"
+                           Margin="0,8,0,18" />
+
+                <UniformGrid Columns="3" Margin="0,0,0,18">
+                    <Button x:Name="CompactInterfaceButton"
+                            Content="Компактный"
+                            Style="{StaticResource GhostButtonStyle}"
+                            Tag="compact"
+                            Command="{Binding Settings.InterfaceSizeCommand}"
+                            CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}"
+                            Margin="0,0,10,0" />
+                    <Button x:Name="NormalInterfaceButton"
+                            Content="Обычный"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Tag="normal"
+                            Command="{Binding Settings.InterfaceSizeCommand}"
+                            CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}"
+                            Margin="0,0,10,0" />
+                    <Button x:Name="LargeInterfaceButton"
+                            Content="Крупный"
+                            Style="{StaticResource GhostButtonStyle}"
+                            Tag="large"
+                            Command="{Binding Settings.InterfaceSizeCommand}"
+                            CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" />
+                </UniformGrid>
+
+                <CheckBox x:Name="ConfirmActionsCheckBox"
+                          Content="Подтверждать отмену брони и завершение сессии"
+                          IsChecked="{Binding Settings.RequireActionConfirmation, Mode=TwoWay}"
+                          Foreground="{DynamicResource TextBrush}"
+                          FontWeight="SemiBold" />
+            </StackPanel>
+        </Border>
+
+        <Border Style="{StaticResource PanelBorderStyle}">
+            <StackPanel>
+                <TextBlock x:Name="SettingsLanguageTitleText" Text="Язык интерфейса" FontSize="24" FontWeight="Black" />
+                <TextBlock x:Name="SettingsLanguageDescriptionText"
+                           Text="Переключает основные элементы навигации и страницу настроек."
+                           Style="{StaticResource MutedTextStyle}"
+                           Margin="0,8,0,18" />
+
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="RuLanguageButton"
+                            Content="Русский"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Tag="ru"
+                            Command="{Binding Settings.LanguageCommand}"
+                            CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}"
+                            Margin="0,0,10,0" />
+                    <Button x:Name="EnLanguageButton"
+                            Content="English"
+                            Style="{StaticResource GhostButtonStyle}"
+                            Tag="en"
+                            Command="{Binding Settings.LanguageCommand}"
+                            CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </StackPanel>
 </UserControl>

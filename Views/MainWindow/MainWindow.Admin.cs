@@ -13,6 +13,7 @@ using VictusLounge.Data;
 using VictusLounge.Helpers;
 using VictusLounge.Models;
 using VictusLounge.Repositories;
+using VictusLounge.Services;
 
 namespace VictusLounge;
 
@@ -201,7 +202,11 @@ public partial class MainWindow
                     && unitOfWork.Users.GetById(payment.UserId) is { } paymentUser)
                 {
                     paymentUser.Balance += payment.Amount;
-                    paymentUser.LoyaltyTier = BetterTier(paymentUser.LoyaltyTier, GetClientTier(paymentUser.Balance));
+                    var playedHours = LoyaltyTierService.CalculatePlayedHours(unitOfWork.GameSessions
+                        .QueryNoTracking()
+                        .Where(session => session.UserId == paymentUser.Id)
+                        .ToList());
+                    paymentUser.LoyaltyTier = GetClientTier(playedHours);
                 }
 
                 payment.PaymentType = PaymentTypes.Cash;
@@ -235,14 +240,20 @@ public partial class MainWindow
             }
 
             var session = unitOfWork.GameSessions.GetOpenForComputer(computer.Id);
+            int? userId = null;
             if (session is not null)
             {
+                userId = session.UserId;
                 session.EndTime = DateTime.Now;
                 session.Status = SessionStatuses.Closed;
             }
 
             computer.Status = PcStatuses.Free;
             unitOfWork.SaveChanges();
+            if (userId is not null)
+            {
+                RefreshStoredClientTier(unitOfWork, userId.Value);
+            }
             LoadDatabaseState();
         }
         catch (Exception ex)

@@ -83,6 +83,7 @@ public partial class MainWindow
     {
         var now = DateTime.Now;
         var hasChanges = false;
+        var closedSessionUserIds = new HashSet<int>();
 
         var expiredSessions = unitOfWork.GameSessions.Query()
             .Where(session => session.Status != SessionStatuses.Closed
@@ -93,6 +94,7 @@ public partial class MainWindow
         foreach (var session in expiredSessions)
         {
             session.Status = SessionStatuses.Closed;
+            closedSessionUserIds.Add(session.UserId);
             hasChanges = true;
         }
 
@@ -132,6 +134,10 @@ public partial class MainWindow
         if (hasChanges)
         {
             unitOfWork.SaveChanges();
+            foreach (var userId in closedSessionUserIds)
+            {
+                RefreshStoredClientTier(unitOfWork, userId);
+            }
         }
     }
 

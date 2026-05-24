@@ -4,6 +4,7 @@ using System.Linq;
 using VictusLounge.Helpers;
 using VictusLounge.Models;
 using VictusLounge.Repositories;
+using VictusLounge.Services;
 
 namespace VictusLounge.Services.Facades;
 
@@ -13,11 +14,11 @@ public sealed class TopupFacade
     {
         if (!TryReadAmount(request.AmountText, out var amount))
         {
-            return new TopupSummary("0 BYN", "Введите сумму больше 0", 0, 0, GetClientTier(request.CurrentBalance));
+            return new TopupSummary("0 BYN", "Введите сумму больше 0", 0, 0, GetClientTier(request.UserId));
         }
 
         var user = TryGetUser(request.UserId);
-        var tier = user is null ? GetClientTier(request.CurrentBalance) : GetClientTier(user);
+        var tier = user is null ? "Bronze" : GetClientTier(user);
         var promoCode = TryGetPromoCode(request.AppliedPromoCode);
         var bonus = CalculateTopupBonus(amount, tier, promoCode);
         var bonusText = bonus > 0
@@ -70,7 +71,7 @@ public sealed class TopupFacade
             var bonus = CalculateTopupBonus(amount, tier, promoCode);
             var bonusSource = promoCode is not null ? $"promo {promoCode.Code}" : $"tier {tier}";
             user.Balance += amount + bonus;
-            user.LoyaltyTier = BetterTier(user.LoyaltyTier, GetClientTier(user.Balance));
+            user.LoyaltyTier = tier;
 
             var nextPaymentId = unitOfWork.Payments.GetNextId(payment => payment.Id);
             unitOfWork.Payments.Add(new Payment
@@ -191,47 +192,32 @@ public sealed class TopupFacade
         }
     }
 
-    private static string GetClientTier(decimal balance)
+    private static string GetClientTier(int userId)
     {
-        return balance switch
+        try
         {
-            >= 150 => "Elite",
-            >= 75 => "Gold",
-            >= 25 => "Silver",
-            _ => "Bronze"
-        };
+            using var unitOfWork = new UnitOfWork();
+            var sessions = unitOfWork.GameSessions
+                .QueryNoTracking()
+                .Where(session => session.UserId == userId)
+                .ToList();
+            return LoyaltyTierService.GetTier(LoyaltyTierService.CalculatePlayedHours(sessions));
+        }
+        catch
+        {
+            return "Bronze";
+        }
     }
 
     private static string GetClientTier(User user)
     {
-        return BetterTier(user.LoyaltyTier, GetClientTier(user.Balance));
-    }
-
-    private static string BetterTier(string current, string candidate)
-    {
-        return TierRank(candidate) > TierRank(current) ? candidate : current;
-    }
-
-    private static int TierRank(string tier)
-    {
-        return tier switch
-        {
-            "Elite" => 3,
-            "Gold" => 2,
-            "Silver" => 1,
-            _ => 0
-        };
+        var tier = GetClientTier(user.Id);
+        return string.IsNullOrWhiteSpace(tier) ? "Bronze" : tier;
     }
 
     private static decimal GetTierTopupBonusRate(string tier)
     {
-        return tier switch
-        {
-            "Elite" => 0.15m,
-            "Gold" => 0.1m,
-            "Silver" => 0.05m,
-            _ => 0m
-        };
+        return LoyaltyTierService.GetTopupBonusRate(tier);
     }
 
     private static bool IsValidPaymentCardNumber(string raw)

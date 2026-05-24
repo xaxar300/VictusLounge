@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using VictusLounge.Helpers;
 using VictusLounge.Models;
@@ -45,7 +46,12 @@ public sealed class BookingService
             var nextBookingId = await unitOfWork.Bookings.GetNextIdAsync(booking => booking.Id);
             var isImminent = start.Date == DateTime.Today && start <= DateTime.Now.AddMinutes(15);
 
-            var pricingStrategy = BookingPricingStrategyFactory.Create(request.Package);
+            var userSessions = unitOfWork.GameSessions
+                .QueryNoTracking()
+                .Where(session => session.UserId == request.UserId)
+                .ToList();
+            var tier = LoyaltyTierService.GetTier(LoyaltyTierService.CalculatePlayedHours(userSessions));
+            var pricingStrategy = BookingPricingStrategyFactory.Create(request.Package, tier);
 
             foreach (var seat in seats)
             {
@@ -109,7 +115,7 @@ public sealed class BookingService
                 return (resolvedComputers, $"ПК {seat} уже занят на это время. Выберите другой интервал или место.");
             }
 
-            if (await unitOfWork.GameSessions.HasTimeConflictAsync(computer.Id, start, end))
+            if (HasGameSessionConflictForBooking(unitOfWork, computer.Id, start, end))
             {
                 return (resolvedComputers, $"ПК {seat} уже занят игровой сессией на это время. Выберите другой интервал или место.");
             }
@@ -118,6 +124,20 @@ public sealed class BookingService
         }
 
         return (resolvedComputers, null);
+    }
+
+    private static bool HasGameSessionConflictForBooking(
+        IUnitOfWork unitOfWork,
+        int computerId,
+        DateTime start,
+        DateTime end)
+    {
+        return unitOfWork.GameSessions.Query().Any(session =>
+            session.ComputerId == computerId
+            && session.Status != SessionStatuses.Closed
+            && session.StartTime < end
+            && ((session.EndTime != null && session.EndTime > start)
+                || (session.EndTime == null && start.Date == DateTime.Today)));
     }
 
 }

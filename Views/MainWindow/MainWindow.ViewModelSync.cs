@@ -35,6 +35,7 @@ public partial class MainWindow
         _viewModel.Booking.Hour = _bookingHour;
         _viewModel.Booking.Minute = _bookingMinute;
         _viewModel.Booking.Package = _bookingPackage;
+        _viewModel.Booking.LoyaltyTier = _currentUserId > 0 ? GetStoredClientTier(_currentUserId) : "Bronze";
         _viewModel.Booking.IsCompanyBooking = _isCompanyBooking;
         _viewModel.Booking.SetSelectedSeats(_selectedSeats);
         _viewModel.Booking.RefreshSummary();

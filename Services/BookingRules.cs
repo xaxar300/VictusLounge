@@ -126,13 +126,18 @@ public static class BookingRules
         return hour is 6 or 7 or 8;
     }
 
-    public static string GetPackageDescription(string package, int duration)
+    public static string GetPackageDescription(string package, int duration, string tier = "Bronze")
     {
+        var tierDiscount = LoyaltyTierService.GetBookingDiscountRate(tier);
+        var regularDiscountText = tierDiscount > 0
+            ? $"скидка {tier} {tierDiscount * 100:0}%."
+            : "скидка статуса пока не открыта.";
+
         return package switch
         {
             "night" => "Night Pack: 8 часов, старт только в 22:00, 23:00 или 00:00, скидка 25%.",
             "morning" => "Morning Pack: 3 часа, старт только в 06:00, 07:00 или 08:00, скидка 20%.",
-            _ => $"Обычный тариф: {duration} ч, скидка Gold 10%."
+            _ => $"Обычный тариф: {duration} ч, {regularDiscountText}"
         };
     }
 }

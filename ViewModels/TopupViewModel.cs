@@ -17,7 +17,7 @@ public sealed class TopupViewModel : ViewModelBase
     private string _methodHint = "Карта: платеж проверяется по номеру карты и сразу зачисляется на баланс.";
     private string _confirmText = "Пополнить";
     private string _summaryText = "50 BYN";
-    private string _bonusText = "+5 бонусов по Gold";
+    private string _bonusText = "Бонус зависит от статуса по часам";
     private string _errorText = string.Empty;
     private bool _hasError;
 

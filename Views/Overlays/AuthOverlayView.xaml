@@ -70,9 +70,9 @@
 
                                     <Border Grid.Column="1" CornerRadius="18" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Padding="18" VerticalAlignment="Stretch">
                                         <Border.Background>
-                                            <ImageBrush ImageSource="/assets/LoginPhoto.png" Stretch="UniformToFill" />
+                                            <ImageBrush ImageSource="pack://application:,,,/Assets/LoginPhoto.png" Stretch="UniformToFill" />
                                         </Border.Background>
-                                        <Grid>
+                                        <Grid Visibility="Collapsed">
                                             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                                 <TextBlock Text="&#xEB9F;" FontFamily="Segoe MDL2 Assets" FontSize="42" Foreground="{DynamicResource GoldLightBrush}" HorizontalAlignment="Center" />
                                                 <TextBlock Text="Фрейм для фото клуба" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" Margin="0,14,0,6" />
@@ -169,9 +169,9 @@
 
                                     <Border Grid.Column="0" CornerRadius="18" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Padding="18" Margin="0,0,22,0" VerticalAlignment="Stretch">
                                         <Border.Background>
-                                            <ImageBrush ImageSource="/assets/RegisterPhoto.png" Stretch="UniformToFill" />
+                                            <ImageBrush ImageSource="pack://application:,,,/Assets/RegisterPhoto.png" Stretch="UniformToFill" />
                                         </Border.Background>
-                                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Collapsed">
                                             <TextBlock Text="&#xEB9F;" FontFamily="Segoe MDL2 Assets" FontSize="42" Foreground="{DynamicResource GoldLightBrush}" HorizontalAlignment="Center" />
                                             <TextBlock Text="Фрейм для промо-фото" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" Margin="0,14,0,6" />
                                             <TextBlock Text="Добавьте сюда изображение клуба, команды или зоны, которую хотите показать новым гостям." Style="{StaticResource MutedTextStyle}" TextAlignment="Center" TextWrapping="Wrap" />

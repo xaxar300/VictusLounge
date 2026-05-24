@@ -13,6 +13,7 @@ using VictusLounge.Data;
 using VictusLounge.Helpers;
 using VictusLounge.Models;
 using VictusLounge.Repositories;
+using VictusLounge.Services;
 using VictusLounge.ViewModels;
 
 namespace VictusLounge;
@@ -46,9 +47,13 @@ public partial class MainWindow
             .ThenByDescending(booking => booking.Id)
             .FirstOrDefault();
 
-        var playedHours = userSessions
-            .Where(session => session.EndTime is not null)
-            .Sum(session => Math.Max(0, (session.EndTime!.Value - session.StartTime).TotalHours));
+        var playedHours = LoyaltyTierService.CalculatePlayedHours(userSessions);
+        var tier = GetClientTier(playedHours);
+        if (!string.Equals(user.LoyaltyTier, tier, StringComparison.Ordinal))
+        {
+            user.LoyaltyTier = tier;
+            RefreshStoredClientTier(unitOfWork, user.Id);
+        }
         var bonus = userPayments
             .Where(payment => payment.PaymentType.Equals(PaymentTypes.Bonus, StringComparison.OrdinalIgnoreCase))
             .Sum(payment => payment.Amount);
@@ -58,11 +63,16 @@ public partial class MainWindow
             .OrderByDescending(group => group.Count())
             .Select(group => group.Key)
             .FirstOrDefault() ?? "-";
-        var progress = Math.Clamp((int)Math.Round(user.Balance / 150m * 100), 0, 100);
+        var progress = Math.Clamp((int)Math.Round(playedHours / LoyaltyTierService.EliteHours * 100), 0, 100);
+        var nextTier = LoyaltyTierService.GetNextTier(tier);
+        var nextThreshold = LoyaltyTierService.GetNextThreshold(tier);
+        var progressText = tier == "Elite"
+            ? $"{progress}% · максимум статуса, наиграно {playedHours:0.#} ч"
+            : $"{progress}% · до {nextTier}: {Math.Max(0, nextThreshold - playedHours):0.#} ч";
 
         CabinetUserNameText.Text = user.FullName;
-        CabinetTierText.Text = $"{GetClientTier(user)} · {user.Login}";
-        CabinetProgressText.Text = $"{progress}% · бонусов: {bonus:0.##}";
+        CabinetTierText.Text = $"{tier} · {user.Login}";
+        CabinetProgressText.Text = progressText;
         CabinetBalanceText.Text = $"{user.Balance:0.##} BYN";
         CabinetBonusText.Text = $"{bonus:0.##}";
         _viewModel.Balance.BonusAmount = bonus;
@@ -75,7 +85,7 @@ public partial class MainWindow
         if (activeBooking is not null && computers.TryGetValue(activeBooking.ComputerId, out var bookingComputer))
         {
             var price = CalculateBookingTotal(activeBooking, bookingComputer);
-            var label = GetBookingPackageLabel(activeBooking);
+            var label = GetBookingPackageLabel(activeBooking, tier);
             var payablePrice = ApplyBookingPromo(price);
             var promoSuffix = payablePrice < price ? $" · промокод -{price - payablePrice:0.##} BYN" : string.Empty;
             CabinetActiveBookingText.Text = $"{bookingComputer.Name} · {activeBooking.StartTime:dd.MM HH:mm}–{activeBooking.EndTime:HH:mm}";
@@ -168,34 +178,65 @@ public partial class MainWindow
 
     private decimal CalculateBookingTotal(Booking booking, Computer computer)
     {
-        if (booking.TotalPrice > 0)
+        if (booking.TotalPrice > 0 && booking.Package != "regular")
         {
             return booking.TotalPrice;
         }
 
         var duration = Math.Max(1m, (decimal)(booking.EndTime - booking.StartTime).TotalHours);
         var baseTotal = computer.HourPrice * duration;
-        return Math.Round(baseTotal * GetBookingDiscountFactor(booking), 2);
+        return Math.Round(baseTotal * GetBookingDiscountFactor(booking, GetStoredClientTier(booking.UserId)), 2);
     }
 
-    private static decimal GetBookingDiscountFactor(Booking booking)
+    private static decimal GetBookingDiscountFactor(Booking booking, string tier)
     {
         return booking.Package switch
         {
             "night" => 0.75m,
             "morning" => 0.8m,
-            _ => 0.9m
+            _ => 1 - LoyaltyTierService.GetBookingDiscountRate(tier)
         };
     }
 
-    private static string GetBookingPackageLabel(Booking booking)
+    private static string GetBookingPackageLabel(Booking booking, string tier)
     {
         return booking.Package switch
         {
             "night" => "Night Pack -25%",
             "morning" => "Morning Pack -20%",
-            _ => "Gold -10%"
+            _ => LoyaltyTierService.GetBookingDiscountLabel(tier)
         };
+    }
+
+    private static string GetStoredClientTier(int userId)
+    {
+        try
+        {
+            using var unitOfWork = new UnitOfWork();
+            return RefreshStoredClientTier(unitOfWork, userId);
+        }
+        catch
+        {
+            return "Bronze";
+        }
+    }
+
+    private static string RefreshStoredClientTier(IUnitOfWork unitOfWork, int userId)
+    {
+        var sessions = unitOfWork.GameSessions
+            .QueryNoTracking()
+            .Where(session => session.UserId == userId)
+            .ToList();
+        var tier = LoyaltyTierService.GetTier(LoyaltyTierService.CalculatePlayedHours(sessions));
+
+        if (unitOfWork.Users.GetById(userId) is { } user
+            && !string.Equals(user.LoyaltyTier, tier, StringComparison.Ordinal))
+        {
+            user.LoyaltyTier = tier;
+            unitOfWork.SaveChanges();
+        }
+
+        return tier;
     }
 
     private void CancelCabinetBooking()
@@ -203,6 +244,11 @@ public partial class MainWindow
         if (_activeCabinetBookingId is null)
         {
             ShowStatus("Бронь не выбрана", "В кабинете нет активной брони для отмены.");
+            return;
+        }
+
+        if (_confirmClientActions && !ConfirmClientAction("Отменить бронь?", "Активная бронь будет отменена. Продолжить?"))
+        {
             return;
         }
 
@@ -247,6 +293,7 @@ public partial class MainWindow
             }
 
             unitOfWork.SaveChanges();
+            RefreshStoredClientTier(unitOfWork, _currentUserId);
             return true;
         }
         catch (Exception ex)
@@ -264,6 +311,11 @@ public partial class MainWindow
             return;
         }
 
+        if (_confirmClientActions && !ConfirmClientAction("Завершить сессию?", "Текущая сессия будет закрыта, а ПК освобожден. Продолжить?"))
+        {
+            return;
+        }
+
         if (EndCurrentClientSession(_activeCabinetSessionId.Value, out var computerName))
         {
             LoadDatabaseState();
@@ -275,6 +327,15 @@ public partial class MainWindow
         }
 
         ShowStatus("Сессия не завершена", "Не удалось закрыть текущую индивидуальную сессию.");
+    }
+
+    private bool ConfirmClientAction(string title, string message)
+    {
+        return MessageBox.Show(
+            message,
+            title,
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning) == MessageBoxResult.Yes;
     }
 
     private bool EndCurrentClientSession(int sessionId, out string computerName)

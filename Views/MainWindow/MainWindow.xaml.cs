@@ -27,8 +27,10 @@ public partial class MainWindow : Window
     private bool _isSidebarCollapsed;
     private string _currentView = "dashboard";
     private string _currentTheme = "BlackGold";
+    private string _currentInterfaceSize = "normal";
     private string _currentLanguage = "ru";
     private string _currentRole = "client";
+    private bool _confirmClientActions = true;
     private int _bookingDuration = 1;
     private bool _isCompanyBooking;
     private DateTime _bookingDate = DateTime.Today;
@@ -92,7 +94,11 @@ public partial class MainWindow : Window
             new DashboardViewModel(ExecuteQuickAction, SelectDashboardZone),
             new ClientCabinetViewModel(ExecuteCabinetAction, CancelCabinetBooking, EndCabinetSession),
             new EventsViewModel(ApplyEventFilter, JoinEvent),
-            new SettingsViewModel(theme => ApplyTheme(theme), language => ApplyLanguage(language)),
+            new SettingsViewModel(
+                theme => ApplyTheme(theme),
+                language => ApplyLanguage(language),
+                size => ApplyInterfaceSize(size),
+                confirm => _confirmClientActions = confirm),
             new NotificationCenterViewModel(ToggleNotificationCenter, MarkNotificationsRead),
             new ShellViewModel(ExecuteGlobalSearch, HandleShellPreviewKeyDown, HandleShellPreviewMouseDown),
             ExecuteAdminAction,
@@ -119,6 +125,7 @@ public partial class MainWindow : Window
 
         ApplyLanguage(_currentLanguage, false);
         UpdateThemeButtons();
+        ApplyInterfaceSize(_currentInterfaceSize, false);
 
         Loaded += (_, _) =>
         {

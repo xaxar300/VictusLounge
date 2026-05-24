@@ -43,7 +43,7 @@
                                             </Border>
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                                 <Border CornerRadius="10" Background="#24D4AF37" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Padding="9,4" HorizontalAlignment="Left" Margin="0,0,0,9">
-                                                    <TextBlock Text="Gold" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Black" FontSize="12" />
+                                                    <TextBlock Text="STATUS" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Black" FontSize="12" />
                                                 </Border>
                                                 <TextBlock x:Name="CabinetUserNameText" Text="Client" FontSize="24" FontWeight="Black" TextWrapping="Wrap" />
                                                 <TextBlock x:Name="CabinetTierText" Text="Bronze · Silver · Gold · Elite" Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,0" />

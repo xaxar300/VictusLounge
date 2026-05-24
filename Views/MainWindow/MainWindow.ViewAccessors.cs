@@ -44,7 +44,7 @@ public partial class MainWindow
     private System.Windows.Controls.Primitives.UniformGrid BookingHourGrid => BookingView.BookingHourGrid;
     private System.Windows.Controls.Primitives.UniformGrid BookingMinuteGrid => BookingView.BookingMinuteGrid;
     private System.Windows.Controls.TextBlock PackageHintText => BookingView.PackageHintText;
-    private System.Windows.Controls.Primitives.UniformGrid BookingSeatGrid => BookingView.BookingSeatGrid;
+    private System.Windows.Controls.Grid BookingSeatGrid => BookingView.BookingSeatGrid;
     private System.Windows.Controls.TextBlock SummarySeatsText => BookingView.SummarySeatsText;
     private System.Windows.Controls.TextBlock SummaryZoneText => BookingView.SummaryZoneText;
     private System.Windows.Controls.TextBlock SummaryDateText => BookingView.SummaryDateText;
@@ -154,6 +154,13 @@ public partial class MainWindow
     private System.Windows.Controls.TextBlock SettingsThemeDescriptionText => SettingsView.SettingsThemeDescriptionText;
     private System.Windows.Controls.Button BlackGoldThemeButton => SettingsView.BlackGoldThemeButton;
     private System.Windows.Controls.Button GraphiteThemeButton => SettingsView.GraphiteThemeButton;
+    private System.Windows.Controls.Button LightThemeButton => SettingsView.LightThemeButton;
+    private System.Windows.Controls.TextBlock SettingsInterfaceSizeTitleText => SettingsView.SettingsInterfaceSizeTitleText;
+    private System.Windows.Controls.TextBlock SettingsInterfaceSizeDescriptionText => SettingsView.SettingsInterfaceSizeDescriptionText;
+    private System.Windows.Controls.Button CompactInterfaceButton => SettingsView.CompactInterfaceButton;
+    private System.Windows.Controls.Button NormalInterfaceButton => SettingsView.NormalInterfaceButton;
+    private System.Windows.Controls.Button LargeInterfaceButton => SettingsView.LargeInterfaceButton;
+    private System.Windows.Controls.CheckBox ConfirmActionsCheckBox => SettingsView.ConfirmActionsCheckBox;
     private System.Windows.Controls.TextBlock SettingsLanguageTitleText => SettingsView.SettingsLanguageTitleText;
     private System.Windows.Controls.TextBlock SettingsLanguageDescriptionText => SettingsView.SettingsLanguageDescriptionText;
     private System.Windows.Controls.Button RuLanguageButton => SettingsView.RuLanguageButton;

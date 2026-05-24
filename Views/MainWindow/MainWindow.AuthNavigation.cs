@@ -13,6 +13,7 @@ using VictusLounge.Data;
 using VictusLounge.Helpers;
 using VictusLounge.Models;
 using VictusLounge.Repositories;
+using VictusLounge.Services;
 using VictusLounge.ViewModels;
 
 namespace VictusLounge;
@@ -88,36 +89,14 @@ public partial class MainWindow
         SyncCurrentUserViewModel();
     }
 
-    private static string GetClientTier(decimal balance)
+    private static string GetClientTier(double playedHours)
     {
-        return balance switch
-        {
-            >= 150 => "Elite",
-            >= 75 => "Gold",
-            >= 25 => "Silver",
-            _ => "Bronze"
-        };
+        return LoyaltyTierService.GetTier(playedHours);
     }
 
     private static string GetClientTier(User user)
     {
-        return BetterTier(user.LoyaltyTier, GetClientTier(user.Balance));
-    }
-
-    private static string BetterTier(string current, string candidate)
-    {
-        return TierRank(candidate) > TierRank(current) ? candidate : current;
-    }
-
-    private static int TierRank(string tier)
-    {
-        return tier switch
-        {
-            "Elite" => 3,
-            "Gold" => 2,
-            "Silver" => 1,
-            _ => 0
-        };
+        return string.IsNullOrWhiteSpace(user.LoyaltyTier) ? "Bronze" : user.LoyaltyTier;
     }
 
     private static string NormalizeRole(string role)
@@ -400,6 +379,34 @@ public partial class MainWindow
     {
         BlackGoldThemeButton.Style = (Style)FindResource(_currentTheme == "BlackGold" ? "PrimaryButtonStyle" : "GhostButtonStyle");
         GraphiteThemeButton.Style = (Style)FindResource(_currentTheme == "Graphite" ? "PrimaryButtonStyle" : "GhostButtonStyle");
+        LightThemeButton.Style = (Style)FindResource(_currentTheme == "Light" ? "PrimaryButtonStyle" : "GhostButtonStyle");
+    }
+
+    private void ApplyInterfaceSize(string size, bool showToast = true)
+    {
+        _currentInterfaceSize = size;
+
+        var scale = size switch
+        {
+            "compact" => 0.92,
+            "large" => 1.08,
+            _ => 1.0
+        };
+
+        ShellRoot.LayoutTransform = new System.Windows.Media.ScaleTransform(scale, scale);
+        UpdateInterfaceSizeButtons();
+
+        if (showToast)
+        {
+            ShowStatus(T("Settings.Applied"), T("Settings.InterfaceSizeApplied"));
+        }
+    }
+
+    private void UpdateInterfaceSizeButtons()
+    {
+        CompactInterfaceButton.Style = (Style)FindResource(_currentInterfaceSize == "compact" ? "PrimaryButtonStyle" : "GhostButtonStyle");
+        NormalInterfaceButton.Style = (Style)FindResource(_currentInterfaceSize == "normal" ? "PrimaryButtonStyle" : "GhostButtonStyle");
+        LargeInterfaceButton.Style = (Style)FindResource(_currentInterfaceSize == "large" ? "PrimaryButtonStyle" : "GhostButtonStyle");
     }
 
     private void ApplyLanguage(string language, bool showToast = true)
@@ -418,6 +425,13 @@ public partial class MainWindow
         SettingsLanguageDescriptionText.Text = T("Settings.LanguageDescription");
         BlackGoldThemeButton.Content = T("Settings.BlackGold");
         GraphiteThemeButton.Content = T("Settings.Graphite");
+        LightThemeButton.Content = T("Settings.Light");
+        SettingsInterfaceSizeTitleText.Text = T("Settings.InterfaceSizeTitle");
+        SettingsInterfaceSizeDescriptionText.Text = T("Settings.InterfaceSizeDescription");
+        CompactInterfaceButton.Content = T("Settings.InterfaceCompact");
+        NormalInterfaceButton.Content = T("Settings.InterfaceNormal");
+        LargeInterfaceButton.Content = T("Settings.InterfaceLarge");
+        ConfirmActionsCheckBox.Content = T("Settings.ConfirmActions");
         ApplyBalanceLanguage();
 
         SetNavButtonText(DashboardNavButton, T("Nav.Dashboard"));

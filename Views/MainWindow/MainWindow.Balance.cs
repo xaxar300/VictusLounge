@@ -1,4 +1,5 @@
 using VictusLounge.Helpers;
+using VictusLounge.Services;
 
 namespace VictusLounge;
 
@@ -11,12 +12,6 @@ public partial class MainWindow
 
     private static decimal GetTierTopupBonusRate(string tier)
     {
-        return tier switch
-        {
-            "Elite" => 0.15m,
-            "Gold" => 0.1m,
-            "Silver" => 0.05m,
-            _ => 0m
-        };
+        return LoyaltyTierService.GetTopupBonusRate(tier);
     }
 }

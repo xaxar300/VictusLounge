@@ -92,8 +92,20 @@
                                             </StackPanel>
                                         </Grid>
 
-                                        <TextBlock Text="Выбор ПК" FontSize="22" FontWeight="Bold" Margin="{StaticResource SpaceBelowM}" />
-                                        <UniformGrid x:Name="BookingSeatGrid" Columns="7" />
+                                        <DockPanel Margin="{StaticResource SpaceBelowM}">
+                                            <StackPanel>
+                                                <TextBlock Text="Выбор ПК" FontSize="22" FontWeight="Bold" />
+                                                <TextBlock Text="Нажмите свободный слот в строке нужного ПК." Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,5,0,0" />
+                                            </StackPanel>
+                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+                                                <TextBlock Text="свободно" Foreground="{DynamicResource OkBrush}" FontSize="12" Margin="0,0,12,0" />
+                                                <TextBlock Text="занято" Foreground="{DynamicResource WaitBrush}" FontSize="12" Margin="0,0,12,0" />
+                                                <TextBlock Text="сервис" Foreground="{DynamicResource MutedBrush}" FontSize="12" />
+                                            </StackPanel>
+                                        </DockPanel>
+                                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" MaxHeight="430">
+                                            <Grid x:Name="BookingSeatGrid" MinWidth="760" />
+                                        </ScrollViewer>
                                     </StackPanel>
                                 </Border>
 
