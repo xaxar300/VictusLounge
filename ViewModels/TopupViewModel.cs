@@ -23,8 +23,8 @@ public sealed class TopupViewModel : ViewModelBase
 
     public TopupViewModel()
     {
-        CloseCommand = new RelayCommand(_ => _close?.Invoke());
-        ConfirmCommand = new RelayCommand(_ => _confirm?.Invoke());
+        CloseCommand = new RelayCommand(() => _close?.Invoke());
+        ConfirmCommand = new RelayCommand(() => _confirm?.Invoke());
         SelectMethodCommand = new RelayCommand(parameter =>
         {
             if (parameter is string method && !string.IsNullOrWhiteSpace(method))

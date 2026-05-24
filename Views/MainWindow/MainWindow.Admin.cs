@@ -1028,11 +1028,11 @@ public partial class MainWindow
         RebuildAdminOperationLogList();
         RebuildAdminSessionsGrid();
 
-        AdminActiveSessionsValue.Text = _adminActiveSessions.ToString();
-        AdminPaymentQueueValue.Text = _adminPaymentQueue.ToString();
-        AdminFreePcsValue.Text = _adminFreePcs.ToString();
+        SetText(AdminActiveSessionsValue, _adminActiveSessions);
+        SetText(AdminPaymentQueueValue, _adminPaymentQueue);
+        SetText(AdminFreePcsValue, _adminFreePcs);
         AdminFreePcsHintText.Text = $"из {_computers.Count} рабочих мест";
-        AdminSupportValue.Text = _adminSupportQueue.ToString();
+        SetText(AdminSupportValue, _adminSupportQueue);
         ShiftCashValue.Text = $"{_shiftCash:0} BYN";
         ShiftOnlineValue.Text = $"{_shiftOnline:0} BYN";
         OwnerRevenueValue.Text = $"{_ownerRevenue:N0} BYN".Replace(',', ' ');
@@ -1044,8 +1044,14 @@ public partial class MainWindow
         OwnerVipPriceText.Text = $"{_vipRate} BYN/час · 8 ПК";
         OwnerBootcampPriceText.Text = $"{_bootcampRate} BYN/час · 5 ПК";
         OwnerRoyalPriceText.Text = $"{_royalRate} BYN/час · 5 ПК";
-        OwnerPeakModeButton.Style = (Style)FindResource(_ownerDemandMode == "peak" ? "PrimaryButtonStyle" : "GhostButtonStyle");
-        OwnerNightModeButton.Style = (Style)FindResource(_ownerDemandMode == "night" ? "PrimaryButtonStyle" : "GhostButtonStyle");
+        SetChoiceButtonStyles(_ownerDemandMode,
+            ("peak", OwnerPeakModeButton),
+            ("night", OwnerNightModeButton));
+    }
+
+    private static void SetText(TextBlock target, object value)
+    {
+        target.Text = value.ToString();
     }
 
     private void RebuildAdminSessionsGrid()

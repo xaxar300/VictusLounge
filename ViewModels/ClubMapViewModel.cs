@@ -30,7 +30,7 @@ public sealed class ClubMapViewModel : ViewModelBase
                 _selectPc?.Invoke(raw);
             }
         });
-        BookSelectedPcCommand = new RelayCommand(_ => _bookSelectedPc?.Invoke());
+        BookSelectedPcCommand = new RelayCommand(() => _bookSelectedPc?.Invoke());
     }
 
     public string? SelectedPc

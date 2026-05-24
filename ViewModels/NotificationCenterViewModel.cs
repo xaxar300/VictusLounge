@@ -7,8 +7,8 @@ public sealed class NotificationCenterViewModel
 {
     public NotificationCenterViewModel(Action toggle, Action markRead)
     {
-        ToggleCommand = new RelayCommand(_ => toggle());
-        MarkReadCommand = new RelayCommand(_ => markRead());
+        ToggleCommand = new RelayCommand(toggle);
+        MarkReadCommand = new RelayCommand(markRead);
     }
 
     public ICommand ToggleCommand { get; }

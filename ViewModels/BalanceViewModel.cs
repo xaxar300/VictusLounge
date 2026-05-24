@@ -50,15 +50,15 @@ public sealed class BalanceViewModel : ViewModelBase
         _buyPackage = buyPackage;
         _showPackage = showPackage;
 
-        ApplyPromoCommand = new RelayCommand(_ => ApplyPromo());
-        ClearPromoCommand = new RelayCommand(_ => ClearPromo(showStatus: true));
-        OpenTopupCommand = new RelayCommand(_ => _openTopup());
-        ExportHistoryCommand = new RelayCommand(_ =>
+        ApplyPromoCommand = new RelayCommand(ApplyPromo);
+        ClearPromoCommand = new RelayCommand(() => ClearPromo(showStatus: true));
+        OpenTopupCommand = new RelayCommand(_openTopup);
+        ExportHistoryCommand = new RelayCommand(() =>
         {
             var exportPath = _exportHistory();
             _showStatus("Экспорт", $"История операций выгружена: {exportPath}");
         });
-        ShowOfferCommand = new RelayCommand(_ =>
+        ShowOfferCommand = new RelayCommand(() =>
             _showStatus("Персональная акция", "Бонус статуса применяется автоматически при пополнении и не требует активации."));
         BuyPackageCommand = new RelayCommand(parameter =>
         {

@@ -657,64 +657,63 @@ public partial class MainWindow
         BookingHourGrid.Children.Clear();
         for (var hour = 0; hour < 24; hour++)
         {
-            var button = new Button
-            {
-                Content = $"{hour:00}",
-                Tag = hour,
-                Style = (Style)FindResource(hour == _bookingHour ? "SelectedTimeButtonStyle" : "TimeButtonStyle"),
-                Margin = new Thickness(0, 0, 8, 8),
-                IsEnabled = BookingRules.IsHourAllowed(_bookingPackage, hour)
-            };
-            if (!button.IsEnabled)
-            {
-                button.Style = (Style)FindResource("UnavailablePcButtonStyle");
-            }
-            button.Command = _viewModel.Booking.SelectHourCommand;
-            button.CommandParameter = hour;
-            BookingHourGrid.Children.Add(button);
+            BookingHourGrid.Children.Add(CreateTimeButton(
+                hour,
+                hour == _bookingHour,
+                BookingRules.IsHourAllowed(_bookingPackage, hour),
+                _viewModel.Booking.SelectHourCommand,
+                new Thickness(0, 0, 8, 8)));
         }
 
         BookingMinuteGrid.Children.Clear();
         foreach (var minute in new[] { 0, 15, 30, 45 })
         {
-            var button = new Button
-            {
-                Content = $"{minute:00}",
-                Tag = minute,
-                Style = (Style)FindResource(minute == _bookingMinute ? "SelectedTimeButtonStyle" : "TimeButtonStyle"),
-                Margin = new Thickness(0, 0, 0, 8)
-            };
-            button.Command = _viewModel.Booking.SelectMinuteCommand;
-            button.CommandParameter = minute;
-            BookingMinuteGrid.Children.Add(button);
+            BookingMinuteGrid.Children.Add(CreateTimeButton(
+                minute,
+                minute == _bookingMinute,
+                isEnabled: true,
+                _viewModel.Booking.SelectMinuteCommand,
+                new Thickness(0, 0, 0, 8)));
         }
     }
 
     private void UpdateBookingTimeButtons()
     {
-        foreach (var child in BookingHourGrid.Children)
-        {
-            if (child is Button button)
-            {
-                var hour = int.TryParse(button.Tag?.ToString(), out var parsedHour) ? parsedHour : -1;
-                button.IsEnabled = BookingRules.IsHourAllowed(_bookingPackage, hour);
-                button.Style = (Style)FindResource(!button.IsEnabled
-                    ? "UnavailablePcButtonStyle"
-                    : hour == _bookingHour ? "SelectedTimeButtonStyle" : "TimeButtonStyle");
-            }
-        }
+        UpdateTimeButtonStyles(BookingHourGrid, _bookingHour, hour => BookingRules.IsHourAllowed(_bookingPackage, hour));
+        UpdateTimeButtonStyles(BookingMinuteGrid, _bookingMinute, minute => BookingRules.IsMinuteAllowed(_bookingPackage, minute));
+    }
 
-        foreach (var child in BookingMinuteGrid.Children)
+    private Button CreateTimeButton(int value, bool isSelected, bool isEnabled, ICommand command, Thickness margin)
+    {
+        var button = new Button
         {
-            if (child is Button button)
-            {
-                var minute = int.TryParse(button.Tag?.ToString(), out var parsedMinute) ? parsedMinute : -1;
-                button.IsEnabled = BookingRules.IsMinuteAllowed(_bookingPackage, minute);
-                button.Style = (Style)FindResource(!button.IsEnabled
-                    ? "UnavailablePcButtonStyle"
-                    : minute == _bookingMinute ? "SelectedTimeButtonStyle" : "TimeButtonStyle");
-            }
+            Content = $"{value:00}",
+            Tag = value,
+            IsEnabled = isEnabled,
+            Style = GetTimeButtonStyle(isSelected, isEnabled),
+            Margin = margin,
+            Command = command,
+            CommandParameter = value
+        };
+
+        return button;
+    }
+
+    private void UpdateTimeButtonStyles(Panel panel, int selectedValue, Func<int, bool> isAllowed)
+    {
+        foreach (var child in panel.Children.OfType<Button>())
+        {
+            var value = int.TryParse(child.Tag?.ToString(), out var parsedValue) ? parsedValue : -1;
+            child.IsEnabled = isAllowed(value);
+            child.Style = GetTimeButtonStyle(value == selectedValue, child.IsEnabled);
         }
+    }
+
+    private Style GetTimeButtonStyle(bool isSelected, bool isEnabled)
+    {
+        return (Style)FindResource(!isEnabled
+            ? "UnavailablePcButtonStyle"
+            : isSelected ? "SelectedTimeButtonStyle" : "TimeButtonStyle");
     }
 
     private SeatInfo[] GetSeatsForZone(string zone)

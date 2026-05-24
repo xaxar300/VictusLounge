@@ -14,8 +14,8 @@ public sealed class ClientCabinetViewModel
                 executeAction(action);
             }
         });
-        CancelBookingCommand = new RelayCommand(_ => cancelBooking());
-        EndSessionCommand = new RelayCommand(_ => endSession());
+        CancelBookingCommand = new RelayCommand(cancelBooking);
+        EndSessionCommand = new RelayCommand(endSession);
     }
 
     public ICommand ActionCommand { get; }

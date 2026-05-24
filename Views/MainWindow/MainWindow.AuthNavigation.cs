@@ -20,6 +20,39 @@ namespace VictusLounge;
 
 public partial class MainWindow
 {
+    private static readonly string[] ThemeColorKeys =
+    [
+        "BgColor", "ShellColor", "PanelColor", "SurfaceColor", "TextColor", "MutedColor", "DimColor",
+        "GoldColor", "GoldLightColor", "GoldDarkColor", "LineColor", "LineSoftColor", "OkColor",
+        "DangerColor", "WaitColor"
+    ];
+
+    private static readonly (string BrushKey, string ColorKey)[] ThemeBrushes =
+    [
+        ("ShellBrush", "ShellColor"),
+        ("PanelBrush", "PanelColor"),
+        ("SurfaceBrush", "SurfaceColor"),
+        ("TextBrush", "TextColor"),
+        ("MutedBrush", "MutedColor"),
+        ("DimBrush", "DimColor"),
+        ("GoldBrush", "GoldColor"),
+        ("GoldLightBrush", "GoldLightColor"),
+        ("LineBrush", "LineColor"),
+        ("LineSoftBrush", "LineSoftColor"),
+        ("OkBrush", "OkColor"),
+        ("DangerBrush", "DangerColor"),
+        ("WaitBrush", "WaitColor")
+    ];
+
+    private static readonly (string BrushKey, string[] ColorKeys)[] ThemeGradients =
+    [
+        ("WindowBackgroundBrush", ["BgColor", "ShellColor", "BgColor"]),
+        ("ShellBackgroundBrush", ["ShellColor", "BgColor"]),
+        ("TitlebarBrush", ["ShellColor", "SurfaceColor"]),
+        ("GoldButtonBrush", ["GoldLightColor", "GoldDarkColor"]),
+        ("PanelGradientBrush", ["PanelColor", "SurfaceColor"])
+    ];
+
     private void SelectAuthRole(string role)
     {
         _currentRole = role;
@@ -128,18 +161,13 @@ public partial class MainWindow
             return;
         }
 
-        foreach (var button in new[]
-        {
-            LoginRoleClientButton,
-            LoginRoleAdminButton,
-            LoginRoleOwnerButton,
-            RegisterRoleClientButton,
-            RegisterRoleAdminButton,
-            RegisterRoleOwnerButton
-        })
-        {
-            button.Style = (Style)FindResource(button.Tag?.ToString() == _currentRole ? "PrimaryButtonStyle" : "GhostButtonStyle");
-        }
+        SetChoiceButtonStyles(_currentRole,
+            ("client", LoginRoleClientButton),
+            ("admin", LoginRoleAdminButton),
+            ("owner", LoginRoleOwnerButton),
+            ("client", RegisterRoleClientButton),
+            ("admin", RegisterRoleAdminButton),
+            ("owner", RegisterRoleOwnerButton));
     }
 
     private void ApplyRoleAccess(bool navigateIfNeeded = true)
@@ -186,8 +214,8 @@ public partial class MainWindow
     private void ConfigureNavigationCommands()
     {
         _viewModel.Navigation.NavigateCommand = new RelayCommand(view => NavigateTo(view?.ToString() ?? "dashboard"));
-        _viewModel.Navigation.LogoutCommand = new RelayCommand(_ => Logout());
-        _viewModel.Navigation.ToggleSidebarCommand = new RelayCommand(_ => ToggleSidebar());
+        _viewModel.Navigation.LogoutCommand = new RelayCommand(Logout);
+        _viewModel.Navigation.ToggleSidebarCommand = new RelayCommand(ToggleSidebar);
     }
 
     private void Logout()
@@ -339,47 +367,28 @@ public partial class MainWindow
     {
         var themeDictionary = LoadDictionary($"Resources/Themes.{theme}.xaml");
 
-        SetThemeColor(themeDictionary, "BgColor");
-        SetThemeColor(themeDictionary, "ShellColor");
-        SetThemeColor(themeDictionary, "PanelColor");
-        SetThemeColor(themeDictionary, "SurfaceColor");
-        SetThemeColor(themeDictionary, "TextColor");
-        SetThemeColor(themeDictionary, "MutedColor");
-        SetThemeColor(themeDictionary, "DimColor");
-        SetThemeColor(themeDictionary, "GoldColor");
-        SetThemeColor(themeDictionary, "GoldLightColor");
-        SetThemeColor(themeDictionary, "GoldDarkColor");
-        SetThemeColor(themeDictionary, "LineColor");
-        SetThemeColor(themeDictionary, "LineSoftColor");
-        SetThemeColor(themeDictionary, "OkColor");
-        SetThemeColor(themeDictionary, "DangerColor");
-        SetThemeColor(themeDictionary, "WaitColor");
+        foreach (var colorKey in ThemeColorKeys)
+        {
+            SetThemeColor(themeDictionary, colorKey);
+        }
 
-        SetBrushColor("ShellBrush", "ShellColor");
-        SetBrushColor("PanelBrush", "PanelColor");
-        SetBrushColor("SurfaceBrush", "SurfaceColor");
-        SetBrushColor("TextBrush", "TextColor");
-        SetBrushColor("MutedBrush", "MutedColor");
-        SetBrushColor("DimBrush", "DimColor");
-        SetBrushColor("GoldBrush", "GoldColor");
-        SetBrushColor("GoldLightBrush", "GoldLightColor");
-        SetBrushColor("LineBrush", "LineColor");
-        SetBrushColor("LineSoftBrush", "LineSoftColor");
-        SetBrushColor("OkBrush", "OkColor");
-        SetBrushColor("DangerBrush", "DangerColor");
-        SetBrushColor("WaitBrush", "WaitColor");
-        SetGradient("WindowBackgroundBrush", "BgColor", "ShellColor", "BgColor");
-        SetGradient("ShellBackgroundBrush", "ShellColor", "BgColor");
-        SetGradient("TitlebarBrush", "ShellColor", "SurfaceColor");
-        SetGradient("GoldButtonBrush", "GoldLightColor", "GoldDarkColor");
-        SetGradient("PanelGradientBrush", "PanelColor", "SurfaceColor");
+        foreach (var (brushKey, colorKey) in ThemeBrushes)
+        {
+            SetBrushColor(brushKey, colorKey);
+        }
+
+        foreach (var (brushKey, colorKeys) in ThemeGradients)
+        {
+            SetGradient(brushKey, colorKeys);
+        }
     }
 
     private void UpdateThemeButtons()
     {
-        BlackGoldThemeButton.Style = (Style)FindResource(_currentTheme == "BlackGold" ? "PrimaryButtonStyle" : "GhostButtonStyle");
-        GraphiteThemeButton.Style = (Style)FindResource(_currentTheme == "Graphite" ? "PrimaryButtonStyle" : "GhostButtonStyle");
-        LightThemeButton.Style = (Style)FindResource(_currentTheme == "Light" ? "PrimaryButtonStyle" : "GhostButtonStyle");
+        SetChoiceButtonStyles(_currentTheme,
+            ("BlackGold", BlackGoldThemeButton),
+            ("Graphite", GraphiteThemeButton),
+            ("Light", LightThemeButton));
     }
 
     private void ApplyInterfaceSize(string size, bool showToast = true)
@@ -404,9 +413,10 @@ public partial class MainWindow
 
     private void UpdateInterfaceSizeButtons()
     {
-        CompactInterfaceButton.Style = (Style)FindResource(_currentInterfaceSize == "compact" ? "PrimaryButtonStyle" : "GhostButtonStyle");
-        NormalInterfaceButton.Style = (Style)FindResource(_currentInterfaceSize == "normal" ? "PrimaryButtonStyle" : "GhostButtonStyle");
-        LargeInterfaceButton.Style = (Style)FindResource(_currentInterfaceSize == "large" ? "PrimaryButtonStyle" : "GhostButtonStyle");
+        SetChoiceButtonStyles(_currentInterfaceSize,
+            ("compact", CompactInterfaceButton),
+            ("normal", NormalInterfaceButton),
+            ("large", LargeInterfaceButton));
     }
 
     private void ApplyLanguage(string language, bool showToast = true)
@@ -417,21 +427,23 @@ public partial class MainWindow
         TopLanguageLabel.Text = T("Top.Language");
         GlobalSearchBox.ToolTip = T("Common.SearchPlaceholder");
 
-        SettingsTitleText.Text = T("Settings.Title");
-        SettingsSubtitleText.Text = T("Settings.Subtitle");
-        SettingsThemeTitleText.Text = T("Settings.ThemeTitle");
-        SettingsThemeDescriptionText.Text = T("Settings.ThemeDescription");
-        SettingsLanguageTitleText.Text = T("Settings.LanguageTitle");
-        SettingsLanguageDescriptionText.Text = T("Settings.LanguageDescription");
-        BlackGoldThemeButton.Content = T("Settings.BlackGold");
-        GraphiteThemeButton.Content = T("Settings.Graphite");
-        LightThemeButton.Content = T("Settings.Light");
-        SettingsInterfaceSizeTitleText.Text = T("Settings.InterfaceSizeTitle");
-        SettingsInterfaceSizeDescriptionText.Text = T("Settings.InterfaceSizeDescription");
-        CompactInterfaceButton.Content = T("Settings.InterfaceCompact");
-        NormalInterfaceButton.Content = T("Settings.InterfaceNormal");
-        LargeInterfaceButton.Content = T("Settings.InterfaceLarge");
-        ConfirmActionsCheckBox.Content = T("Settings.ConfirmActions");
+        SetLocalizedText(
+            (SettingsTitleText, "Settings.Title"),
+            (SettingsSubtitleText, "Settings.Subtitle"),
+            (SettingsThemeTitleText, "Settings.ThemeTitle"),
+            (SettingsThemeDescriptionText, "Settings.ThemeDescription"),
+            (SettingsLanguageTitleText, "Settings.LanguageTitle"),
+            (SettingsLanguageDescriptionText, "Settings.LanguageDescription"),
+            (SettingsInterfaceSizeTitleText, "Settings.InterfaceSizeTitle"),
+            (SettingsInterfaceSizeDescriptionText, "Settings.InterfaceSizeDescription"));
+        SetLocalizedContent(
+            (BlackGoldThemeButton, "Settings.BlackGold"),
+            (GraphiteThemeButton, "Settings.Graphite"),
+            (LightThemeButton, "Settings.Light"),
+            (CompactInterfaceButton, "Settings.InterfaceCompact"),
+            (NormalInterfaceButton, "Settings.InterfaceNormal"),
+            (LargeInterfaceButton, "Settings.InterfaceLarge"),
+            (ConfirmActionsCheckBox, "Settings.ConfirmActions"));
         ApplyBalanceLanguage();
 
         SetNavButtonText(DashboardNavButton, T("Nav.Dashboard"));
@@ -445,10 +457,11 @@ public partial class MainWindow
         SetNavButtonText(OwnerNavButton, T("Nav.Owner"));
         SetNavButtonText(SettingsNavButton, T("Nav.Settings"));
 
-        RuLanguageButton.Style = (Style)FindResource(language == "ru" ? "PrimaryButtonStyle" : "GhostButtonStyle");
-        EnLanguageButton.Style = (Style)FindResource(language == "en" ? "PrimaryButtonStyle" : "GhostButtonStyle");
-        TopRuButton.Style = (Style)FindResource(language == "ru" ? "PrimaryButtonStyle" : "GhostButtonStyle");
-        TopEnButton.Style = (Style)FindResource(language == "en" ? "PrimaryButtonStyle" : "GhostButtonStyle");
+        SetChoiceButtonStyles(language,
+            ("ru", RuLanguageButton),
+            ("en", EnLanguageButton),
+            ("ru", TopRuButton),
+            ("en", TopEnButton));
         _viewModel.Navigation.CurrentTitle = _currentView switch
         {
             "map" => T("Nav.Map"),
@@ -484,6 +497,22 @@ public partial class MainWindow
         return _languageStrings.Contains(key) ? _languageStrings[key]?.ToString() ?? key : key;
     }
 
+    private void SetLocalizedText(params (TextBlock Target, string Key)[] items)
+    {
+        foreach (var (target, key) in items)
+        {
+            target.Text = T(key);
+        }
+    }
+
+    private void SetLocalizedContent(params (ContentControl Target, string Key)[] items)
+    {
+        foreach (var (target, key) in items)
+        {
+            target.Content = T(key);
+        }
+    }
+
     private void ApplyBalanceLanguage()
     {
         if (!IsLoaded)
@@ -491,35 +520,40 @@ public partial class MainWindow
             return;
         }
 
-        BalanceKickerText.Text = T("Balance.Kicker");
-        BalanceTitleText.Text = T("Balance.Title");
-        BalanceSubtitleText.Text = T("Balance.Subtitle");
-        BalanceTopupCardButton.Content = T("Balance.Topup");
-        BalanceCurrentLabelText.Text = T("Balance.Current");
-        BalancePromoLabelText.Text = T("Balance.Promo");
-        BalanceApplyPromoButton.Content = T("Balance.Apply");
+        SetLocalizedText(
+            (BalanceKickerText, "Balance.Kicker"),
+            (BalanceTitleText, "Balance.Title"),
+            (BalanceSubtitleText, "Balance.Subtitle"),
+            (BalanceCurrentLabelText, "Balance.Current"),
+            (BalancePromoLabelText, "Balance.Promo"));
+        SetLocalizedContent(
+            (BalanceTopupCardButton, "Balance.Topup"),
+            (BalanceApplyPromoButton, "Balance.Apply"));
         if (_viewModel.Balance.IsRegularPackagesVisible)
         {
             _viewModel.Balance.ShowDefaultPackageOffer(T("Balance.Packages"), T("Balance.QuickGame"), T("Balance.Buy"));
         }
-        EveningPackageText.Text = T("Balance.EveningPack");
-        NightPackageText.Text = T("Balance.NightPack");
-        BootcampPackageText.Text = T("Balance.BootcampTraining");
-        WeekendPackageText.Text = T("Balance.WeekendPass");
-        EveningBuyButton.Content = T("Balance.Buy");
-        NightBuyButton.Content = T("Balance.Buy");
-        BootcampBuyButton.Content = T("Balance.Buy");
-        WeekendBuyButton.Content = T("Balance.Buy");
-        BalancePersonalOfferLabelText.Text = T("Balance.PersonalOffer");
+        SetLocalizedText(
+            (EveningPackageText, "Balance.EveningPack"),
+            (NightPackageText, "Balance.NightPack"),
+            (BootcampPackageText, "Balance.BootcampTraining"),
+            (WeekendPackageText, "Balance.WeekendPass"),
+            (BalancePersonalOfferLabelText, "Balance.PersonalOffer"));
+        SetLocalizedContent(
+            (EveningBuyButton, "Balance.Buy"),
+            (NightBuyButton, "Balance.Buy"),
+            (BootcampBuyButton, "Balance.Buy"),
+            (WeekendBuyButton, "Balance.Buy"),
+            (BalanceOfferButton, "Balance.Activate"),
+            (BalanceReceiptButton, "Balance.Export"));
         _viewModel.Balance.PersonalOfferText = T("Balance.PersonalOfferText");
-        BalanceOfferButton.Content = T("Balance.Activate");
-        BalanceHistoryTitleText.Text = T("Balance.History");
-        BalanceReceiptButton.Content = T("Balance.Export");
-        BalanceDateHeaderText.Text = T("Table.Date");
-        BalanceOperationHeaderText.Text = T("Balance.Operation");
-        BalanceMethodHeaderText.Text = T("Balance.Method");
-        BalanceSumHeaderText.Text = T("Table.Amount");
-        BalanceStatusHeaderText.Text = T("Balance.Status");
+        SetLocalizedText(
+            (BalanceHistoryTitleText, "Balance.History"),
+            (BalanceDateHeaderText, "Table.Date"),
+            (BalanceOperationHeaderText, "Balance.Operation"),
+            (BalanceMethodHeaderText, "Balance.Method"),
+            (BalanceSumHeaderText, "Table.Amount"),
+            (BalanceStatusHeaderText, "Balance.Status"));
         RefreshBalanceHistoryFromDatabase();
     }
 
@@ -593,6 +627,14 @@ public partial class MainWindow
         }
 
         return brush;
+    }
+
+    private void SetChoiceButtonStyles(string activeKey, params (string Key, Button Button)[] choices)
+    {
+        foreach (var (key, button) in choices)
+        {
+            button.Style = (Style)FindResource(activeKey == key ? "PrimaryButtonStyle" : "GhostButtonStyle");
+        }
     }
 
     private static void SetNavButtonText(Button button, string text)

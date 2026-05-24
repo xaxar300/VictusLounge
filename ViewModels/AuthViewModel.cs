@@ -29,12 +29,12 @@ public sealed class AuthViewModel : ViewModelBase
         _signedIn = signedIn;
         _stateChanged = stateChanged;
         _roleSelected = roleSelected;
-        ShowLoginCommand = new RelayCommand(_ =>
+        ShowLoginCommand = new RelayCommand(() =>
         {
             IsRegisterMode = false;
             _stateChanged?.Invoke();
         });
-        ShowRegisterCommand = new RelayCommand(_ =>
+        ShowRegisterCommand = new RelayCommand(() =>
         {
             IsRegisterMode = true;
             _stateChanged?.Invoke();

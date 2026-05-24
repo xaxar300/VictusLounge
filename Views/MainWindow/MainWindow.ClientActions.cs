@@ -69,10 +69,11 @@ public partial class MainWindow
             return;
         }
 
-        EventFilterAllButton.Style = (Style)FindResource(filter == "all" ? "PrimaryButtonStyle" : "GhostButtonStyle");
-        EventFilterDotaButton.Style = (Style)FindResource(filter == "dota" ? "PrimaryButtonStyle" : "GhostButtonStyle");
-        EventFilterCsButton.Style = (Style)FindResource(filter == "cs2" ? "PrimaryButtonStyle" : "GhostButtonStyle");
-        EventFilterLanButton.Style = (Style)FindResource(filter == "lan" ? "PrimaryButtonStyle" : "GhostButtonStyle");
+        SetChoiceButtonStyles(filter,
+            ("all", EventFilterAllButton),
+            ("dota", EventFilterDotaButton),
+            ("cs2", EventFilterCsButton),
+            ("lan", EventFilterLanButton));
 
         DotaEventCard.Visibility = filter is "all" or "dota" ? Visibility.Visible : Visibility.Collapsed;
         CsEventCard.Visibility = filter is "all" or "cs2" ? Visibility.Visible : Visibility.Collapsed;

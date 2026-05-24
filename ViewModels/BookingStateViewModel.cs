@@ -57,10 +57,10 @@ public sealed class BookingStateViewModel : ViewModelBase
         SelectHourCommand = new RelayCommand(parameter => ExecuteInt(parameter, _selectHour));
         SelectMinuteCommand = new RelayCommand(parameter => ExecuteInt(parameter, _selectMinute));
         SelectSeatCommand = new RelayCommand(parameter => ExecuteString(parameter, _selectSeat));
-        ToggleTimePickerCommand = new RelayCommand(_ => _toggleTimePicker?.Invoke());
-        ConfirmCommand = new RelayCommand(_ => _confirmBooking?.Invoke());
-        ClearCommand = new RelayCommand(_ => _clearBooking?.Invoke());
-        CloseConfirmationCommand = new RelayCommand(_ => _closeConfirmation?.Invoke());
+        ToggleTimePickerCommand = new RelayCommand(() => _toggleTimePicker?.Invoke());
+        ConfirmCommand = new RelayCommand(() => _confirmBooking?.Invoke());
+        ClearCommand = new RelayCommand(() => _clearBooking?.Invoke());
+        CloseConfirmationCommand = new RelayCommand(() => _closeConfirmation?.Invoke());
         RefreshSummary();
     }
 

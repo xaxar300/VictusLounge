@@ -50,9 +50,10 @@ public partial class MainWindow
     {
         _topupMethod = method;
         _viewModel.Topup.Method = method;
-        TopupCardMethodButton.Style = (Style)FindResource(method == "card" ? "PrimaryButtonStyle" : "GhostButtonStyle");
-        TopupEripMethodButton.Style = (Style)FindResource(method == "erip" ? "PrimaryButtonStyle" : "GhostButtonStyle");
-        TopupCashMethodButton.Style = (Style)FindResource(method == "cash" ? "PrimaryButtonStyle" : "GhostButtonStyle");
+        SetChoiceButtonStyles(method,
+            ("card", TopupCardMethodButton),
+            ("erip", TopupEripMethodButton),
+            ("cash", TopupCashMethodButton));
         _viewModel.Topup.MethodHint = method switch
         {
             "erip" => "ЕРИП: будет создан код оплаты. Баланс пополнится после внешнего подтверждения.",
