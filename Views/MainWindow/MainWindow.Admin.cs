@@ -1,15 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Effects;
-using System.Windows.Threading;
-using Microsoft.EntityFrameworkCore;
-using VictusLounge.Data;
 using VictusLounge.Helpers;
 using VictusLounge.Models;
 using VictusLounge.Repositories;
@@ -418,6 +412,14 @@ public partial class MainWindow
             BorderBrush = (Brush)FindResource("LineBrush"),
             Padding = new Thickness(10, 6, 10, 6)
         };
+        var okButton = new Button
+        {
+            Content = "OK",
+            IsDefault = true,
+            MinWidth = 86,
+            Margin = new Thickness(0, 0, 8, 0),
+            Style = (Style)FindResource("PrimaryButtonStyle")
+        };
 
         var dialog = new Window
         {
@@ -447,14 +449,7 @@ public partial class MainWindow
                         HorizontalAlignment = HorizontalAlignment.Right,
                         Children =
                         {
-                            new Button
-                            {
-                                Content = "OK",
-                                IsDefault = true,
-                                MinWidth = 86,
-                                Margin = new Thickness(0, 0, 8, 0),
-                                Style = (Style)FindResource("PrimaryButtonStyle")
-                            },
+                            okButton,
                             new Button
                             {
                                 Content = "Отмена",
@@ -467,18 +462,7 @@ public partial class MainWindow
                 }
             }
         };
-
-        if (dialog.Content is StackPanel panel
-            && panel.Children.OfType<StackPanel>().LastOrDefault() is { } buttons)
-        {
-            foreach (var button in buttons.Children.OfType<Button>())
-            {
-                if (button.IsDefault)
-                {
-                    button.Click += (_, _) => dialog.DialogResult = true;
-                }
-            }
-        }
+        okButton.Click += (_, _) => dialog.DialogResult = true;
 
         inputBox.SelectAll();
         return dialog.ShowDialog() == true ? inputBox.Text.Trim() : null;
@@ -748,9 +732,10 @@ public partial class MainWindow
                 {
                     _shiftCash += sessionAmount;
                     SetPcStatus(sessionComputer, PcStatuses.Busy);
-                    RefreshAdminUx();
-                    AddAdminLog($"{sessionComputer} started as guest session");
-                    ShowStatus("Новая сессия", $"Запущена гостевая сессия на {sessionComputer}. Карта и бронь обновлены.");
+                    CompleteAdminAction(
+                        $"{sessionComputer} started as guest session",
+                        "Новая сессия",
+                        $"Запущена гостевая сессия на {sessionComputer}. Карта и бронь обновлены.");
                 }
                 break;
 
@@ -771,9 +756,7 @@ public partial class MainWindow
 
                 SaveAllPendingPaymentsAsCash(settlementAmount);
                 _adminPaymentQueue = 0;
-                RefreshAdminUx();
-                AddAdminLog("All pending payments settled");
-                ShowStatus("Оплаты закрыты", "Все ожидающие платежи отмечены как оплаченные, касса пересчитана.");
+                CompleteAdminAction("All pending payments settled", "Оплаты закрыты", "Все ожидающие платежи отмечены как оплаченные, касса пересчитана.");
                 break;
 
             case "admin-reschedule-booking":
@@ -788,11 +771,18 @@ public partial class MainWindow
                 var serviceComputer = PromptText("Поставить ПК в сервис", "Введите имя ПК:", _selectedMapPc ?? GetFirstFreeComputerName());
                 if (!string.IsNullOrWhiteSpace(serviceComputer))
                 {
+                    var previousStatus = GetPcStatus(serviceComputer, _computers.FirstOrDefault(computer => computer.Name.Equals(serviceComputer, StringComparison.OrdinalIgnoreCase))?.Status ?? PcStatuses.Free);
                     SetPcStatus(serviceComputer, PcStatuses.Service);
                     LoadDatabaseState();
-                    RefreshAdminUx();
-                    AddAdminLog($"{serviceComputer} moved to service");
-                    ShowStatus("Сервис", $"{serviceComputer} переведен в обслуживание. Карта и выбор брони обновлены.");
+                    CompleteAdminAction($"{serviceComputer} moved to service", "Сервис", $"{serviceComputer} переведен в обслуживание. Карта и выбор брони обновлены.");
+                    ShowUndoSnackbar("Можно отменить", $"{serviceComputer}: вернуть предыдущий статус.", () =>
+                    {
+                        SetPcStatus(serviceComputer, previousStatus);
+                        LoadDatabaseState();
+                        RefreshAdminUx();
+                        AddAdminLog($"{serviceComputer} service action undone");
+                        ShowStatus("Действие отменено", $"{serviceComputer}: статус восстановлен.");
+                    });
                 }
                 break;
 
@@ -800,20 +790,37 @@ public partial class MainWindow
                 var clearServiceComputer = PromptText("Снять сервис с ПК", "Введите имя ПК:", GetFirstServiceComputerName());
                 if (!string.IsNullOrWhiteSpace(clearServiceComputer))
                 {
+                    var previousStatus = GetPcStatus(clearServiceComputer, _computers.FirstOrDefault(computer => computer.Name.Equals(clearServiceComputer, StringComparison.OrdinalIgnoreCase))?.Status ?? PcStatuses.Service);
                     SetPcStatus(clearServiceComputer, PcStatuses.Free);
                     LoadDatabaseState();
-                    RefreshAdminUx();
-                    AddAdminLog($"Service released {clearServiceComputer}");
-                    ShowStatus("Сервис снят", $"{clearServiceComputer} вернулся из обслуживания и доступен для брони.");
+                    CompleteAdminAction($"Service released {clearServiceComputer}", "Сервис снят", $"{clearServiceComputer} вернулся из обслуживания и доступен для брони.");
+                    ShowUndoSnackbar("Можно отменить", $"{clearServiceComputer}: вернуть предыдущий статус.", () =>
+                    {
+                        SetPcStatus(clearServiceComputer, previousStatus);
+                        LoadDatabaseState();
+                        RefreshAdminUx();
+                        AddAdminLog($"{clearServiceComputer} service release undone");
+                        ShowStatus("Действие отменено", $"{clearServiceComputer}: статус восстановлен.");
+                    });
                 }
                 break;
 
             case "shift-close":
+                var previousShiftClosed = _shiftClosed;
                 _shiftClosed = !_shiftClosed;
                 SaveShiftState(_shiftClosed);
-                RefreshAdminUx();
-                AddAdminLog(_shiftClosed ? "Shift closed" : "Shift reopened");
-                ShowStatus(_shiftClosed ? "Смена закрыта" : "Смена снова активна", _shiftClosed ? "Касса заблокирована для новых расходов, отчет готов." : "Операции смены снова доступны.");
+                CompleteAdminAction(
+                    _shiftClosed ? "Shift closed" : "Shift reopened",
+                    _shiftClosed ? "Смена закрыта" : "Смена снова активна",
+                    _shiftClosed ? "Касса заблокирована для новых расходов, отчет готов." : "Операции смены снова доступны.");
+                ShowUndoSnackbar("Можно отменить", "Вернуть предыдущее состояние смены.", () =>
+                {
+                    _shiftClosed = previousShiftClosed;
+                    SaveShiftState(_shiftClosed);
+                    RefreshAdminUx();
+                    AddAdminLog(_shiftClosed ? "Shift close restored" : "Shift reopen undone");
+                    ShowStatus("Действие отменено", _shiftClosed ? "Смена снова закрыта." : "Смена снова активна.");
+                });
                 break;
 
             case "shift-expense":
@@ -835,9 +842,7 @@ public partial class MainWindow
 
                 _shiftCash = Math.Max(0, _shiftCash - expenseAmount);
                 SaveShiftExpense(expenseAmount, expenseComment);
-                RefreshAdminUx();
-                AddAdminLog($"Expense added: -{expenseAmount:0.##} BYN");
-                ShowStatus("Расход внесен", $"В кассу добавлен расход: -{expenseAmount:0.##} BYN.");
+                CompleteAdminAction($"Expense added: -{expenseAmount:0.##} BYN", "Расход внесен", $"В кассу добавлен расход: -{expenseAmount:0.##} BYN.");
                 break;
 
             case "shift-report":
@@ -855,9 +860,7 @@ public partial class MainWindow
 
                 AddIncident($"{DateTime.Now:HH:mm} · {incidentText}");
                 _adminSupportQueue++;
-                RefreshAdminUx();
-                AddAdminLog("Incident added to shift journal");
-                ShowStatus("Инцидент добавлен", "Запись появилась в журнале, очередь поддержки увеличена.");
+                CompleteAdminAction("Incident added to shift journal", "Инцидент добавлен", "Запись появилась в журнале, очередь поддержки увеличена.");
                 break;
 
             case "owner-peak":
@@ -869,9 +872,7 @@ public partial class MainWindow
                     SaveTariffRate("VIP", _vipRate);
                     SaveTariffRate("Royal", _royalRate);
                 }
-                RefreshAdminUx();
-                AddAdminLog($"Owner scenario applied: {_ownerDemandMode}");
-                ShowStatus("Режим спроса", $"Активный режим: {_ownerDemandMode}. Метрики пересчитаны из тарифов и загрузки.");
+                CompleteAdminAction($"Owner scenario applied: {_ownerDemandMode}", "Режим спроса", $"Активный режим: {_ownerDemandMode}. Метрики пересчитаны из тарифов и загрузки.");
                 break;
 
             case "owner-night":
@@ -881,9 +882,7 @@ public partial class MainWindow
                     _standardRate = 7;
                     SaveTariffRate("Standard", _standardRate);
                 }
-                RefreshAdminUx();
-                AddAdminLog($"Owner scenario applied: {_ownerDemandMode}");
-                ShowStatus("Режим спроса", $"Активный режим: {_ownerDemandMode}. Метрики пересчитаны без ручного накручивания.");
+                CompleteAdminAction($"Owner scenario applied: {_ownerDemandMode}", "Режим спроса", $"Активный режим: {_ownerDemandMode}. Метрики пересчитаны без ручного накручивания.");
                 break;
 
             case "owner-export":
@@ -974,9 +973,7 @@ public partial class MainWindow
         _adminFreePcs++;
         SaveSessionClosed(computerName);
         SetPcStatus(computerName, PcStatuses.Free);
-        RefreshAdminUx();
-        AddAdminLog($"{computerName} closed and released");
-        ShowStatus("Сессия закрыта", $"{computerName} освобожден и стал доступен на карте клуба.");
+        CompleteAdminAction($"{computerName} closed and released", "Сессия закрыта", $"{computerName} освобожден и стал доступен на карте клуба.");
     }
 
     private void PayAdminSession(string computerName)
@@ -991,9 +988,7 @@ public partial class MainWindow
         _adminPaymentQueue = Math.Max(0, _adminPaymentQueue - 1);
         _shiftCash += amount;
         SavePaymentConfirmation(computerName, amount);
-        RefreshAdminUx();
-        AddAdminLog($"{computerName} payment confirmed");
-        ShowStatus("Оплата принята", $"{computerName}: касса +{amount:0.##} BYN.");
+        CompleteAdminAction($"{computerName} payment confirmed", "Оплата принята", $"{computerName}: касса +{amount:0.##} BYN.");
     }
 
     private void ExtendAdminSession(string computerName)
@@ -1001,9 +996,14 @@ public partial class MainWindow
         const decimal extensionPrice = 36m;
         _shiftOnline += extensionPrice;
         SaveSessionExtension(computerName, extensionPrice);
+        CompleteAdminAction($"{computerName} extended", "Сессия продлена", $"{computerName}: онлайн +{extensionPrice:0.##} BYN.");
+    }
+
+    private void CompleteAdminAction(string logEntry, string statusTitle, string statusBody)
+    {
         RefreshAdminUx();
-        AddAdminLog($"{computerName} extended");
-        ShowStatus("Сессия продлена", $"{computerName}: онлайн +{extensionPrice:0.##} BYN.");
+        AddAdminLog(logEntry);
+        ShowStatus(statusTitle, statusBody);
     }
 
     private decimal? GetOpenSessionAmount(string computerName)
@@ -1111,7 +1111,7 @@ public partial class MainWindow
                 AddAdminSessionCell(row, 0, computerName, "TextBrush", FontWeights.Bold);
                 AddAdminSessionCell(row, 1, clientName, "MutedBrush", FontWeights.Normal);
                 AddAdminSessionCell(row, 2, endText, "TextBrush", FontWeights.Normal);
-                AddAdminSessionCell(row, 3, statusText, statusBrush, FontWeights.Bold);
+                AddAdminSessionStatusBadge(row, statusText, statusBrush);
                 AddAdminSessionButton(row, computerName, session.Status);
             }
         }
@@ -1134,6 +1134,25 @@ public partial class MainWindow
         Grid.SetRow(block, row);
         Grid.SetColumn(block, column);
         AdminSessionsGrid.Children.Add(block);
+    }
+
+    private void AddAdminSessionStatusBadge(int row, string text, string brushKey)
+    {
+        var label = new TextBlock
+        {
+            Text = text,
+            Style = (Style)FindResource("StatusBadgeTextStyle"),
+            Foreground = (Brush)FindResource(brushKey)
+        };
+        var badge = new Border
+        {
+            Style = (Style)FindResource("StatusBadgeStyle"),
+            Margin = new Thickness(0, 10, 0, 0),
+            Child = label
+        };
+        Grid.SetRow(badge, row);
+        Grid.SetColumn(badge, 3);
+        AdminSessionsGrid.Children.Add(badge);
     }
 
     private void AddAdminSessionButton(int row, string computerName, string status)

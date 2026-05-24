@@ -1,15 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Effects;
-using System.Windows.Threading;
-using Microsoft.EntityFrameworkCore;
-using VictusLounge.Data;
 using VictusLounge.Helpers;
 using VictusLounge.Models;
 using VictusLounge.Repositories;
@@ -43,37 +37,25 @@ public partial class MainWindow
         RefreshBalanceHistoryFromDatabase();
     }
 
+    private void RefreshWorkspaceAfterStateChange()
+    {
+        LoadDatabaseState();
+        ApplyMapPcButtonStatuses();
+        RebuildBookingSeatGrid();
+        RefreshAdminUx();
+    }
+
     private void RefreshEffectiveComputerStatuses(IUnitOfWork unitOfWork)
     {
         _pcStatusOverrides.Clear();
 
         var now = DateTime.Now;
-        var activeSessionComputerIds = unitOfWork.GameSessions
-            .QueryNoTracking()
-            .Where(session => session.Status != SessionStatuses.Closed
-                && session.StartTime <= now
-                && (session.EndTime == null || session.EndTime > now))
-            .Select(session => session.ComputerId)
-            .ToHashSet();
-        var imminentBookingComputerIds = unitOfWork.Bookings
-            .QueryNoTracking()
-            .Where(booking => booking.Status != BookingStatuses.Cancelled
-                && booking.StartTime <= now.AddMinutes(15)
-                && booking.EndTime > now)
-            .Select(booking => booking.ComputerId)
-            .ToHashSet();
+        var activeSessionComputerIds = GetActiveSessionComputerIds(unitOfWork, now);
+        var imminentBookingComputerIds = GetImminentBookingComputerIds(unitOfWork, now);
 
         foreach (var computer in _computers)
         {
-            var savedStatus = NormalizePcStatus(computer.Status);
-            var effectiveStatus = savedStatus == PcStatuses.Service
-                ? PcStatuses.Service
-                : activeSessionComputerIds.Contains(computer.Id)
-                    ? PcStatuses.Busy
-                    : imminentBookingComputerIds.Contains(computer.Id)
-                        ? PcStatuses.Reserved
-                        : PcStatuses.Free;
-
+            var effectiveStatus = ResolveEffectiveComputerStatus(computer, activeSessionComputerIds, imminentBookingComputerIds);
             computer.Status = effectiveStatus;
             _pcStatusOverrides[computer.Name] = effectiveStatus;
         }
@@ -98,31 +80,12 @@ public partial class MainWindow
             hasChanges = true;
         }
 
-        var activeSessionComputerIds = unitOfWork.GameSessions
-            .QueryNoTracking()
-            .Where(session => session.Status != SessionStatuses.Closed
-                && session.StartTime <= now
-                && (session.EndTime == null || session.EndTime > now))
-            .Select(session => session.ComputerId)
-            .ToHashSet();
-        var imminentBookingComputerIds = unitOfWork.Bookings
-            .QueryNoTracking()
-            .Where(booking => booking.Status != BookingStatuses.Cancelled
-                && booking.StartTime <= now.AddMinutes(15)
-                && booking.EndTime > now)
-            .Select(booking => booking.ComputerId)
-            .ToHashSet();
+        var activeSessionComputerIds = GetActiveSessionComputerIds(unitOfWork, now);
+        var imminentBookingComputerIds = GetImminentBookingComputerIds(unitOfWork, now);
 
         foreach (var computer in unitOfWork.Computers.Query())
         {
-            var savedStatus = NormalizePcStatus(computer.Status);
-            var actualStatus = savedStatus == PcStatuses.Service
-                ? PcStatuses.Service
-                : activeSessionComputerIds.Contains(computer.Id)
-                    ? PcStatuses.Busy
-                    : imminentBookingComputerIds.Contains(computer.Id)
-                        ? PcStatuses.Reserved
-                        : PcStatuses.Free;
+            var actualStatus = ResolveEffectiveComputerStatus(computer, activeSessionComputerIds, imminentBookingComputerIds);
 
             if (computer.Status != actualStatus)
             {
@@ -141,6 +104,43 @@ public partial class MainWindow
         }
     }
 
+    private static HashSet<int> GetActiveSessionComputerIds(IUnitOfWork unitOfWork, DateTime now)
+    {
+        return unitOfWork.GameSessions
+            .QueryNoTracking()
+            .Where(session => session.Status != SessionStatuses.Closed
+                && session.StartTime <= now
+                && (session.EndTime == null || session.EndTime > now))
+            .Select(session => session.ComputerId)
+            .ToHashSet();
+    }
+
+    private static HashSet<int> GetImminentBookingComputerIds(IUnitOfWork unitOfWork, DateTime now)
+    {
+        return unitOfWork.Bookings
+            .QueryNoTracking()
+            .Where(booking => booking.Status != BookingStatuses.Cancelled
+                && booking.StartTime <= now.AddMinutes(15)
+                && booking.EndTime > now)
+            .Select(booking => booking.ComputerId)
+            .ToHashSet();
+    }
+
+    private static string ResolveEffectiveComputerStatus(
+        Computer computer,
+        HashSet<int> activeSessionComputerIds,
+        HashSet<int> imminentBookingComputerIds)
+    {
+        var savedStatus = NormalizePcStatus(computer.Status);
+        return savedStatus == PcStatuses.Service
+            ? PcStatuses.Service
+            : activeSessionComputerIds.Contains(computer.Id)
+                ? PcStatuses.Busy
+                : imminentBookingComputerIds.Contains(computer.Id)
+                    ? PcStatuses.Reserved
+                    : PcStatuses.Free;
+    }
+
     private void UpdateDashboardSummary(IUnitOfWork unitOfWork)
     {
         if (!IsLoaded)
@@ -149,7 +149,7 @@ public partial class MainWindow
         }
 
         var totalPcs = _computers.Count;
-        var freePcs = _computers.Count(computer => NormalizePcStatus(computer.Status) == PcStatuses.Free);
+        var freePcs = CountComputersByStatus(PcStatuses.Free);
         var availableZones = _computers
             .GroupBy(computer => NormalizeZoneGroup(computer.Zone))
             .Count(group => group.Any(computer => NormalizePcStatus(computer.Status) == PcStatuses.Free));
@@ -241,13 +241,18 @@ public partial class MainWindow
             return;
         }
 
-        var freePcs = _computers.Count(computer => NormalizePcStatus(computer.Status) == PcStatuses.Free);
-        var busyPcs = _computers.Count(computer => NormalizePcStatus(computer.Status) == PcStatuses.Busy);
-        var servicePcs = _computers.Count(computer => NormalizePcStatus(computer.Status) == PcStatuses.Service);
+        var freePcs = CountComputersByStatus(PcStatuses.Free);
+        var busyPcs = CountComputersByStatus(PcStatuses.Busy);
+        var servicePcs = CountComputersByStatus(PcStatuses.Service);
         AnnouncementTextA.Text =
             $"Свободно ПК: {freePcs} · занято: {busyPcs} · сервис: {servicePcs} · Standard {_standardRate} BYN/ч · VIP {_vipRate} BYN/ч · Royal {_royalRate} BYN/ч ·";
         AnnouncementTextB.Text = AnnouncementTextA.Text;
         ResetAnnouncementMarquee();
+    }
+
+    private int CountComputersByStatus(string status)
+    {
+        return _computers.Count(computer => NormalizePcStatus(computer.Status) == status);
     }
 
     private void UpdateCabinetNextBenefit()

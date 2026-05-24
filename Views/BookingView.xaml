@@ -22,6 +22,7 @@
                                 </Grid.ColumnDefinitions>
 
                                 <Border Style="{StaticResource PanelBorderStyle}" Margin="{StaticResource SpacePanelRight}">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" MaxHeight="640">
                                     <StackPanel>
                                         <UniformGrid Columns="4" Margin="{StaticResource SpaceBelowL}">
                                             <Button x:Name="DateTodayButton" Content="Сегодня&#x0a;сегодня" Tag="" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Booking.SelectDateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="{StaticResource SpaceInlineS}" />
@@ -107,9 +108,10 @@
                                             <Grid x:Name="BookingSeatGrid" MinWidth="760" />
                                         </ScrollViewer>
                                     </StackPanel>
+                                    </ScrollViewer>
                                 </Border>
 
-                                <Border Grid.Column="1" Style="{StaticResource PanelBorderStyle}">
+                                <Border Grid.Column="1" Style="{StaticResource PanelBorderStyle}" VerticalAlignment="Top">
                                     <StackPanel>
                                         <TextBlock Text="SUMMARY" Style="{StaticResource KickerTextStyle}" />
                                         <TextBlock Text="Итог брони" FontSize="26" FontWeight="Black" Margin="{StaticResource SpaceHeading}" />

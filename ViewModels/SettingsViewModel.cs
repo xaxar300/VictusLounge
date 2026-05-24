@@ -18,29 +18,9 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     {
         _setActionConfirmation = setActionConfirmation;
 
-        ThemeCommand = new RelayCommand(parameter =>
-        {
-            if (parameter is string theme && !string.IsNullOrWhiteSpace(theme))
-            {
-                applyTheme(theme);
-            }
-        });
-
-        LanguageCommand = new RelayCommand(parameter =>
-        {
-            if (parameter is string language && !string.IsNullOrWhiteSpace(language))
-            {
-                applyLanguage(language);
-            }
-        });
-
-        InterfaceSizeCommand = new RelayCommand(parameter =>
-        {
-            if (parameter is string size && !string.IsNullOrWhiteSpace(size))
-            {
-                applyInterfaceSize(size);
-            }
-        });
+        ThemeCommand = CreateStringCommand(applyTheme);
+        LanguageCommand = CreateStringCommand(applyLanguage);
+        InterfaceSizeCommand = CreateStringCommand(applyInterfaceSize);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -68,5 +48,10 @@ public sealed class SettingsViewModel : INotifyPropertyChanged
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    private static ICommand CreateStringCommand(Action<string> execute)
+    {
+        return RelayCommand.ForString(execute);
     }
 }

@@ -7,13 +7,7 @@ public sealed class ClientCabinetViewModel
 {
     public ClientCabinetViewModel(Action<string> executeAction, Action cancelBooking, Action endSession)
     {
-        ActionCommand = new RelayCommand(parameter =>
-        {
-            if (parameter is string action && !string.IsNullOrWhiteSpace(action))
-            {
-                executeAction(action);
-            }
-        });
+        ActionCommand = RelayCommand.ForString(executeAction);
         CancelBookingCommand = new RelayCommand(cancelBooking);
         EndSessionCommand = new RelayCommand(endSession);
     }

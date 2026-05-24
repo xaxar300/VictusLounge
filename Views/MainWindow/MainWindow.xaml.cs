@@ -16,13 +16,17 @@ public partial class MainWindow : Window
     private const double AnnouncementSpeed = 55;
     private const double AnnouncementGap = 36;
     private readonly DispatcherTimer _toastTimer;
+    private readonly DispatcherTimer _undoSnackbarTimer;
     private readonly DispatcherTimer _announcementTimer;
     private readonly DispatcherTimer _liveRefreshTimer;
     private readonly MainWindowViewModel _viewModel;
     private readonly BookingFacade _bookingFacade = new();
     private readonly TopupFacade _topupFacade = new();
+    private readonly UserSettingsStore _userSettingsStore = new();
     private readonly HashSet<string> _selectedSeats = [];
     private ResourceDictionary _languageStrings = new();
+    private UserSettings _userSettings = UserSettings.Default;
+    private Action? _pendingUndoAction;
     private DateTime _lastAnnouncementTick;
     private bool _isSidebarCollapsed;
     private string _currentView = "dashboard";
@@ -76,6 +80,12 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
+        _userSettings = _userSettingsStore.Load();
+        _currentTheme = _userSettings.Theme;
+        _currentInterfaceSize = _userSettings.InterfaceSize;
+        _currentLanguage = _userSettings.Language;
+        _confirmClientActions = _userSettings.ConfirmClientActions;
+
         _viewModel = new MainWindowViewModel(
             new AuthViewModel(new AuthService(), SignInUser, ApplyAuthViewState, SelectAuthRole),
             new BalanceViewModel(
@@ -98,7 +108,7 @@ public partial class MainWindow : Window
                 theme => ApplyTheme(theme),
                 language => ApplyLanguage(language),
                 size => ApplyInterfaceSize(size),
-                confirm => _confirmClientActions = confirm),
+                SetActionConfirmation),
             new NotificationCenterViewModel(ToggleNotificationCenter, MarkNotificationsRead),
             new ShellViewModel(ExecuteGlobalSearch, HandleShellPreviewKeyDown, HandleShellPreviewMouseDown),
             ExecuteAdminAction,
@@ -110,6 +120,8 @@ public partial class MainWindow : Window
         ConfigureNavigationCommands();
         ConfigureBookingCommands();
         ConfigureTopupCommands();
+        _viewModel.Settings.RequireActionConfirmation = _confirmClientActions;
+        UndoSnackbarButton.Click += (_, _) => ExecutePendingUndo();
 
         _toastTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
         _toastTimer.Tick += (_, _) =>
@@ -117,6 +129,8 @@ public partial class MainWindow : Window
             _toastTimer.Stop();
             StatusToast.Visibility = Visibility.Collapsed;
         };
+        _undoSnackbarTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(7) };
+        _undoSnackbarTimer.Tick += (_, _) => HideUndoSnackbar();
 
         _announcementTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
         _announcementTimer.Tick += AnnouncementTimer_Tick;
@@ -155,7 +169,7 @@ public partial class MainWindow : Window
         ConfigureBookingDateButton(DateTomorrowButton, GetShortRuDay(today.AddDays(1)), today.AddDays(1));
         ConfigureBookingDateButton(DateThirdButton, GetShortRuDay(today.AddDays(2)), today.AddDays(2));
         ConfigureBookingDateButton(DateCustomButton, GetShortRuDay(today.AddDays(3)), today.AddDays(3));
-        SetActiveButton(DateTodayButton, DateTodayButton, DateTomorrowButton, DateThirdButton, DateCustomButton);
+        SetTaggedChoiceButtonStyles(DateTodayButton.Tag?.ToString() ?? string.Empty, DateTodayButton, DateTomorrowButton, DateThirdButton, DateCustomButton);
     }
 
     private void RefreshBookingDatesIfStale()

@@ -7,21 +7,8 @@ public sealed class DashboardViewModel
 {
     public DashboardViewModel(Action<string> executeQuickAction, Action<string> selectZone)
     {
-        QuickActionCommand = new RelayCommand(parameter =>
-        {
-            if (parameter is string action && !string.IsNullOrWhiteSpace(action))
-            {
-                executeQuickAction(action);
-            }
-        });
-
-        SelectZoneCommand = new RelayCommand(parameter =>
-        {
-            if (parameter is string zone && !string.IsNullOrWhiteSpace(zone))
-            {
-                selectZone(zone);
-            }
-        });
+        QuickActionCommand = RelayCommand.ForString(executeQuickAction);
+        SelectZoneCommand = RelayCommand.ForString(selectZone);
     }
 
     public ICommand QuickActionCommand { get; }

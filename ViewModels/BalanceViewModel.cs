@@ -60,20 +60,8 @@ public sealed class BalanceViewModel : ViewModelBase
         });
         ShowOfferCommand = new RelayCommand(() =>
             _showStatus("Персональная акция", "Бонус статуса применяется автоматически при пополнении и не требует активации."));
-        BuyPackageCommand = new RelayCommand(parameter =>
-        {
-            if (parameter is string raw && !string.IsNullOrWhiteSpace(raw))
-            {
-                _buyPackage(raw);
-            }
-        });
-        ShowPackageCommand = new RelayCommand(parameter =>
-        {
-            if (parameter is string raw && !string.IsNullOrWhiteSpace(raw))
-            {
-                _showPackage(raw);
-            }
-        });
+        BuyPackageCommand = RelayCommand.ForString(_buyPackage);
+        ShowPackageCommand = RelayCommand.ForString(_showPackage);
     }
 
     public ObservableCollection<BalanceHistoryItemViewModel> History { get; } = [];

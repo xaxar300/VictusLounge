@@ -254,10 +254,7 @@ public partial class MainWindow
 
         if (CancelBooking(_activeCabinetBookingId.Value))
         {
-            LoadDatabaseState();
-            ApplyMapPcButtonStatuses();
-            RebuildBookingSeatGrid();
-            RefreshAdminUx();
+            RefreshWorkspaceAfterStateChange();
             ShowImportantStatus("Бронь отменена", "Статус брони обновлен в базе данных.");
             return;
         }
@@ -318,10 +315,7 @@ public partial class MainWindow
 
         if (EndCurrentClientSession(_activeCabinetSessionId.Value, out var computerName))
         {
-            LoadDatabaseState();
-            ApplyMapPcButtonStatuses();
-            RebuildBookingSeatGrid();
-            RefreshAdminUx();
+            RefreshWorkspaceAfterStateChange();
             ShowImportantStatus("Сессия завершена", $"{computerName} освобожден, сессия закрыта в базе данных.");
             return;
         }

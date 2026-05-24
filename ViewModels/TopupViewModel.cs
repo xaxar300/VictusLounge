@@ -25,20 +25,8 @@ public sealed class TopupViewModel : ViewModelBase
     {
         CloseCommand = new RelayCommand(() => _close?.Invoke());
         ConfirmCommand = new RelayCommand(() => _confirm?.Invoke());
-        SelectMethodCommand = new RelayCommand(parameter =>
-        {
-            if (parameter is string method && !string.IsNullOrWhiteSpace(method))
-            {
-                _selectMethod?.Invoke(method);
-            }
-        });
-        SelectAmountPresetCommand = new RelayCommand(parameter =>
-        {
-            if (parameter is string amount && !string.IsNullOrWhiteSpace(amount))
-            {
-                _selectAmountPreset?.Invoke(amount);
-            }
-        });
+        SelectMethodCommand = RelayCommand.ForString(method => _selectMethod?.Invoke(method));
+        SelectAmountPresetCommand = RelayCommand.ForString(amount => _selectAmountPreset?.Invoke(amount));
     }
 
     public string AmountText

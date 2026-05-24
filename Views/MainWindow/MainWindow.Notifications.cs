@@ -65,6 +65,22 @@ public partial class MainWindow
             return;
         }
 
+        if (e.Key == Key.K && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+        {
+            GlobalSearchBox.Focus();
+            GlobalSearchBox.SelectAll();
+            ShowStatus("Командная палитра", "Команды: бронь, карта, админ, смена, настройки, светлая тема, компактный, PC-04.");
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Enter && GlobalSearchBox.IsKeyboardFocusWithin)
+        {
+            ExecuteGlobalSearch(_viewModel.Shell.SearchQuery);
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key == Key.Escape && TopupOverlay.Visibility == Visibility.Visible)
         {
             CloseTopupOverlay();
@@ -110,6 +126,11 @@ public partial class MainWindow
         }
 
         if (query.Length < 2)
+        {
+            return;
+        }
+
+        if (TryExecuteCommandPalette(query))
         {
             return;
         }
@@ -167,6 +188,81 @@ public partial class MainWindow
         ShowStatus("Результат поиска", result);
     }
 
+    private bool TryExecuteCommandPalette(string query)
+    {
+        var command = query.Trim().ToLowerInvariant();
+        var view = command switch
+        {
+            "dashboard" or "main" or "home" or "главная" => "dashboard",
+            "map" or "карта" or "схема" => "map",
+            "booking" or "бронь" or "бронирование" => "booking",
+            "cabinet" or "кабинет" => "cabinet",
+            "balance" or "баланс" => "balance",
+            "events" or "события" => "events",
+            "admin" or "админ" => "admin",
+            "shift" or "смена" => "shift",
+            "owner" or "владелец" => "owner",
+            "settings" or "настройки" => "settings",
+            _ => null
+        };
+
+        if (view is not null)
+        {
+            NavigateTo(view);
+            ShowStatus("Команда выполнена", $"Открыт раздел: {_viewModel.Navigation.CurrentTitle}.");
+            return true;
+        }
+
+        switch (command)
+        {
+            case "light":
+            case "светлая":
+            case "светлая тема":
+                ApplyTheme("Light");
+                return true;
+            case "dark":
+            case "темная":
+            case "темная тема":
+                ApplyTheme("BlackGold");
+                return true;
+            case "graphite":
+            case "графит":
+                ApplyTheme("Graphite");
+                return true;
+            case "compact":
+            case "компактный":
+                ApplyInterfaceSize("compact");
+                return true;
+            case "normal":
+            case "обычный":
+                ApplyInterfaceSize("normal");
+                return true;
+            case "large":
+            case "крупный":
+                ApplyInterfaceSize("large");
+                return true;
+            case "ru":
+            case "русский":
+                ApplyLanguage("ru");
+                return true;
+            case "en":
+            case "english":
+                ApplyLanguage("en");
+                return true;
+        }
+
+        var computer = _computers.FirstOrDefault(item => item.Name.Equals(query.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (computer is null)
+        {
+            return false;
+        }
+
+        NavigateTo("map");
+        SelectMapPc($"{computer.Name}|{computer.Zone}|{computer.Status}");
+        ShowStatus("ПК найден", $"{computer.Name}: {computer.Zone}, {GetStatusText(computer.Status, true)}.");
+        return true;
+    }
+
     private void ShowStatus(string title, string body)
     {
         ShowToast(title, body);
@@ -185,6 +281,38 @@ public partial class MainWindow
         StatusToast.Visibility = Visibility.Visible;
         _toastTimer.Stop();
         _toastTimer.Start();
+    }
+
+    private void ShowUndoSnackbar(string title, string body, Action undoAction)
+    {
+        _pendingUndoAction = undoAction;
+        StatusToast.Visibility = Visibility.Collapsed;
+        _toastTimer.Stop();
+        UndoSnackbarTitleText.Text = title;
+        UndoSnackbarBodyText.Text = body;
+        UndoSnackbar.Visibility = Visibility.Visible;
+        _undoSnackbarTimer.Stop();
+        _undoSnackbarTimer.Start();
+    }
+
+    private void ExecutePendingUndo()
+    {
+        var undoAction = _pendingUndoAction;
+        if (undoAction is null)
+        {
+            HideUndoSnackbar();
+            return;
+        }
+
+        HideUndoSnackbar();
+        undoAction();
+    }
+
+    private void HideUndoSnackbar()
+    {
+        _pendingUndoAction = null;
+        _undoSnackbarTimer.Stop();
+        UndoSnackbar.Visibility = Visibility.Collapsed;
     }
 
     private void AddNotification(string title, string body)

@@ -19,13 +19,7 @@ public sealed class OwnerDashboardViewModel : ViewModelBase
     public OwnerDashboardViewModel(Action<string>? executeAction = null)
     {
         _executeAction = executeAction;
-        ActionCommand = new RelayCommand(parameter =>
-        {
-            if (parameter is string action && !string.IsNullOrWhiteSpace(action))
-            {
-                _executeAction?.Invoke(action);
-            }
-        });
+        ActionCommand = RelayCommand.ForString(action => _executeAction?.Invoke(action));
     }
 
     public ICommand ActionCommand { get; }

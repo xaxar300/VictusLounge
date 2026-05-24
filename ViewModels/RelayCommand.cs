@@ -8,6 +8,18 @@ public sealed class RelayCommand : ICommand
     private readonly Action<object?> _execute;
     private readonly Predicate<object?>? _canExecute;
 
+    public static ICommand ForString(Action<string> execute)
+    {
+        ArgumentNullException.ThrowIfNull(execute);
+        return new RelayCommand(parameter =>
+        {
+            if (parameter is string value && !string.IsNullOrWhiteSpace(value))
+            {
+                execute(value);
+            }
+        });
+    }
+
     public RelayCommand(Action<object?> execute, Predicate<object?>? canExecute = null)
     {
         _execute = execute ?? throw new ArgumentNullException(nameof(execute));

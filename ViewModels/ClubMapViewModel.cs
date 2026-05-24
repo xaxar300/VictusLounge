@@ -23,13 +23,7 @@ public sealed class ClubMapViewModel : ViewModelBase
 
     public ClubMapViewModel()
     {
-        SelectPcCommand = new RelayCommand(parameter =>
-        {
-            if (parameter is string raw && !string.IsNullOrWhiteSpace(raw))
-            {
-                _selectPc?.Invoke(raw);
-            }
-        });
+        SelectPcCommand = RelayCommand.ForString(raw => _selectPc?.Invoke(raw));
         BookSelectedPcCommand = new RelayCommand(() => _bookSelectedPc?.Invoke());
     }
 

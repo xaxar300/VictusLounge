@@ -357,6 +357,7 @@ public partial class MainWindow
         _currentTheme = theme;
         ApplyThemeResources(theme);
         UpdateThemeButtons();
+        SaveUserSettings();
         if (showToast)
         {
             ShowStatus(T("Settings.Applied"), T("Settings.ThemeApplied"));
@@ -404,6 +405,7 @@ public partial class MainWindow
 
         ShellRoot.LayoutTransform = new System.Windows.Media.ScaleTransform(scale, scale);
         UpdateInterfaceSizeButtons();
+        SaveUserSettings();
 
         if (showToast)
         {
@@ -480,11 +482,24 @@ public partial class MainWindow
         ApplyMapPcButtonStatuses();
         RebuildBookingSeatGrid();
         UpdateBookingSeatButtons();
+        SaveUserSettings();
 
         if (showToast)
         {
             ShowStatus(T("Settings.Applied"), T("Settings.LanguageApplied"));
         }
+    }
+
+    private void SetActionConfirmation(bool confirm)
+    {
+        _confirmClientActions = confirm;
+        SaveUserSettings();
+    }
+
+    private void SaveUserSettings()
+    {
+        _userSettings = new UserSettings(_currentTheme, _currentInterfaceSize, _currentLanguage, _confirmClientActions);
+        _userSettingsStore.Save(_userSettings);
     }
 
     private static ResourceDictionary LoadDictionary(string path)
@@ -634,6 +649,15 @@ public partial class MainWindow
         foreach (var (key, button) in choices)
         {
             button.Style = (Style)FindResource(activeKey == key ? "PrimaryButtonStyle" : "GhostButtonStyle");
+        }
+    }
+
+    private void SetTaggedChoiceButtonStyles(string activeTag, params Button[] buttons)
+    {
+        foreach (var button in buttons)
+        {
+            var isActive = string.Equals(button.Tag?.ToString(), activeTag, StringComparison.OrdinalIgnoreCase);
+            button.Style = (Style)FindResource(isActive ? "PrimaryButtonStyle" : "GhostButtonStyle");
         }
     }
 

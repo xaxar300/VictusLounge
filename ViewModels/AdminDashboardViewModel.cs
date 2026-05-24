@@ -20,20 +20,8 @@ public sealed class AdminDashboardViewModel : ViewModelBase
     public AdminDashboardViewModel(Action<string>? executeAction = null, Action<string>? executeShiftTask = null)
     {
         _executeAction = executeAction;
-        ActionCommand = new RelayCommand(parameter =>
-        {
-            if (parameter is string action && !string.IsNullOrWhiteSpace(action))
-            {
-                _executeAction?.Invoke(action);
-            }
-        });
-        ShiftTaskCommand = new RelayCommand(parameter =>
-        {
-            if (parameter is string taskKey && !string.IsNullOrWhiteSpace(taskKey))
-            {
-                executeShiftTask?.Invoke(taskKey);
-            }
-        });
+        ActionCommand = RelayCommand.ForString(action => _executeAction?.Invoke(action));
+        ShiftTaskCommand = RelayCommand.ForString(taskKey => executeShiftTask?.Invoke(taskKey));
     }
 
     public ICommand ActionCommand { get; }

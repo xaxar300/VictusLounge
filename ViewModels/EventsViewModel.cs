@@ -7,21 +7,8 @@ public sealed class EventsViewModel
 {
     public EventsViewModel(Action<string> applyFilter, Action<string> joinEvent)
     {
-        FilterCommand = new RelayCommand(parameter =>
-        {
-            if (parameter is string filter && !string.IsNullOrWhiteSpace(filter))
-            {
-                applyFilter(filter);
-            }
-        });
-
-        JoinCommand = new RelayCommand(parameter =>
-        {
-            if (parameter is string eventTag && !string.IsNullOrWhiteSpace(eventTag))
-            {
-                joinEvent(eventTag);
-            }
-        });
+        FilterCommand = RelayCommand.ForString(applyFilter);
+        JoinCommand = RelayCommand.ForString(joinEvent);
     }
 
     public ICommand FilterCommand { get; }

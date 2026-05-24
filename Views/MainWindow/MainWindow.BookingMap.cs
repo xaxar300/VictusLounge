@@ -1,16 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
-using System.Windows.Threading;
-using Microsoft.EntityFrameworkCore;
-using VictusLounge.Data;
 using VictusLounge.Helpers;
 using VictusLounge.Models;
 using VictusLounge.Repositories;
@@ -119,8 +114,9 @@ public partial class MainWindow
     private void SelectBookingMode(string mode)
     {
         _isCompanyBooking = mode == "company";
-        SingleModeButton.Style = (Style)FindResource(_isCompanyBooking ? "GhostButtonStyle" : "PrimaryButtonStyle");
-        CompanyModeButton.Style = (Style)FindResource(_isCompanyBooking ? "PrimaryButtonStyle" : "GhostButtonStyle");
+        SetChoiceButtonStyles(mode,
+            ("single", SingleModeButton),
+            ("company", CompanyModeButton));
 
         if (!_isCompanyBooking && _selectedSeats.Count > 1)
         {
@@ -145,17 +141,7 @@ public partial class MainWindow
         }
 
         _bookingDate = date;
-        var activeButton = new[]
-        {
-            DateTodayButton,
-            DateTomorrowButton,
-            DateThirdButton,
-            DateCustomButton
-        }.FirstOrDefault(button => string.Equals(button.Tag?.ToString(), raw, StringComparison.OrdinalIgnoreCase));
-        if (activeButton is not null)
-        {
-            SetActiveButton(activeButton, DateTodayButton, DateTomorrowButton, DateThirdButton, DateCustomButton);
-        }
+        SetTaggedChoiceButtonStyles(raw, DateTodayButton, DateTomorrowButton, DateThirdButton, DateCustomButton);
 
         RebuildBookingSeatGrid();
         UpdateBookingSummary();
@@ -174,17 +160,7 @@ public partial class MainWindow
         _bookingZoneName = parts[1];
         _bookingTariff = GetTariffPrice(parts[0], tariff);
         _selectedSeats.Clear();
-        var activeButton = new[]
-        {
-            ZoneStandardButton,
-            ZoneVipButton,
-            ZoneBootcampButton,
-            ZoneRoyalButton
-        }.FirstOrDefault(button => string.Equals(button.Tag?.ToString(), raw, StringComparison.OrdinalIgnoreCase));
-        if (activeButton is not null)
-        {
-            SetActiveButton(activeButton, ZoneStandardButton, ZoneVipButton, ZoneBootcampButton, ZoneRoyalButton);
-        }
+        SetTaggedChoiceButtonStyles(raw, ZoneStandardButton, ZoneVipButton, ZoneBootcampButton, ZoneRoyalButton);
 
         RebuildBookingSeatGrid();
         UpdateBookingSummary();
@@ -254,18 +230,7 @@ public partial class MainWindow
                 break;
         }
 
-        var activeButton = new[]
-        {
-            Duration1Button,
-            Duration2Button,
-            Duration3Button,
-            MorningPackButton,
-            Duration8Button
-        }.FirstOrDefault(button => string.Equals(button.Tag?.ToString(), tag, StringComparison.OrdinalIgnoreCase));
-        if (activeButton is not null)
-        {
-            SetActiveButton(activeButton, Duration1Button, Duration2Button, Duration3Button, MorningPackButton, Duration8Button);
-        }
+        SetTaggedChoiceButtonStyles(tag, Duration1Button, Duration2Button, Duration3Button, MorningPackButton, Duration8Button);
 
         UpdateBookingTimeButtons();
         RebuildBookingSeatGrid();
@@ -320,10 +285,7 @@ public partial class MainWindow
 
         _viewModel.Booking.ClearError();
         _viewModel.Booking.RefreshConfirmationText();
-        LoadDatabaseState();
-        ApplyMapPcButtonStatuses();
-        RebuildBookingSeatGrid();
-        RefreshAdminUx();
+        RefreshWorkspaceAfterStateChange();
         BookingConfirmOverlay.Visibility = Visibility.Visible;
         ShowImportantStatus("Бронь подтверждена", $"{_viewModel.Booking.SeatsText}, {_viewModel.Booking.Date:yyyy-MM-dd}, {_viewModel.Booking.TimeText}. Итого: {_viewModel.Booking.TotalText}.");
     }
@@ -779,14 +741,6 @@ public partial class MainWindow
         return PcStatusNormalizer.Normalize(status);
     }
 
-    private void SetActiveButton(Button activeButton, params Button[] buttons)
-    {
-        foreach (var button in buttons)
-        {
-            button.Style = (Style)FindResource(ReferenceEquals(button, activeButton) ? "PrimaryButtonStyle" : "GhostButtonStyle");
-        }
-    }
-
     private string GetBookingStartTime()
     {
         return $"{_bookingHour:00}:{_bookingMinute:00}";
@@ -851,7 +805,7 @@ public partial class MainWindow
         _bookingZoneKey = parts[0];
         _bookingZoneName = parts[1];
         _bookingTariff = GetTariffPrice(parts[0], tariff);
-        SetActiveButton(button, ZoneStandardButton, ZoneVipButton, ZoneBootcampButton, ZoneRoyalButton);
+        SetTaggedChoiceButtonStyles(raw, ZoneStandardButton, ZoneVipButton, ZoneBootcampButton, ZoneRoyalButton);
     }
 
     private void ApplyMapPcButtonStatuses()
