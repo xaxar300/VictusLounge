@@ -145,13 +145,22 @@
                             </StackPanel>
                             <Button Grid.Column="2"
                                     x:Name="SidebarToggle"
-                                    Content="&#xE76B;"
-                                    FontFamily="Segoe MDL2 Assets"
                                     Style="{StaticResource GhostButtonStyle}"
                                     Width="34"
                                     MinHeight="34"
                                     Padding="0"
-                                    Command="{Binding Navigation.ToggleSidebarCommand}" />
+                                    Command="{Binding Navigation.ToggleSidebarCommand}">
+                                <Path x:Name="SidebarToggleIcon"
+                                      Data="M 9 5 L 5 9 L 9 13"
+                                      Stroke="{DynamicResource GoldLightBrush}"
+                                      StrokeThickness="2"
+                                      StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round"
+                                      StrokeLineJoin="Round"
+                                      Width="14"
+                                      Height="18"
+                                      Stretch="Uniform" />
+                            </Button>
                         </Grid>
 
                         <ScrollViewer Grid.Row="1" Margin="0,18,0,18" VerticalScrollBarVisibility="Auto">

@@ -13,6 +13,7 @@ using VictusLounge.Data;
 using VictusLounge.Helpers;
 using VictusLounge.Models;
 using VictusLounge.Repositories;
+using VictusLounge.Services.Facades;
 
 namespace VictusLounge;
 
@@ -71,155 +72,51 @@ public partial class MainWindow
 
     private void UpdateTopupSummary()
     {
-        if (!TryReadTopupAmount(out var amount))
-        {
-            _viewModel.Topup.SummaryText = "0 BYN";
-            _viewModel.Topup.BonusText = "Введите сумму больше 0";
-            return;
-        }
-
-        var bonus = CalculateTopupBonus(amount);
-        var tier = GetCurrentClientTier();
-        _viewModel.Topup.SummaryText = $"{amount:0.##} BYN";
-        _viewModel.Topup.BonusText = bonus > 0
-            ? IsPromoApplied()
-                ? $"+{bonus:0.##} бонусов по промокоду"
-                : $"+{bonus:0.##} бонусов по статусу {tier}"
-            : "Бонусы начисляются от 50 BYN";
-    }
-
-    private bool TryReadTopupAmount(out decimal amount)
-    {
-        return decimal.TryParse(
-            _viewModel.Topup.AmountText.Replace(',', '.'),
-            System.Globalization.NumberStyles.Number,
-            System.Globalization.CultureInfo.InvariantCulture,
-            out amount) && amount > 0;
-    }
-
-    private bool SaveBalanceTopup(decimal amount, decimal bonus)
-    {
-        try
-        {
-            using var unitOfWork = new UnitOfWork();
-            var user = unitOfWork.Users.FirstOrDefault(item => item.Id == _currentUserId);
-            if (user is null)
-            {
-                return false;
-            }
-
-            var bonusSource = IsPromoApplied() ? $"promo {_appliedPromoCode}" : $"tier {GetClientTier(user)}";
-            user.Balance += amount + bonus;
-            user.LoyaltyTier = BetterTier(user.LoyaltyTier, GetClientTier(user.Balance));
-            var nextPaymentId = unitOfWork.Payments.GetNextId(payment => payment.Id);
-            unitOfWork.Payments.Add(new Payment
-            {
-                Id = nextPaymentId++,
-                UserId = user.Id,
-                Amount = amount,
-                PaymentType = PaymentTypes.Card,
-                CreatedAt = DateTime.Now,
-                Comment = bonus > 0
-                    ? $"Balance top-up. Bonus added to balance: {bonus:0.##} BYN via {bonusSource}"
-                    : "Balance top-up"
-            });
-
-            if (bonus > 0)
-            {
-                unitOfWork.Payments.Add(new Payment
-                {
-                    Id = nextPaymentId,
-                    UserId = user.Id,
-                    Amount = bonus,
-                    PaymentType = PaymentTypes.Bonus,
-                    CreatedAt = DateTime.Now,
-                    Comment = $"Top-up bonus from {bonusSource}: {amount:0.##} BYN"
-                });
-            }
-
-            unitOfWork.SaveChanges();
-            _balanceAmount = user.Balance;
-            return true;
-        }
-        catch (Exception ex)
-        {
-            ShowDatabaseError("Ошибка пополнения баланса", ex);
-            return false;
-        }
-    }
-
-    private bool SavePendingTopupRequest(decimal amount, string method)
-    {
-        try
-        {
-            using var unitOfWork = new UnitOfWork();
-            if (!unitOfWork.Users.Any(user => user.Id == _currentUserId))
-            {
-                return false;
-            }
-
-            unitOfWork.Payments.Add(new Payment
-            {
-                Id = unitOfWork.Payments.GetNextId(payment => payment.Id),
-                UserId = _currentUserId,
-                Amount = amount,
-                PaymentType = method == "erip" ? PaymentTypes.PendingErip : PaymentTypes.PendingCash,
-                CreatedAt = DateTime.Now,
-                Comment = "Pending balance top-up request"
-            });
-
-            unitOfWork.SaveChanges();
-            return true;
-        }
-        catch (Exception ex)
-        {
-            ShowDatabaseError("Ошибка заявки на пополнение", ex);
-            return false;
-        }
+        var summary = _topupFacade.BuildSummary(new TopupSummaryRequest(
+            _currentUserId,
+            _balanceAmount,
+            _viewModel.Topup.AmountText,
+            _appliedPromoCode));
+        _viewModel.Topup.SummaryText = summary.SummaryText;
+        _viewModel.Topup.BonusText = summary.BonusText;
     }
 
     private void ConfirmTopup()
     {
-        if (!TryReadTopupAmount(out var amount))
-        {
-            _viewModel.Topup.ShowError("Введите корректную сумму пополнения.");
-            return;
-        }
+        var result = _topupFacade.ConfirmTopup(new TopupFacadeRequest(
+            _currentUserId,
+            _viewModel.Topup.AmountText,
+            _topupMethod,
+            _viewModel.Topup.CardNumber,
+            _appliedPromoCode));
 
-        if (_topupMethod != "card")
+        if (!result.Success)
         {
-            var requestType = _topupMethod == "erip" ? "ЕРИП" : "наличными";
-            if (!SavePendingTopupRequest(amount, _topupMethod))
+            if (result.Exception is not null)
             {
-                _viewModel.Topup.ShowError("Не удалось сохранить заявку в базе данных.");
-                return;
+                ShowDatabaseError("Ошибка пополнения баланса", result.Exception);
             }
 
+            _viewModel.Topup.ShowError(result.ErrorMessage ?? "Не удалось выполнить пополнение.");
+            return;
+        }
+
+        if (result.Operation is TopupOperation.Erip or TopupOperation.Cash)
+        {
+            var requestType = result.Operation == TopupOperation.Erip ? "ЕРИП" : "наличными";
             CloseTopupOverlay();
             LoadDatabaseState();
-            ShowImportantStatus("Заявка создана", $"Пополнение {requestType} на {amount:0.##} BYN ожидает подтверждения. Баланс пока не изменен.");
+            ShowImportantStatus("Заявка создана", $"Пополнение {requestType} на {result.Amount:0.##} BYN ожидает подтверждения. Баланс пока не изменен.");
             return;
         }
 
-        if (!IsValidPaymentCardNumber(_viewModel.Topup.CardNumber))
-        {
-            _viewModel.Topup.ShowError("Введите корректный номер карты.");
-            return;
-        }
-
-        var bonus = CalculateTopupBonus(amount);
-        if (!SaveBalanceTopup(amount, bonus))
-        {
-            _viewModel.Topup.ShowError("Не удалось обновить баланс в базе данных.");
-            return;
-        }
-
+        _balanceAmount = result.NewBalance ?? _balanceAmount;
         UpdateCurrentBalanceText();
         LoadDatabaseState();
         RefreshAdminUx();
         SyncCurrentUserViewModel();
         CloseTopupOverlay();
-        ShowImportantStatus("Баланс пополнен", $"Картой зачислено {amount:0.##} BYN. Бонусы: +{bonus:0.##}. Новый баланс: {_balanceAmount:0.##} BYN.");
+        ShowImportantStatus("Баланс пополнен", $"Картой зачислено {result.Amount:0.##} BYN. Бонусы: +{result.Bonus:0.##}. Новый баланс: {_balanceAmount:0.##} BYN.");
     }
 
 }

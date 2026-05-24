@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Microsoft.EntityFrameworkCore;
 using VictusLounge.Data;
@@ -14,6 +15,7 @@ using VictusLounge.Helpers;
 using VictusLounge.Models;
 using VictusLounge.Repositories;
 using VictusLounge.Services;
+using VictusLounge.Services.Facades;
 
 namespace VictusLounge;
 
@@ -69,6 +71,7 @@ public partial class MainWindow
         _viewModel.ClubMap.DetailTitle = pc;
         _viewModel.ClubMap.DetailSubtitle = $"{zone}: статус — {statusText}.";
         _viewModel.ClubMap.PhotoCaption = $"{pc} · {zone}";
+        UpdatePcPhoto(zone);
         _viewModel.ClubMap.Cpu = specs.Cpu;
         _viewModel.ClubMap.Gpu = specs.Gpu;
         _viewModel.ClubMap.Ram = specs.Ram;
@@ -267,25 +270,22 @@ public partial class MainWindow
 
     private void SelectBookingSeat(string seat)
     {
-        if (string.IsNullOrWhiteSpace(seat))
+        var selection = _bookingFacade.SelectSeat(new BookingSeatSelectionRequest(
+            _selectedSeats.ToArray(),
+            seat,
+            _isCompanyBooking));
+        if (!selection.Success)
         {
+            var message = selection.ErrorMessage ?? "Не удалось выбрать ПК.";
+            _viewModel.Booking.ShowError(message);
+            ShowStatus("Лимит брони", message);
             return;
         }
 
-        if (!_isCompanyBooking)
+        _selectedSeats.Clear();
+        foreach (var selectedSeat in selection.Seats)
         {
-            _selectedSeats.Clear();
-        }
-        else if (!_selectedSeats.Contains(seat) && _selectedSeats.Count >= BookingRules.MaxCompanySeats)
-        {
-            _viewModel.Booking.ShowError("Групповая бронь ограничена 5 ПК.");
-            ShowStatus("Лимит брони", "Для компании можно выбрать максимум 5 ПК.");
-            return;
-        }
-
-        if (!_selectedSeats.Add(seat))
-        {
-            _selectedSeats.Remove(seat);
+            _selectedSeats.Add(selectedSeat);
         }
 
         _viewModel.Booking.ClearError();
@@ -294,53 +294,11 @@ public partial class MainWindow
         ShowStatus("Выбор ПК обновлен", _selectedSeats.Count == 0 ? "ПК пока не выбран." : $"Выбрано: {string.Join(", ", _selectedSeats)}.");
     }
 
-    private void ConfirmBooking()
+    private async void ConfirmBooking()
     {
-        var start = _bookingDate.Date.AddHours(_bookingHour).AddMinutes(_bookingMinute);
-        var end = start.AddHours(_bookingDuration);
-        var validation = BookingRules.Validate(
-            _selectedSeats.ToArray(),
-            _isCompanyBooking,
-            start,
-            end,
-            _bookingPackage,
-            _bookingDuration,
-            DateTime.Now);
-        if (!validation.Success)
-        {
-            var message = validation.ErrorMessage ?? "Бронь не прошла проверку правил.";
-            _viewModel.Booking.ShowError(message);
-            ShowStatus("Проверьте бронь", message);
-            return;
-        }
-
-        _viewModel.Booking.ClearError();
-
-        _viewModel.Booking.RefreshConfirmationText();
-
-        if (!SaveBookingSelectionToDatabase())
-        {
-            return;
-        }
-
-        ApplyMapPcButtonStatuses();
-        RebuildBookingSeatGrid();
-        RefreshAdminUx();
-        BookingConfirmOverlay.Visibility = Visibility.Visible;
-        ShowImportantStatus("Бронь подтверждена", $"{_viewModel.Booking.SeatsText}, {_viewModel.Booking.Date:yyyy-MM-dd}, {_viewModel.Booking.TimeText}. Итого: {_viewModel.Booking.TotalText}.");
-    }
-
-    private bool SaveBookingSelectionToDatabase()
-    {
-        if (!EnsureSignedInForDatabaseWrite())
-        {
-            _viewModel.Booking.ShowError("Войдите в систему перед бронированием.");
-            return false;
-        }
-
-        var bookingService = new BookingService();
-        var result = bookingService.CreateBooking(new BookingCreateRequest(
+        var result = await _bookingFacade.ConfirmBookingAsync(new BookingFacadeRequest(
             _currentUserId,
+            _currentUserId > 0,
             _selectedSeats.ToArray(),
             _isCompanyBooking,
             _bookingDate,
@@ -351,17 +309,40 @@ public partial class MainWindow
 
         if (!result.Success)
         {
-            if (result.Exception is not null)
-            {
-                ShowDatabaseError("Ошибка сохранения брони", result.Exception);
-            }
-
-            _viewModel.Booking.ShowError(result.ErrorMessage ?? "Не удалось сохранить бронь.");
-            return false;
+            HandleBookingFacadeError(result);
+            return;
         }
 
+        _viewModel.Booking.ClearError();
+        _viewModel.Booking.RefreshConfirmationText();
         LoadDatabaseState();
-        return true;
+        ApplyMapPcButtonStatuses();
+        RebuildBookingSeatGrid();
+        RefreshAdminUx();
+        BookingConfirmOverlay.Visibility = Visibility.Visible;
+        ShowImportantStatus("Бронь подтверждена", $"{_viewModel.Booking.SeatsText}, {_viewModel.Booking.Date:yyyy-MM-dd}, {_viewModel.Booking.TimeText}. Итого: {_viewModel.Booking.TotalText}.");
+    }
+
+    private void HandleBookingFacadeError(BookingFacadeResult result)
+    {
+        var message = result.ErrorMessage ?? "Не удалось подтвердить бронь.";
+        if (result.Exception is not null)
+        {
+            ShowDatabaseError("Ошибка сохранения брони", result.Exception);
+        }
+
+        _viewModel.Booking.ShowError(message);
+        ShowStatus(GetBookingFacadeErrorTitle(result.Failure), message);
+    }
+
+    private static string GetBookingFacadeErrorTitle(BookingFacadeFailure failure)
+    {
+        return failure switch
+        {
+            BookingFacadeFailure.AuthRequired => "Нужен вход",
+            BookingFacadeFailure.Persistence => "Ошибка сохранения",
+            _ => "Проверьте бронь"
+        };
     }
 
     private void CloseBookingConfirmation()
@@ -409,6 +390,7 @@ public partial class MainWindow
             {
                 Content = seat.IsAvailable ? seat.Name : $"{seat.Name}\n{GetStatusText(seat.Status)}",
                 Tag = seat.Name,
+                Uid = seat.Status,
                 Style = (Style)FindResource("PcButtonStyle"),
                 Margin = new Thickness(0, 0, 8, 8),
                 IsEnabled = seat.IsAvailable,
@@ -418,6 +400,7 @@ public partial class MainWindow
             {
                 button.Style = (Style)FindResource("UnavailablePcButtonStyle");
             }
+            ApplyPcStatusVisual(button, seat.Status, seat.IsAvailable);
             button.Command = _viewModel.Booking.SelectSeatCommand;
             button.CommandParameter = seat.Name;
             BookingSeatGrid.Children.Add(button);
@@ -581,6 +564,7 @@ public partial class MainWindow
                 if (!button.IsEnabled)
                 {
                     button.Style = (Style)FindResource("UnavailablePcButtonStyle");
+                    ApplyPcStatusVisual(button, button.Uid, isAvailable: false);
                     continue;
                 }
 
@@ -651,12 +635,7 @@ public partial class MainWindow
             button.FocusVisualStyle = null;
             button.ToolTip = seat.IsAvailable ? T("Status.AvailableTooltip") : $"{T("Status.UnavailableTooltip")}: {GetStatusText(seat.Status)}";
             button.IsEnabled = true;
-            if (!seat.IsAvailable)
-            {
-                button.BorderBrush = (Brush)FindResource(seat.Status == PcStatuses.Busy ? "DangerBrush" : seat.Status == PcStatuses.Reserved ? "WaitBrush" : "LineSoftBrush");
-                button.Background = (Brush)FindResource("SurfaceBrush");
-                button.Opacity = seat.Status == PcStatuses.Busy ? 0.82 : 0.62;
-            }
+            ApplyPcStatusVisual(button, seat.Status, seat.IsAvailable);
 
             if (_selectedMapPc == pc)
             {
@@ -751,6 +730,60 @@ public partial class MainWindow
             "Bootcamp" => new PcSpecs("Intel Core i7-13700KF", "GeForce RTX 4070 Ti", "32 GB DDR5", "27\" 240 Hz"),
             "Royal VIP" => new PcSpecs("AMD Ryzen 7 7800X3D", "GeForce RTX 4080 Super", "64 GB DDR5", "32\" 240 Hz"),
             _ => new PcSpecs("Intel Core i5", "GeForce RTX", "16 GB", "144 Hz")
+        };
+    }
+
+    private void ApplyPcStatusVisual(Button button, string status, bool isAvailable)
+    {
+        var normalizedStatus = NormalizePcStatus(status);
+        button.Opacity = 1;
+
+        if (isAvailable)
+        {
+            button.Background = (Brush)FindResource("PcFreeBackgroundBrush");
+            button.BorderBrush = (Brush)FindResource("OkBrush");
+            button.Foreground = (Brush)FindResource("OkBrush");
+            return;
+        }
+
+        switch (normalizedStatus)
+        {
+            case PcStatuses.Busy:
+                button.Background = (Brush)FindResource("PcBusyBackgroundBrush");
+                button.BorderBrush = (Brush)FindResource("DangerBrush");
+                button.Foreground = (Brush)FindResource("DangerBrush");
+                break;
+            case PcStatuses.Reserved:
+                button.Background = (Brush)FindResource("PcReservedBackgroundBrush");
+                button.BorderBrush = (Brush)FindResource("WaitBrush");
+                button.Foreground = (Brush)FindResource("WaitBrush");
+                break;
+            default:
+                button.Background = (Brush)FindResource("PcServiceBackgroundBrush");
+                button.BorderBrush = (Brush)FindResource("LineSoftBrush");
+                button.Foreground = (Brush)FindResource("MutedBrush");
+                button.Opacity = 0.74;
+                break;
+        }
+    }
+
+    private void UpdatePcPhoto(string zone)
+    {
+        PcPhotoFrame.Background = new ImageBrush
+        {
+            ImageSource = new BitmapImage(new Uri(GetZonePhotoPath(zone), UriKind.Relative)),
+            Stretch = Stretch.UniformToFill
+        };
+    }
+
+    private static string GetZonePhotoPath(string zone)
+    {
+        return zone switch
+        {
+            "VIP" => "/assets/VIP.png",
+            "Bootcamp" => "/assets/Bootcamp.png",
+            "Royal VIP" => "/assets/RoyalVip.png",
+            _ => "/assets/Standard.png"
         };
     }
 

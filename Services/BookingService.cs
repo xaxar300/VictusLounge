@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using VictusLounge.Helpers;
 using VictusLounge.Models;
 using VictusLounge.Repositories;
@@ -10,6 +11,11 @@ namespace VictusLounge.Services;
 public sealed class BookingService
 {
     public BookingCreateResult CreateBooking(BookingCreateRequest request)
+    {
+        return CreateBookingAsync(request).GetAwaiter().GetResult();
+    }
+
+    public async Task<BookingCreateResult> CreateBookingAsync(BookingCreateRequest request)
     {
         var seats = BookingRules.NormalizeSeats(request.Seats);
         var start = request.Date.Date.AddHours(request.Hour).AddMinutes(request.Minute);
@@ -30,13 +36,13 @@ public sealed class BookingService
         try
         {
             using var unitOfWork = new UnitOfWork();
-            var resolvedComputers = ResolveComputers(unitOfWork, seats, start, end, out var error);
+            var (resolvedComputers, error) = await ResolveComputersAsync(unitOfWork, seats, start, end);
             if (error is not null)
             {
                 return BookingCreateResult.Fail(error);
             }
 
-            var nextBookingId = unitOfWork.Bookings.GetNextId(booking => booking.Id);
+            var nextBookingId = await unitOfWork.Bookings.GetNextIdAsync(booking => booking.Id);
             var isImminent = start.Date == DateTime.Today && start <= DateTime.Now.AddMinutes(15);
 
             var pricingStrategy = BookingPricingStrategyFactory.Create(request.Package);
@@ -68,7 +74,7 @@ public sealed class BookingService
                 }
             }
 
-            unitOfWork.SaveChanges();
+            await unitOfWork.SaveChangesAsync();
             return BookingCreateResult.Ok();
         }
         catch (Exception ex)
@@ -77,47 +83,41 @@ public sealed class BookingService
         }
     }
 
-    private static Dictionary<string, Computer> ResolveComputers(
+    private static async Task<(Dictionary<string, Computer> Computers, string? Error)> ResolveComputersAsync(
         IUnitOfWork unitOfWork,
         IEnumerable<string> seats,
         DateTime start,
-        DateTime end,
-        out string? error)
+        DateTime end)
     {
         var resolvedComputers = new Dictionary<string, Computer>(StringComparer.Ordinal);
-        error = null;
 
         foreach (var seat in seats)
         {
-            var computer = unitOfWork.Computers.GetByName(seat);
+            var computer = await unitOfWork.Computers.GetByNameAsync(seat);
             if (computer is null)
             {
-                error = $"ПК {seat} не найден в базе данных.";
-                return resolvedComputers;
+                return (resolvedComputers, $"ПК {seat} не найден в базе данных.");
             }
 
             if (PcStatusNormalizer.Normalize(computer.Status) == PcStatuses.Service)
             {
-                error = $"ПК {seat} находится в обслуживании. Выберите другое место.";
-                return resolvedComputers;
+                return (resolvedComputers, $"ПК {seat} находится в обслуживании. Выберите другое место.");
             }
 
-            if (unitOfWork.Bookings.HasTimeConflict(computer.Id, start, end))
+            if (await unitOfWork.Bookings.HasTimeConflictAsync(computer.Id, start, end))
             {
-                error = $"ПК {seat} уже занят на это время. Выберите другой интервал или место.";
-                return resolvedComputers;
+                return (resolvedComputers, $"ПК {seat} уже занят на это время. Выберите другой интервал или место.");
             }
 
-            if (unitOfWork.GameSessions.HasTimeConflict(computer.Id, start, end))
+            if (await unitOfWork.GameSessions.HasTimeConflictAsync(computer.Id, start, end))
             {
-                error = $"ПК {seat} уже занят игровой сессией на это время. Выберите другой интервал или место.";
-                return resolvedComputers;
+                return (resolvedComputers, $"ПК {seat} уже занят игровой сессией на это время. Выберите другой интервал или место.");
             }
 
             resolvedComputers[seat] = computer;
         }
 
-        return resolvedComputers;
+        return (resolvedComputers, null);
     }
 
 }

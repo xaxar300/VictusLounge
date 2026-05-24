@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using VictusLounge.Data;
 using VictusLounge.Helpers;
@@ -18,6 +19,7 @@ public interface IUserRepository : IRepository<User>
 public interface IComputerRepository : IRepository<Computer>
 {
     Computer? GetByName(string name);
+    Task<Computer?> GetByNameAsync(string name);
     List<Computer> GetOrderedNoTracking();
     Dictionary<int, Computer> GetDictionaryNoTracking();
     List<Computer> GetByZone(string zone);
@@ -32,6 +34,7 @@ public interface ITariffRepository : IRepository<Tariff>
 public interface IBookingRepository : IRepository<Booking>
 {
     bool HasTimeConflict(int computerId, DateTime start, DateTime end, int? excludedBookingId = null);
+    Task<bool> HasTimeConflictAsync(int computerId, DateTime start, DateTime end, int? excludedBookingId = null);
     bool HasImminentBooking(int computerId, DateTime now, int? excludedBookingId = null);
     Booking? GetPendingForUser(int userId, DateTime cutoff);
     List<Booking> GetTodaysPending(DateTime today);
@@ -41,6 +44,7 @@ public interface IGameSessionRepository : IRepository<GameSession>
 {
     bool HasOpenSession(int computerId, DateTime now, int? excludedSessionId = null);
     bool HasTimeConflict(int computerId, DateTime start, DateTime end);
+    Task<bool> HasTimeConflictAsync(int computerId, DateTime start, DateTime end);
     GameSession? GetOpenForComputer(int computerId);
     decimal? GetOpenSessionAmount(string computerName);
     string? GetFirstPendingPaymentComputerName(DateTime now);
@@ -106,6 +110,11 @@ public class ComputerRepository : Repository<Computer>, IComputerRepository
         return FirstOrDefault(computer => computer.Name == name);
     }
 
+    public Task<Computer?> GetByNameAsync(string name)
+    {
+        return Query().FirstOrDefaultAsync(computer => computer.Name == name);
+    }
+
     public List<Computer> GetOrderedNoTracking()
     {
         return QueryNoTracking().OrderBy(computer => computer.Id).ToList();
@@ -151,6 +160,16 @@ public class BookingRepository : Repository<Booking>, IBookingRepository
     public bool HasTimeConflict(int computerId, DateTime start, DateTime end, int? excludedBookingId = null)
     {
         return Query().Any(booking =>
+            (!excludedBookingId.HasValue || booking.Id != excludedBookingId.Value)
+            && booking.ComputerId == computerId
+            && booking.Status != BookingStatuses.Cancelled
+            && booking.StartTime < end
+            && booking.EndTime > start);
+    }
+
+    public Task<bool> HasTimeConflictAsync(int computerId, DateTime start, DateTime end, int? excludedBookingId = null)
+    {
+        return Query().AnyAsync(booking =>
             (!excludedBookingId.HasValue || booking.Id != excludedBookingId.Value)
             && booking.ComputerId == computerId
             && booking.Status != BookingStatuses.Cancelled
@@ -212,6 +231,15 @@ public class GameSessionRepository : Repository<GameSession>, IGameSessionReposi
     public bool HasTimeConflict(int computerId, DateTime start, DateTime end)
     {
         return Query().Any(session =>
+            session.ComputerId == computerId
+            && session.Status != SessionStatuses.Closed
+            && session.StartTime < end
+            && (session.EndTime == null || session.EndTime > start));
+    }
+
+    public Task<bool> HasTimeConflictAsync(int computerId, DateTime start, DateTime end)
+    {
+        return Query().AnyAsync(session =>
             session.ComputerId == computerId
             && session.Status != SessionStatuses.Closed
             && session.StartTime < end

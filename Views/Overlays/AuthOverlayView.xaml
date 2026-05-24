@@ -68,7 +68,10 @@
                                         </UniformGrid>
                                     </StackPanel>
 
-                                    <Border Grid.Column="1" CornerRadius="18" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Background="#1AD4AF37" Padding="18" VerticalAlignment="Stretch">
+                                    <Border Grid.Column="1" CornerRadius="18" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Padding="18" VerticalAlignment="Stretch">
+                                        <Border.Background>
+                                            <ImageBrush ImageSource="/assets/LoginPhoto.png" Stretch="UniformToFill" />
+                                        </Border.Background>
                                         <Grid>
                                             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                                 <TextBlock Text="&#xEB9F;" FontFamily="Segoe MDL2 Assets" FontSize="42" Foreground="{DynamicResource GoldLightBrush}" HorizontalAlignment="Center" />
@@ -164,7 +167,10 @@
                                         <ColumnDefinition Width="1.1*" />
                                     </Grid.ColumnDefinitions>
 
-                                    <Border Grid.Column="0" CornerRadius="18" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Background="#1AD4AF37" Padding="18" Margin="0,0,22,0" VerticalAlignment="Stretch">
+                                    <Border Grid.Column="0" CornerRadius="18" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Padding="18" Margin="0,0,22,0" VerticalAlignment="Stretch">
+                                        <Border.Background>
+                                            <ImageBrush ImageSource="/assets/RegisterPhoto.png" Stretch="UniformToFill" />
+                                        </Border.Background>
                                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                             <TextBlock Text="&#xEB9F;" FontFamily="Segoe MDL2 Assets" FontSize="42" Foreground="{DynamicResource GoldLightBrush}" HorizontalAlignment="Center" />
                                             <TextBlock Text="Фрейм для промо-фото" Foreground="{DynamicResource TextBrush}" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" Margin="0,14,0,6" />

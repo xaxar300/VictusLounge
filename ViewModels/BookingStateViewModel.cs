@@ -20,7 +20,7 @@ public sealed class BookingStateViewModel : ViewModelBase
     private string _package = "regular";
     private bool _isCompanyBooking;
     private string[] _selectedSeats = [];
-    private string _seatsText = "—";
+    private string _seatsText = "ПК не выбран";
     private string _timeText = "18:00-19:00";
     private string _durationText = "1 ч";
     private string _tariffText = "8 BYN/час · Gold -10%";
@@ -294,7 +294,7 @@ public sealed class BookingStateViewModel : ViewModelBase
         var discount = baseTotal - total;
         var tariffLabel = pricingStrategy.Label;
 
-        SeatsText = _selectedSeats.Length == 0 ? "—" : string.Join(", ", _selectedSeats);
+        SeatsText = _selectedSeats.Length == 0 ? "ПК не выбран" : string.Join(", ", _selectedSeats);
         TimeText = $"{start:HH:mm}-{end:HH:mm}";
         DurationText = $"{Duration} ч";
         TariffText = $"{Tariff} BYN/час · {tariffLabel}";

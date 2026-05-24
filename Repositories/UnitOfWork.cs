@@ -1,6 +1,7 @@
 using VictusLounge.Data;
 using VictusLounge.Models;
 using Microsoft.EntityFrameworkCore.Storage;
+using System.Threading.Tasks;
 
 namespace VictusLounge.Repositories;
 
@@ -59,6 +60,11 @@ public class UnitOfWork : IUnitOfWork
     public int SaveChanges()
     {
         return _dbContext.SaveChanges();
+    }
+
+    public Task<int> SaveChangesAsync()
+    {
+        return _dbContext.SaveChangesAsync();
     }
 
     public void Dispose()

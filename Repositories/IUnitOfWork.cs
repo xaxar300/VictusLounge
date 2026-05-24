@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using VictusLounge.Models;
 
 namespace VictusLounge.Repositories;
@@ -17,4 +18,5 @@ public interface IUnitOfWork : IDisposable
     void CommitTransaction();
     void RollbackTransaction();
     int SaveChanges();
+    Task<int> SaveChangesAsync();
 }

@@ -117,8 +117,10 @@
                                                 CornerRadius="12"
                                                 BorderBrush="{DynamicResource LineBrush}"
                                                 BorderThickness="1"
-                                                Background="{DynamicResource SurfaceBrush}"
                                                 Margin="0,18,0,16">
+                                            <Border.Background>
+                                                <ImageBrush ImageSource="/assets/Standard.png" Stretch="UniformToFill" />
+                                            </Border.Background>
                                             <Grid>
                                                 <Grid.Background>
                                                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">

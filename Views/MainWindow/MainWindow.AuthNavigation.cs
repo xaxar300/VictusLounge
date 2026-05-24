@@ -248,7 +248,9 @@ public partial class MainWindow
         ProfileText.Visibility = _isSidebarCollapsed ? Visibility.Collapsed : Visibility.Visible;
         LogoutText.Visibility = _isSidebarCollapsed ? Visibility.Collapsed : Visibility.Visible;
         SidebarVersionText.HorizontalAlignment = _isSidebarCollapsed ? HorizontalAlignment.Center : HorizontalAlignment.Right;
-        SidebarToggle.Content = _isSidebarCollapsed ? "\uE76C" : "\uE76B";
+        SidebarToggleIcon.Data = Geometry.Parse(_isSidebarCollapsed
+            ? "M 5 5 L 9 9 L 5 13"
+            : "M 9 5 L 5 9 L 9 13");
 
         foreach (var button in new[]
         {

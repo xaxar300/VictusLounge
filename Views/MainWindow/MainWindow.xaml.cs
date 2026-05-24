@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Threading;
 using VictusLounge.Models;
 using VictusLounge.Services;
+using VictusLounge.Services.Facades;
 using VictusLounge.ViewModels;
 
 namespace VictusLounge;
@@ -18,6 +19,8 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _announcementTimer;
     private readonly DispatcherTimer _liveRefreshTimer;
     private readonly MainWindowViewModel _viewModel;
+    private readonly BookingFacade _bookingFacade = new();
+    private readonly TopupFacade _topupFacade = new();
     private readonly HashSet<string> _selectedSeats = [];
     private ResourceDictionary _languageStrings = new();
     private DateTime _lastAnnouncementTick;

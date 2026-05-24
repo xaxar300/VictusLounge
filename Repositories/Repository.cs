@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using VictusLounge.Data;
 
@@ -60,6 +61,13 @@ public class Repository<TEntity> : IRepository<TEntity>
     public int GetNextId(Expression<Func<TEntity, int>> idSelector)
     {
         return _dbSet.Any() ? _dbSet.Max(idSelector) + 1 : 1;
+    }
+
+    public async Task<int> GetNextIdAsync(Expression<Func<TEntity, int>> idSelector)
+    {
+        return await _dbSet.AnyAsync()
+            ? await _dbSet.MaxAsync(idSelector) + 1
+            : 1;
     }
 
     public void Add(TEntity entity)

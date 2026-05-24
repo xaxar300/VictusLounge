@@ -24,4 +24,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Resource Include="assets\*.png" />
+  </ItemGroup>
+
 </Project>
