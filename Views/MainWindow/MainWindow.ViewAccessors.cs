@@ -128,6 +128,7 @@ public partial class MainWindow
     private System.Windows.Controls.TextBlock AdminFreePcsHintText => AdminView.AdminFreePcsHintText;
     private System.Windows.Controls.TextBlock AdminSupportValue => AdminView.AdminSupportValue;
     private System.Windows.Controls.Grid AdminSessionsGrid => AdminView.AdminSessionsGrid;
+    private System.Windows.Controls.StackPanel AdminTaskQueueList => AdminView.AdminTaskQueueList;
     private System.Windows.Controls.StackPanel AdminQuickOpsPanel => AdminView.AdminQuickOpsPanel;
     private System.Windows.Controls.StackPanel AdminOperationLogList => AdminView.AdminOperationLogList;
     private System.Windows.Controls.TextBlock ShiftCashValue => ShiftView.ShiftCashValue;

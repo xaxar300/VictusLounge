@@ -11,10 +11,10 @@ namespace VictusLounge.Converters
     /// </summary>
     public class StatusToBrushConverter : IValueConverter
     {
-        private static readonly Brush FreeBrush = new SolidColorBrush(Color.FromArgb(0xFF, 0x4C, 0xAF, 0x50)); // green
-        private static readonly Brush BusyBrush = new SolidColorBrush(Color.FromArgb(0xFF, 0xFF, 0x98, 0x00)); // amber
-        private static readonly Brush ReservedBrush = new SolidColorBrush(Color.FromArgb(0xFF, 0xFF, 0x44, 0x36)); // red
-        private static readonly Brush ServiceBrush = new SolidColorBrush(Color.FromArgb(0xFF, 0x9E, 0x9E, 0x9E)); // gray
+        private static readonly Brush FreeBrush = new SolidColorBrush(Color.FromRgb(0x68, 0xD8, 0x89));
+        private static readonly Brush BusyBrush = new SolidColorBrush(Color.FromRgb(0xE6, 0x6B, 0x6B));
+        private static readonly Brush ReservedBrush = new SolidColorBrush(Color.FromRgb(0xED, 0xC8, 0x6B));
+        private static readonly Brush ServiceBrush = new SolidColorBrush(Color.FromRgb(0xA9, 0xA0, 0x92));
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
@@ -34,6 +34,6 @@ namespace VictusLounge.Converters
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
-            throw new NotImplementedException();
+            Binding.DoNothing;
     }
 }

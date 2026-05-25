@@ -1,163 +1,287 @@
-﻿<UserControl x:Class="VictusLounge.Views.BookingView"
+<UserControl x:Class="VictusLounge.Views.BookingView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="Transparent">
-<StackPanel>
-                            <DockPanel Margin="{StaticResource SpaceSection}">
+    <StackPanel>
+        <DockPanel Margin="{StaticResource SpaceSection}" LastChildFill="False">
+            <StackPanel DockPanel.Dock="Left">
+                <TextBlock Text="BOOKING FLOW" Style="{StaticResource KickerTextStyle}" />
+                <TextBlock Text="Бронирование" FontSize="32" FontWeight="Black" Margin="{StaticResource SpaceTitle}" />
+                <TextBlock Text="Пошагово выберите время, место, тариф и проверьте итог перед подтверждением." Style="{StaticResource MutedTextStyle}" />
+            </StackPanel>
+            <Border DockPanel.Dock="Right"
+                    CornerRadius="13"
+                    BorderBrush="{DynamicResource LineSoftBrush}"
+                    BorderThickness="1"
+                    Background="{DynamicResource SurfaceBrush}"
+                    Padding="5"
+                    VerticalAlignment="Top">
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="SingleModeButton"
+                            Content="Одиночная"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Tag="single"
+                            Command="{Binding Booking.SelectModeCommand}"
+                            CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}"
+                            MinHeight="34"
+                            Padding="14,0"
+                            Margin="{StaticResource SpaceInlineS}" />
+                    <Button x:Name="CompanyModeButton"
+                            Content="Компания"
+                            Style="{StaticResource GhostButtonStyle}"
+                            Tag="company"
+                            Command="{Binding Booking.SelectModeCommand}"
+                            CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}"
+                            MinHeight="34"
+                            Padding="14,0" />
+                </StackPanel>
+            </Border>
+        </DockPanel>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.65*" />
+                <ColumnDefinition Width="0.9*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Style="{StaticResource PanelBorderStyle}" Margin="{StaticResource SpacePanelRight}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              MaxHeight="650">
+                    <StackPanel>
+                        <UniformGrid Columns="4" Margin="{StaticResource SpaceBelowL}">
+                            <Border CornerRadius="11" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Background="#18D4AF37" Padding="12" Margin="0,0,8,0">
                                 <StackPanel>
-                                    <TextBlock Text="BOOKING FLOW" Style="{StaticResource KickerTextStyle}" />
-                                    <TextBlock Text="Бронирование" FontSize="38" FontWeight="Black" Margin="{StaticResource SpaceTitle}" />
-                                    <TextBlock Text="Выберите дату, зону, один или несколько ПК, затем проверьте итог перед подтверждением." Style="{StaticResource MutedTextStyle}" />
+                                    <TextBlock Text="1" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Black" />
+                                    <TextBlock Text="Дата и время" FontWeight="Bold" Margin="0,5,0,0" TextWrapping="Wrap" />
                                 </StackPanel>
-                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
-                                    <Button x:Name="SingleModeButton" Content="Одиночная" Style="{StaticResource PrimaryButtonStyle}" Tag="single" Command="{Binding Booking.SelectModeCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="{StaticResource SpaceInlineS}" />
-                                    <Button x:Name="CompanyModeButton" Content="Для компании" Style="{StaticResource GhostButtonStyle}" Tag="company" Command="{Binding Booking.SelectModeCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" />
+                            </Border>
+                            <Border CornerRadius="11" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Background="{DynamicResource SurfaceBrush}" Padding="12" Margin="0,0,8,0">
+                                <StackPanel>
+                                    <TextBlock Text="2" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Black" />
+                                    <TextBlock Text="Зона и ПК" FontWeight="Bold" Margin="0,5,0,0" TextWrapping="Wrap" />
                                 </StackPanel>
-                            </DockPanel>
+                            </Border>
+                            <Border CornerRadius="11" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Background="{DynamicResource SurfaceBrush}" Padding="12" Margin="0,0,8,0">
+                                <StackPanel>
+                                    <TextBlock Text="3" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Black" />
+                                    <TextBlock Text="Тариф" FontWeight="Bold" Margin="0,5,0,0" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+                            <Border CornerRadius="11" BorderBrush="{DynamicResource LineSoftBrush}" BorderThickness="1" Background="{DynamicResource SurfaceBrush}" Padding="12">
+                                <StackPanel>
+                                    <TextBlock Text="4" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Black" />
+                                    <TextBlock Text="Подтверждение" FontWeight="Bold" Margin="0,5,0,0" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
 
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="1.7*" />
-                                    <ColumnDefinition Width="0.9*" />
-                                </Grid.ColumnDefinitions>
+                        <Grid Margin="{StaticResource SpaceBelowL}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="44" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Width="30" Height="30" CornerRadius="15" Background="{DynamicResource GoldButtonBrush}" VerticalAlignment="Top">
+                                <TextBlock Text="1" Foreground="#111111" FontWeight="Black" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="Дата и время" FontSize="22" FontWeight="Black" />
+                                <TextBlock Text="Сначала задайте день и стартовый слот. Недоступные пакетные часы подсветятся в выборе времени." Foreground="{DynamicResource MutedBrush}" Margin="{StaticResource SpaceStackXs}" TextWrapping="Wrap" />
+                                <UniformGrid Columns="4" Margin="{StaticResource SpaceStackM}">
+                                    <Button x:Name="DateTodayButton"
+                                            Content="Сегодня&#x0a;сегодня"
+                                            Tag=""
+                                            Style="{StaticResource PrimaryButtonStyle}"
+                                            Command="{Binding Booking.SelectDateCommand}"
+                                            CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}"
+                                            Margin="{StaticResource SpaceInlineS}" />
+                                    <Button x:Name="DateTomorrowButton"
+                                            Content="Завтра&#x0a;+1 день"
+                                            Tag=""
+                                            Style="{StaticResource GhostButtonStyle}"
+                                            Command="{Binding Booking.SelectDateCommand}"
+                                            CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}"
+                                            Margin="{StaticResource SpaceInlineS}" />
+                                    <Button x:Name="DateThirdButton"
+                                            Content="+2 дня&#x0a;дата"
+                                            Tag=""
+                                            Style="{StaticResource GhostButtonStyle}"
+                                            Command="{Binding Booking.SelectDateCommand}"
+                                            CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}"
+                                            Margin="{StaticResource SpaceInlineS}" />
+                                    <Button x:Name="DateCustomButton"
+                                            Content="+3 дня&#x0a;дата"
+                                            Tag=""
+                                            Style="{StaticResource GhostButtonStyle}"
+                                            Command="{Binding Booking.SelectDateCommand}"
+                                            CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" />
+                                </UniformGrid>
 
-                                <Border Style="{StaticResource PanelBorderStyle}" Margin="{StaticResource SpacePanelRight}">
-                                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" MaxHeight="640">
+                                <Grid Margin="{StaticResource SpaceStackM}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="320" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
                                     <StackPanel>
-                                        <UniformGrid Columns="4" Margin="{StaticResource SpaceBelowL}">
-                                            <Button x:Name="DateTodayButton" Content="Сегодня&#x0a;сегодня" Tag="" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Booking.SelectDateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="{StaticResource SpaceInlineS}" />
-                                            <Button x:Name="DateTomorrowButton" Content="Завтра&#x0a;+1 день" Tag="" Style="{StaticResource GhostButtonStyle}" Command="{Binding Booking.SelectDateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="{StaticResource SpaceInlineS}" />
-                                            <Button x:Name="DateThirdButton" Content="+2 дня&#x0a;дата" Tag="" Style="{StaticResource GhostButtonStyle}" Command="{Binding Booking.SelectDateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="{StaticResource SpaceInlineS}" />
-                                            <Button x:Name="DateCustomButton" Content="+3 дня&#x0a;дата" Tag="" Style="{StaticResource GhostButtonStyle}" Command="{Binding Booking.SelectDateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" />
-                                        </UniformGrid>
-
-                                        <Grid Margin="{StaticResource SpaceBelowL}">
-                                            <Grid.ColumnDefinitions><ColumnDefinition Width="1.1*" /><ColumnDefinition Width="0.9*" /></Grid.ColumnDefinitions>
-                                            <StackPanel Margin="{StaticResource SpaceInlineS}">
-                                                <TextBlock Text="Зона" Foreground="{DynamicResource MutedBrush}" Margin="{StaticResource SpaceBelowS}" />
-                                                <WrapPanel>
-                                                    <Button x:Name="ZoneStandardButton" Content="Standard" Tag="Standard|Standard Hall|8" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Booking.SelectZoneCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="{StaticResource SpaceWrapItem}" />
-                                                    <Button x:Name="ZoneVipButton" Content="VIP" Tag="VIP|VIP Zone|14" Style="{StaticResource GhostButtonStyle}" Command="{Binding Booking.SelectZoneCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="{StaticResource SpaceWrapItem}" />
-                                                    <Button x:Name="ZoneBootcampButton" Content="Bootcamp" Tag="Bootcamp|Bootcamp Room|50" Style="{StaticResource GhostButtonStyle}" Command="{Binding Booking.SelectZoneCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="{StaticResource SpaceWrapItem}" />
-                                                    <Button x:Name="ZoneRoyalButton" Content="Royal VIP" Tag="Royal VIP|Royal VIP|24" Style="{StaticResource GhostButtonStyle}" Command="{Binding Booking.SelectZoneCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="{StaticResource SpaceWrapItem}" />
-                                                </WrapPanel>
-                                                <TextBlock Text="Тариф" Foreground="{DynamicResource MutedBrush}" Margin="{StaticResource SpaceLabelStack}" />
-                                                <WrapPanel>
-                                                    <Button x:Name="Duration1Button" Content="1 час" Tag="1" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Booking.SelectDurationCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="{StaticResource SpaceWrapItem}" />
-                                                    <Button x:Name="Duration2Button" Content="2 часа" Tag="2" Style="{StaticResource GhostButtonStyle}" Command="{Binding Booking.SelectDurationCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="{StaticResource SpaceWrapItem}" />
-                                                    <Button x:Name="Duration3Button" Content="3 часа" Tag="3" Style="{StaticResource GhostButtonStyle}" Command="{Binding Booking.SelectDurationCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="{StaticResource SpaceWrapItem}" />
-                                                    <Button x:Name="MorningPackButton" Content="Morning Pack" Tag="morning" Style="{StaticResource GhostButtonStyle}" Command="{Binding Booking.SelectDurationCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="{StaticResource SpaceWrapItem}" />
-                                                    <Button x:Name="Duration8Button" Content="Night Pack" Tag="night" Style="{StaticResource GhostButtonStyle}" Command="{Binding Booking.SelectDurationCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="{StaticResource SpaceWrapItem}" />
-                                                </WrapPanel>
-                                            </StackPanel>
-                                            <StackPanel Grid.Column="1">
-                                                <TextBlock Text="Начало" Foreground="{DynamicResource MutedBrush}" Margin="{StaticResource SpaceBelowS}" />
-                                                <Button x:Name="TimePickerToggleButton"
-                                                        Content="{Binding Booking.TimePickerText}"
-                                                        Style="{StaticResource GhostButtonStyle}"
-                                                        Command="{Binding Booking.ToggleTimePickerCommand}"
-                                                        Width="300"
-                                                        HorizontalAlignment="Left" />
-                                                <Border x:Name="TimePickerPanel"
-                                                        Width="300"
-                                                        HorizontalAlignment="Left"
-                                                        Visibility="Collapsed"
-                                                        CornerRadius="12"
-                                                        BorderBrush="{DynamicResource LineBrush}"
-                                                        BorderThickness="1"
-                                                        Background="{DynamicResource PanelGradientBrush}"
-                                                        Padding="{StaticResource SpaceInsetS}"
-                                                        Margin="{StaticResource SpaceStackS}">
-                                                    <StackPanel>
-                                                        <StackPanel>
-                                                            <TextBlock Text="Часы" Foreground="{DynamicResource MutedBrush}" Margin="{StaticResource SpaceBelowS}" />
-                                                            <UniformGrid x:Name="BookingHourGrid" Columns="4" />
-                                                        </StackPanel>
-                                                        <StackPanel Margin="{StaticResource SpaceStackS}">
-                                                            <TextBlock Text="Минуты" Foreground="{DynamicResource MutedBrush}" Margin="{StaticResource SpaceBelowS}" />
-                                                            <UniformGrid x:Name="BookingMinuteGrid" Columns="4" />
-                                                        </StackPanel>
-                                                    </StackPanel>
-                                                </Border>
-                                                <Border CornerRadius="12"
-                                                        BorderBrush="{DynamicResource LineSoftBrush}"
-                                                        BorderThickness="1"
-                                                        Background="{DynamicResource SurfaceBrush}"
-                                                        Padding="{StaticResource SpaceInsetS}"
-                                                        Margin="{StaticResource SpaceStackM}">
-                                                    <TextBlock x:Name="PackageHintText"
-                                                               Text="{Binding Booking.PackageHintText}"
-                                                               Foreground="{DynamicResource MutedBrush}"
-                                                               TextWrapping="Wrap" />
-                                                </Border>
-                                            </StackPanel>
-                                        </Grid>
-
-                                        <DockPanel Margin="{StaticResource SpaceBelowM}">
+                                        <TextBlock Text="Начало" Foreground="{DynamicResource MutedBrush}" Margin="{StaticResource SpaceBelowS}" />
+                                        <Button x:Name="TimePickerToggleButton"
+                                                Content="{Binding Booking.TimePickerText}"
+                                                Style="{StaticResource GhostButtonStyle}"
+                                                Command="{Binding Booking.ToggleTimePickerCommand}"
+                                                Width="300"
+                                                HorizontalAlignment="Left" />
+                                        <Border x:Name="TimePickerPanel"
+                                                Width="300"
+                                                HorizontalAlignment="Left"
+                                                Visibility="Collapsed"
+                                                CornerRadius="12"
+                                                BorderBrush="{DynamicResource LineBrush}"
+                                                BorderThickness="1"
+                                                Background="{DynamicResource PanelGradientBrush}"
+                                                Padding="{StaticResource SpaceInsetS}"
+                                                Margin="{StaticResource SpaceStackS}">
                                             <StackPanel>
-                                                <TextBlock Text="Выбор ПК" FontSize="22" FontWeight="Bold" />
-                                                <TextBlock Text="Нажмите свободный слот в строке нужного ПК." Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,5,0,0" />
+                                                <StackPanel>
+                                                    <TextBlock Text="Часы" Foreground="{DynamicResource MutedBrush}" Margin="{StaticResource SpaceBelowS}" />
+                                                    <UniformGrid x:Name="BookingHourGrid" Columns="4" />
+                                                </StackPanel>
+                                                <StackPanel Margin="{StaticResource SpaceStackS}">
+                                                    <TextBlock Text="Минуты" Foreground="{DynamicResource MutedBrush}" Margin="{StaticResource SpaceBelowS}" />
+                                                    <UniformGrid x:Name="BookingMinuteGrid" Columns="4" />
+                                                </StackPanel>
                                             </StackPanel>
-                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
-                                                <TextBlock Text="свободно" Foreground="{DynamicResource OkBrush}" FontSize="12" Margin="0,0,12,0" />
-                                                <TextBlock Text="занято" Foreground="{DynamicResource WaitBrush}" FontSize="12" Margin="0,0,12,0" />
-                                                <TextBlock Text="сервис" Foreground="{DynamicResource MutedBrush}" FontSize="12" />
-                                            </StackPanel>
-                                        </DockPanel>
-                                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" MaxHeight="430">
-                                            <Grid x:Name="BookingSeatGrid" MinWidth="760" />
-                                        </ScrollViewer>
+                                        </Border>
                                     </StackPanel>
-                                    </ScrollViewer>
-                                </Border>
+                                    <Border Grid.Column="1"
+                                            CornerRadius="12"
+                                            BorderBrush="{DynamicResource LineSoftBrush}"
+                                            BorderThickness="1"
+                                            Background="{DynamicResource SurfaceBrush}"
+                                            Padding="{StaticResource SpaceInsetS}"
+                                            VerticalAlignment="Top">
+                                        <TextBlock x:Name="PackageHintText"
+                                                   Text="{Binding Booking.PackageHintText}"
+                                                   Foreground="{DynamicResource MutedBrush}"
+                                                   TextWrapping="Wrap" />
+                                    </Border>
+                                </Grid>
+                            </StackPanel>
+                        </Grid>
 
-                                <Border Grid.Column="1" Style="{StaticResource PanelBorderStyle}" VerticalAlignment="Top">
-                                    <StackPanel>
-                                        <TextBlock Text="SUMMARY" Style="{StaticResource KickerTextStyle}" />
-                                        <TextBlock Text="Итог брони" FontSize="26" FontWeight="Black" Margin="{StaticResource SpaceHeading}" />
-                                        <Grid>
-                                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-                                            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
-                                            <TextBlock Text="ПК" Foreground="{DynamicResource MutedBrush}" /><TextBlock x:Name="SummarySeatsText" Grid.Column="1" Text="{Binding Booking.SeatsText}" FontWeight="Bold" HorizontalAlignment="Right" TextWrapping="Wrap" />
-                                            <TextBlock Grid.Row="1" Text="Зона" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" /><TextBlock x:Name="SummaryZoneText" Grid.Row="1" Grid.Column="1" Text="{Binding Booking.ZoneName}" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" />
-                                            <TextBlock Grid.Row="2" Text="Дата" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" /><TextBlock x:Name="SummaryDateText" Grid.Row="2" Grid.Column="1" Text="{Binding Booking.Date, StringFormat=yyyy-MM-dd}" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" />
-                                            <TextBlock Grid.Row="3" Text="Время" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" /><TextBlock x:Name="SummaryTimeText" Grid.Row="3" Grid.Column="1" Text="{Binding Booking.TimeText}" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" />
-                                            <TextBlock Grid.Row="4" Text="Длительность" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" /><TextBlock x:Name="SummaryDurationText" Grid.Row="4" Grid.Column="1" Text="{Binding Booking.DurationText}" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" />
-                                            <TextBlock Grid.Row="5" Text="Тариф" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" /><TextBlock x:Name="SummaryTariffText" Grid.Row="5" Grid.Column="1" Text="{Binding Booking.TariffText}" FontWeight="Bold" HorizontalAlignment="Right" TextWrapping="Wrap" Margin="0,10,0,0" />
-                                            <TextBlock Grid.Row="6" Text="Без скидки" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" /><TextBlock x:Name="SummaryBaseTotalText" Grid.Row="6" Grid.Column="1" Text="{Binding Booking.BaseTotalText}" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" />
-                                            <TextBlock Grid.Row="7" Text="Скидка" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" /><TextBlock x:Name="SummaryDiscountText" Grid.Row="7" Grid.Column="1" Text="{Binding Booking.DiscountText}" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" />
-                                            <Border Grid.Row="8" Grid.ColumnSpan="2" Height="1" Background="{DynamicResource LineBrush}" Margin="0,16,0,12" />
-                                            <TextBlock Grid.Row="9" Text="Итого" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Black" FontSize="16" Margin="0,0,0,0" />
-                                            <TextBlock x:Name="SummaryTotalText" Grid.Row="9" Grid.Column="1" Text="{Binding Booking.TotalText}" Foreground="{DynamicResource GoldLightBrush}" FontSize="30" FontWeight="Black" HorizontalAlignment="Right" Margin="0,-4,0,0" />
-                                        </Grid>
-                                        <Border Margin="{StaticResource SpaceStackL}"
-                                                Padding="{StaticResource SpaceInsetS}"
-                                                CornerRadius="10"
-                                                Background="{DynamicResource StatusWarningBackgroundBrush}"
-                                                BorderBrush="{DynamicResource WaitBrush}"
-                                                BorderThickness="1"
-                                                Visibility="{Binding Booking.WarningVisibility}">
-                                            <DockPanel>
-                                                <TextBlock Text="!" Foreground="{DynamicResource WaitBrush}" FontWeight="Black" Margin="{StaticResource SpaceInlineS}" />
-                                                <TextBlock x:Name="BookingWarningText" Text="{Binding Booking.WarningText}" Foreground="{DynamicResource WaitBrush}" TextWrapping="Wrap" />
-                                            </DockPanel>
-                                        </Border>
-                                        <Border Margin="{StaticResource SpaceStackS}"
-                                                Padding="{StaticResource SpaceInsetS}"
-                                                CornerRadius="10"
-                                                Background="{DynamicResource StatusErrorBackgroundBrush}"
-                                                BorderBrush="{DynamicResource DangerBrush}"
-                                                BorderThickness="1"
-                                                Visibility="{Binding Booking.ErrorVisibility}">
-                                            <DockPanel>
-                                                <TextBlock Text="!" Foreground="{DynamicResource DangerBrush}" FontWeight="Black" Margin="{StaticResource SpaceInlineS}" />
-                                                <TextBlock x:Name="BookingErrorText" Text="{Binding Booking.ErrorText}" Foreground="{DynamicResource DangerBrush}" FontWeight="Bold" TextWrapping="Wrap" />
-                                            </DockPanel>
-                                        </Border>
-                                        <Button Content="Подтвердить бронь" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Booking.ConfirmCommand}" Margin="0,22,0,10" />
-                                        <Button Content="Очистить выбор" Style="{StaticResource GhostButtonStyle}" Command="{Binding Booking.ClearCommand}" />
+                        <Border Height="1" Background="{DynamicResource LineSoftBrush}" Margin="{StaticResource SpaceBelowL}" />
+
+                        <Grid Margin="{StaticResource SpaceBelowL}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="44" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Width="30" Height="30" CornerRadius="15" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" VerticalAlignment="Top">
+                                <TextBlock Text="2" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Black" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="Зона и ПК" FontSize="22" FontWeight="Black" />
+                                <TextBlock Text="Выберите зону, затем свободный слот в строке нужного ПК." Foreground="{DynamicResource MutedBrush}" Margin="{StaticResource SpaceStackXs}" TextWrapping="Wrap" />
+                                <WrapPanel Margin="{StaticResource SpaceStackM}">
+                                    <Button x:Name="ZoneStandardButton" Content="Standard" Tag="Standard|Standard Hall|8" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Booking.SelectZoneCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="{StaticResource SpaceWrapItem}" />
+                                    <Button x:Name="ZoneVipButton" Content="VIP" Tag="VIP|VIP Zone|14" Style="{StaticResource GhostButtonStyle}" Command="{Binding Booking.SelectZoneCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="{StaticResource SpaceWrapItem}" />
+                                    <Button x:Name="ZoneBootcampButton" Content="Bootcamp" Tag="Bootcamp|Bootcamp Room|50" Style="{StaticResource GhostButtonStyle}" Command="{Binding Booking.SelectZoneCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="{StaticResource SpaceWrapItem}" />
+                                    <Button x:Name="ZoneRoyalButton" Content="Royal VIP" Tag="Royal VIP|Royal VIP|24" Style="{StaticResource GhostButtonStyle}" Command="{Binding Booking.SelectZoneCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="{StaticResource SpaceWrapItem}" />
+                                </WrapPanel>
+                                <DockPanel Margin="{StaticResource SpaceBelowM}">
+                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+                                        <TextBlock Text="свободно" Foreground="{DynamicResource StatusFreeBrush}" FontSize="12" Margin="0,0,12,0" />
+                                        <TextBlock Text="занято" Foreground="{DynamicResource StatusBusyBrush}" FontSize="12" Margin="0,0,12,0" />
+                                        <TextBlock Text="бронь" Foreground="{DynamicResource StatusReservedBrush}" FontSize="12" Margin="0,0,12,0" />
+                                        <TextBlock Text="сервис" Foreground="{DynamicResource StatusServiceBrush}" FontSize="12" />
                                     </StackPanel>
-                                </Border>
-                            </Grid>
+                                    <TextBlock Text="Timeline мест" FontSize="18" FontWeight="Bold" />
+                                </DockPanel>
+                                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" MaxHeight="390">
+                                    <Grid x:Name="BookingSeatGrid" MinWidth="760" />
+                                </ScrollViewer>
+                            </StackPanel>
+                        </Grid>
+
+                        <Border Height="1" Background="{DynamicResource LineSoftBrush}" Margin="{StaticResource SpaceBelowL}" />
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="44" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border Width="30" Height="30" CornerRadius="15" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" VerticalAlignment="Top">
+                                <TextBlock Text="3" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Black" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="Тариф" FontSize="22" FontWeight="Black" />
+                                <TextBlock Text="Выберите длительность или пакет. Итог пересчитается сразу." Foreground="{DynamicResource MutedBrush}" Margin="{StaticResource SpaceStackXs}" TextWrapping="Wrap" />
+                                <WrapPanel Margin="{StaticResource SpaceStackM}">
+                                    <Button x:Name="Duration1Button" Content="1 час" Tag="1" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Booking.SelectDurationCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="{StaticResource SpaceWrapItem}" />
+                                    <Button x:Name="Duration2Button" Content="2 часа" Tag="2" Style="{StaticResource GhostButtonStyle}" Command="{Binding Booking.SelectDurationCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="{StaticResource SpaceWrapItem}" />
+                                    <Button x:Name="Duration3Button" Content="3 часа" Tag="3" Style="{StaticResource GhostButtonStyle}" Command="{Binding Booking.SelectDurationCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="{StaticResource SpaceWrapItem}" />
+                                    <Button x:Name="MorningPackButton" Content="Morning Pack" Tag="morning" Style="{StaticResource GhostButtonStyle}" Command="{Binding Booking.SelectDurationCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="{StaticResource SpaceWrapItem}" />
+                                    <Button x:Name="Duration8Button" Content="Night Pack" Tag="night" Style="{StaticResource GhostButtonStyle}" Command="{Binding Booking.SelectDurationCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Margin="{StaticResource SpaceWrapItem}" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Border Grid.Column="1" Style="{StaticResource PanelBorderStyle}" VerticalAlignment="Top">
+                <StackPanel>
+                    <DockPanel Margin="{StaticResource SpaceBelowM}">
+                        <Border Width="30" Height="30" CornerRadius="15" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" DockPanel.Dock="Left" Margin="0,0,10,0">
+                            <TextBlock Text="4" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Black" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel>
+                            <TextBlock Text="Подтверждение" Style="{StaticResource KickerTextStyle}" />
+                            <TextBlock Text="Итог брони" FontSize="26" FontWeight="Black" Margin="0,6,0,0" />
                         </StackPanel>
+                    </DockPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                        <TextBlock Text="ПК" Foreground="{DynamicResource MutedBrush}" /><TextBlock x:Name="SummarySeatsText" Grid.Column="1" Text="{Binding Booking.SeatsText}" FontWeight="Bold" HorizontalAlignment="Right" TextWrapping="Wrap" />
+                        <TextBlock Grid.Row="1" Text="Зона" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" /><TextBlock x:Name="SummaryZoneText" Grid.Row="1" Grid.Column="1" Text="{Binding Booking.ZoneName}" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" TextWrapping="Wrap" />
+                        <TextBlock Grid.Row="2" Text="Дата" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" /><TextBlock x:Name="SummaryDateText" Grid.Row="2" Grid.Column="1" Text="{Binding Booking.Date, StringFormat=yyyy-MM-dd}" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" />
+                        <TextBlock Grid.Row="3" Text="Время" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" /><TextBlock x:Name="SummaryTimeText" Grid.Row="3" Grid.Column="1" Text="{Binding Booking.TimeText}" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" />
+                        <TextBlock Grid.Row="4" Text="Длительность" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" /><TextBlock x:Name="SummaryDurationText" Grid.Row="4" Grid.Column="1" Text="{Binding Booking.DurationText}" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" />
+                        <TextBlock Grid.Row="5" Text="Тариф" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" /><TextBlock x:Name="SummaryTariffText" Grid.Row="5" Grid.Column="1" Text="{Binding Booking.TariffText}" FontWeight="Bold" HorizontalAlignment="Right" TextWrapping="Wrap" Margin="0,10,0,0" />
+                        <TextBlock Grid.Row="6" Text="Без скидки" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" /><TextBlock x:Name="SummaryBaseTotalText" Grid.Row="6" Grid.Column="1" Text="{Binding Booking.BaseTotalText}" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" />
+                        <TextBlock Grid.Row="7" Text="Скидка" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0" /><TextBlock x:Name="SummaryDiscountText" Grid.Row="7" Grid.Column="1" Text="{Binding Booking.DiscountText}" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,10,0,0" />
+                        <Border Grid.Row="8" Grid.ColumnSpan="2" Height="1" Background="{DynamicResource LineBrush}" Margin="0,16,0,12" />
+                        <TextBlock Grid.Row="9" Text="Итого" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Black" FontSize="16" />
+                        <TextBlock x:Name="SummaryTotalText" Grid.Row="9" Grid.Column="1" Text="{Binding Booking.TotalText}" Foreground="{DynamicResource GoldLightBrush}" FontSize="30" FontWeight="Black" HorizontalAlignment="Right" Margin="0,-4,0,0" />
+                    </Grid>
+                    <Border Margin="{StaticResource SpaceStackL}"
+                            Padding="{StaticResource SpaceInsetS}"
+                            CornerRadius="10"
+                            Background="{DynamicResource StatusWarningBackgroundBrush}"
+                            BorderBrush="{DynamicResource StatusReservedBrush}"
+                            BorderThickness="1"
+                            Visibility="{Binding Booking.WarningVisibility}">
+                        <DockPanel>
+                            <TextBlock Text="!" Foreground="{DynamicResource StatusReservedBrush}" FontWeight="Black" Margin="{StaticResource SpaceInlineS}" />
+                            <TextBlock x:Name="BookingWarningText" Text="{Binding Booking.WarningText}" Foreground="{DynamicResource StatusReservedBrush}" TextWrapping="Wrap" />
+                        </DockPanel>
+                    </Border>
+                    <Border Margin="{StaticResource SpaceStackS}"
+                            Padding="{StaticResource SpaceInsetS}"
+                            CornerRadius="10"
+                            Background="{DynamicResource StatusErrorBackgroundBrush}"
+                            BorderBrush="{DynamicResource StatusBusyBrush}"
+                            BorderThickness="1"
+                            Visibility="{Binding Booking.ErrorVisibility}">
+                        <DockPanel>
+                            <TextBlock Text="!" Foreground="{DynamicResource StatusBusyBrush}" FontWeight="Black" Margin="{StaticResource SpaceInlineS}" />
+                            <TextBlock x:Name="BookingErrorText" Text="{Binding Booking.ErrorText}" Foreground="{DynamicResource StatusBusyBrush}" FontWeight="Bold" TextWrapping="Wrap" />
+                        </DockPanel>
+                    </Border>
+                    <Button Content="Подтвердить бронь" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Booking.ConfirmCommand}" Margin="0,22,0,10" />
+                    <Button Content="Очистить выбор" Style="{StaticResource GhostButtonStyle}" Command="{Binding Booking.ClearCommand}" />
+                </StackPanel>
+            </Border>
+        </Grid>
+    </StackPanel>
 </UserControl>

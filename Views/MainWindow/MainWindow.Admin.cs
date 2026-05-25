@@ -962,9 +962,39 @@ public partial class MainWindow
                 ExtendAdminSession(parts[1]);
                 return true;
 
+            case "admin-clear-service":
+                ReleaseServiceComputerDirectly(parts[1]);
+                return true;
+
             default:
                 return false;
         }
+    }
+
+    private void ReleaseServiceComputerDirectly(string? computerName)
+    {
+        if (string.IsNullOrWhiteSpace(computerName))
+        {
+            return;
+        }
+
+        var previousStatus = GetPcStatus(
+            computerName,
+            _computers.FirstOrDefault(computer => computer.Name.Equals(computerName, StringComparison.OrdinalIgnoreCase))?.Status ?? PcStatuses.Service);
+        SetPcStatus(computerName, PcStatuses.Free);
+        LoadDatabaseState();
+        CompleteAdminAction(
+            $"Service released {computerName}",
+            "Сервис снят",
+            $"{computerName} вернулся из обслуживания и доступен для брони.");
+        ShowUndoSnackbar("Можно отменить", $"{computerName}: вернуть предыдущий статус.", () =>
+        {
+            SetPcStatus(computerName, previousStatus);
+            LoadDatabaseState();
+            RefreshAdminUx();
+            AddAdminLog($"{computerName} service release undone");
+            ShowStatus("Действие отменено", $"{computerName}: статус восстановлен.");
+        });
     }
 
     private void CloseAdminSession(string computerName)
@@ -1026,6 +1056,7 @@ public partial class MainWindow
         SyncAdminViewModel();
         SyncOwnerViewModel();
         RebuildAdminOperationLogList();
+        RebuildAdminTaskQueue();
         RebuildAdminSessionsGrid();
 
         SetText(AdminActiveSessionsValue, _adminActiveSessions);
@@ -1054,6 +1085,172 @@ public partial class MainWindow
         target.Text = value.ToString();
     }
 
+    private void RebuildAdminTaskQueue()
+    {
+        if (!IsLoaded || AdminTaskQueueList is null)
+        {
+            return;
+        }
+
+        AdminTaskQueueList.Children.Clear();
+        var added = 0;
+
+        try
+        {
+            using var unitOfWork = new UnitOfWork();
+            var now = DateTime.Now;
+            var computers = unitOfWork.Computers.GetDictionaryNoTracking();
+            var users = unitOfWork.Users.QueryNoTracking().ToDictionary(user => user.Id);
+
+            var pendingBookings = unitOfWork.Bookings
+                .QueryNoTracking()
+                .Where(booking => booking.Status == BookingStatuses.PendingPayment && booking.EndTime > now)
+                .OrderBy(booking => booking.StartTime)
+                .Take(2)
+                .ToList();
+
+            foreach (var booking in pendingBookings)
+            {
+                var computerName = computers.TryGetValue(booking.ComputerId, out var computer)
+                    ? computer.Name
+                    : $"ПК-{booking.ComputerId}";
+                var clientName = users.TryGetValue(booking.UserId, out var user)
+                    ? user.FullName
+                    : $"User #{booking.UserId}";
+
+                AddAdminTaskQueueRow(
+                    "Оплатить бронь",
+                    $"{computerName} · {clientName} · {booking.StartTime:dd.MM HH:mm}",
+                    "StatusReservedBrush",
+                    "admin-payment",
+                    "Оплата",
+                    isPrimary: true);
+                added++;
+            }
+
+            var pendingSessions = unitOfWork.GameSessions
+                .QueryNoTracking()
+                .Where(session => session.Status == SessionStatuses.AwaitingPayment
+                    && (session.EndTime == null || session.EndTime > now))
+                .OrderBy(session => session.StartTime)
+                .Take(2)
+                .ToList();
+
+            foreach (var session in pendingSessions)
+            {
+                var computerName = computers.TryGetValue(session.ComputerId, out var computer)
+                    ? computer.Name
+                    : $"ПК-{session.ComputerId}";
+                var clientName = users.TryGetValue(session.UserId, out var user)
+                    ? user.FullName
+                    : $"User #{session.UserId}";
+
+                AddAdminTaskQueueRow(
+                    "Принять оплату сессии",
+                    $"{computerName} · {clientName} · с {session.StartTime:HH:mm}",
+                    "StatusReservedBrush",
+                    $"admin-pay-session|{computerName}",
+                    "Оплата",
+                    isPrimary: true);
+                added++;
+            }
+
+            var serviceComputers = unitOfWork.Computers
+                .QueryNoTracking()
+                .ToList()
+                .Where(computer => NormalizePcStatus(computer.Status) == PcStatuses.Service)
+                .OrderBy(computer => computer.Name)
+                .Take(2);
+
+            foreach (var computer in serviceComputers)
+            {
+                AddAdminTaskQueueRow(
+                    "Проверить сервис",
+                    $"{computer.Name} · {computer.Zone}",
+                    "StatusServiceBrush",
+                    $"admin-clear-service|{computer.Name}",
+                    "Снять",
+                    isPrimary: false);
+                added++;
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowDatabaseError("Ошибка загрузки очереди задач", ex);
+        }
+
+        if (added == 0)
+        {
+            AdminTaskQueueList.Children.Add(new TextBlock
+            {
+                Text = "Очередь чистая: ожидающих оплат и сервисных задач нет.",
+                Foreground = (Brush)FindResource("MutedBrush"),
+                TextWrapping = TextWrapping.Wrap
+            });
+        }
+    }
+
+    private void AddAdminTaskQueueRow(
+        string title,
+        string details,
+        string brushKey,
+        string commandParameter,
+        string actionText,
+        bool isPrimary)
+    {
+        var accentBrush = (Brush)FindResource(brushKey);
+        var titleBlock = new TextBlock
+        {
+            Text = title,
+            Foreground = accentBrush,
+            FontWeight = FontWeights.Black,
+            TextWrapping = TextWrapping.Wrap
+        };
+        var detailsBlock = new TextBlock
+        {
+            Text = details,
+            Foreground = (Brush)FindResource("MutedBrush"),
+            FontSize = 12,
+            Margin = new Thickness(0, 5, 0, 0),
+            TextWrapping = TextWrapping.Wrap
+        };
+        var copy = new StackPanel();
+        copy.Children.Add(titleBlock);
+        copy.Children.Add(detailsBlock);
+
+        var button = new Button
+        {
+            Content = actionText,
+            Style = (Style)FindResource(isPrimary ? "PrimaryButtonStyle" : "GhostButtonStyle"),
+            Command = _viewModel.Admin.ActionCommand,
+            CommandParameter = commandParameter,
+            MinHeight = 32,
+            Padding = new Thickness(12, 0, 12, 0),
+            Margin = new Thickness(12, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        var rowGrid = new Grid();
+        rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        rowGrid.Children.Add(copy);
+        Grid.SetColumn(button, 1);
+        rowGrid.Children.Add(button);
+
+        var row = new Border
+        {
+            CornerRadius = new CornerRadius(10),
+            BorderBrush = (Brush)FindResource("LineSoftBrush"),
+            BorderThickness = new Thickness(1),
+            Background = (Brush)FindResource("SurfaceBrush"),
+            Padding = new Thickness(12),
+            Margin = new Thickness(0, 0, 0, 8),
+            Child = rowGrid
+        };
+
+        AdminTaskQueueList.Children.Add(row);
+    }
+
     private void RebuildAdminSessionsGrid()
     {
         if (!IsLoaded || AdminSessionsGrid is null)
@@ -1061,9 +1258,9 @@ public partial class MainWindow
             return;
         }
 
-        while (AdminSessionsGrid.Children.Count > 4)
+        while (AdminSessionsGrid.Children.Count > 5)
         {
-            AdminSessionsGrid.Children.RemoveAt(4);
+            AdminSessionsGrid.Children.RemoveAt(5);
         }
 
         while (AdminSessionsGrid.RowDefinitions.Count > 1)
@@ -1194,9 +1391,9 @@ public partial class MainWindow
     {
         return status switch
         {
-            SessionStatuses.AwaitingPayment => "WaitBrush",
+            SessionStatuses.AwaitingPayment => "StatusReservedBrush",
             SessionStatuses.Team => "GoldLightBrush",
-            SessionStatuses.Active => "OkBrush",
+            SessionStatuses.Active => "StatusFreeBrush",
             _ => "MutedBrush"
         };
     }

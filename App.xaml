@@ -21,6 +21,10 @@
         <Color x:Key="OkColor">#68D889</Color>
         <Color x:Key="DangerColor">#E66B6B</Color>
         <Color x:Key="WaitColor">#EDC86B</Color>
+        <Color x:Key="StatusFreeColor">#68D889</Color>
+        <Color x:Key="StatusBusyColor">#E66B6B</Color>
+        <Color x:Key="StatusReservedColor">#EDC86B</Color>
+        <Color x:Key="StatusServiceColor">#A9A092</Color>
 
         <SolidColorBrush x:Key="ShellBrush" Color="{StaticResource ShellColor}" po:Freeze="False" />
         <SolidColorBrush x:Key="PanelBrush" Color="{StaticResource PanelColor}" po:Freeze="False" />
@@ -35,6 +39,14 @@
         <SolidColorBrush x:Key="OkBrush" Color="{StaticResource OkColor}" po:Freeze="False" />
         <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}" po:Freeze="False" />
         <SolidColorBrush x:Key="WaitBrush" Color="{StaticResource WaitColor}" po:Freeze="False" />
+        <SolidColorBrush x:Key="StatusFreeBrush" Color="{StaticResource StatusFreeColor}" po:Freeze="False" />
+        <SolidColorBrush x:Key="StatusBusyBrush" Color="{StaticResource StatusBusyColor}" po:Freeze="False" />
+        <SolidColorBrush x:Key="StatusReservedBrush" Color="{StaticResource StatusReservedColor}" po:Freeze="False" />
+        <SolidColorBrush x:Key="StatusServiceBrush" Color="{StaticResource StatusServiceColor}" po:Freeze="False" />
+        <SolidColorBrush x:Key="StatusFreeBackgroundBrush" Color="#162F6F48" po:Freeze="False" />
+        <SolidColorBrush x:Key="StatusBusyBackgroundBrush" Color="#2AE66B6B" po:Freeze="False" />
+        <SolidColorBrush x:Key="StatusReservedBackgroundBrush" Color="#2AEDC86B" po:Freeze="False" />
+        <SolidColorBrush x:Key="StatusServiceBackgroundBrush" Color="#1AFFFFFF" po:Freeze="False" />
         <SolidColorBrush x:Key="PcFreeBackgroundBrush" Color="#162F6F48" po:Freeze="False" />
         <SolidColorBrush x:Key="PcBusyBackgroundBrush" Color="#2AE66B6B" po:Freeze="False" />
         <SolidColorBrush x:Key="PcReservedBackgroundBrush" Color="#2AEDC86B" po:Freeze="False" />

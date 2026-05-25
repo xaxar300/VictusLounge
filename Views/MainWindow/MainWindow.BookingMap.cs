@@ -947,28 +947,28 @@ public partial class MainWindow
 
         if (isAvailable)
         {
-            button.Background = (Brush)FindResource("PcFreeBackgroundBrush");
-            button.BorderBrush = (Brush)FindResource("OkBrush");
-            button.Foreground = (Brush)FindResource("OkBrush");
+            button.Background = (Brush)FindResource("StatusFreeBackgroundBrush");
+            button.BorderBrush = (Brush)FindResource("StatusFreeBrush");
+            button.Foreground = (Brush)FindResource("StatusFreeBrush");
             return;
         }
 
         switch (normalizedStatus)
         {
             case PcStatuses.Busy:
-                button.Background = (Brush)FindResource("PcBusyBackgroundBrush");
-                button.BorderBrush = (Brush)FindResource("DangerBrush");
-                button.Foreground = (Brush)FindResource("DangerBrush");
+                button.Background = (Brush)FindResource("StatusBusyBackgroundBrush");
+                button.BorderBrush = (Brush)FindResource("StatusBusyBrush");
+                button.Foreground = (Brush)FindResource("StatusBusyBrush");
                 break;
             case PcStatuses.Reserved:
-                button.Background = (Brush)FindResource("PcReservedBackgroundBrush");
-                button.BorderBrush = (Brush)FindResource("WaitBrush");
-                button.Foreground = (Brush)FindResource("WaitBrush");
+                button.Background = (Brush)FindResource("StatusReservedBackgroundBrush");
+                button.BorderBrush = (Brush)FindResource("StatusReservedBrush");
+                button.Foreground = (Brush)FindResource("StatusReservedBrush");
                 break;
             default:
-                button.Background = (Brush)FindResource("PcServiceBackgroundBrush");
-                button.BorderBrush = (Brush)FindResource("LineSoftBrush");
-                button.Foreground = (Brush)FindResource("MutedBrush");
+                button.Background = (Brush)FindResource("StatusServiceBackgroundBrush");
+                button.BorderBrush = (Brush)FindResource("StatusServiceBrush");
+                button.Foreground = (Brush)FindResource("StatusServiceBrush");
                 button.Opacity = 0.74;
                 break;
         }
