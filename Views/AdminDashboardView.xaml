@@ -1,6 +1,8 @@
 <UserControl x:Class="VictusLounge.Views.AdminDashboardView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:helpers="clr-namespace:VictusLounge.Helpers"
+             xmlns:vm="clr-namespace:VictusLounge.ViewModels"
              Background="Transparent">
     <StackPanel>
         <DockPanel Margin="0,0,0,18" LastChildFill="False">
@@ -72,7 +74,7 @@
                             <TextBlock Text="Текущие сессии" FontSize="24" FontWeight="Black" Margin="0,6,0,0" />
                         </StackPanel>
                     </DockPanel>
-                    <Grid x:Name="AdminSessionsGrid">
+                    <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="0.75*" />
                             <ColumnDefinition Width="1.25*" />
@@ -89,6 +91,58 @@
                         <TextBlock Grid.Column="3" Text="Статус" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" />
                         <TextBlock Grid.Column="4" Text="Действие" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" HorizontalAlignment="Right" />
                     </Grid>
+                    <ItemsControl x:Name="AdminSessionsGrid" ItemsSource="{Binding Admin.Sessions}" Margin="0,4,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="0.75*" />
+                                        <ColumnDefinition Width="1.25*" />
+                                        <ColumnDefinition Width="0.8*" />
+                                        <ColumnDefinition Width="0.95*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding ComputerName}" FontWeight="Bold" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Text="{Binding ClientName}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="2" Text="{Binding EndText}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                    <Border Grid.Column="3" Style="{StaticResource StatusBadgeStyle}" Margin="0">
+                                        <TextBlock x:Name="SessionStatusText" Text="{Binding StatusText}" Style="{StaticResource StatusBadgeTextStyle}" />
+                                    </Border>
+                                    <Button Grid.Column="4"
+                                            Content="{Binding ActionText}"
+                                            Command="{Binding DataContext.Admin.ActionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding ActionCommandParameter}"
+                                            MinHeight="30"
+                                            Padding="14,0"
+                                            Margin="10,0,0,0"
+                                            Visibility="{Binding HasAction, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource GhostButtonStyle}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsPrimaryAction}" Value="True">
+                                                        <Setter Property="Background" Value="{DynamicResource GoldButtonBrush}" />
+                                                        <Setter Property="Foreground" Value="#111111" />
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource GoldLightBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </Grid>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding Status}" Value="{x:Static helpers:SessionStatus.AwaitingPayment}">
+                                        <Setter TargetName="SessionStatusText" Property="Foreground" Value="{DynamicResource StatusReservedBrush}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Status}" Value="{x:Static helpers:SessionStatus.Active}">
+                                        <Setter TargetName="SessionStatusText" Property="Foreground" Value="{DynamicResource StatusFreeBrush}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Status}" Value="{x:Static helpers:SessionStatus.Team}">
+                                        <Setter TargetName="SessionStatusText" Property="Foreground" Value="{DynamicResource GoldLightBrush}" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </StackPanel>
             </Border>
 
@@ -97,9 +151,58 @@
                     <StackPanel>
                         <TextBlock Text="TASK QUEUE" Style="{StaticResource KickerTextStyle}" />
                         <TextBlock Text="Очередь задач" FontSize="24" FontWeight="Black" Margin="0,6,0,12" />
-                        <StackPanel x:Name="AdminTaskQueueList">
-                            <TextBlock Text="Задачи появятся после загрузки данных." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />
-                        </StackPanel>
+                        <ItemsControl x:Name="AdminTaskQueueList" ItemsSource="{Binding Admin.TaskQueue}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border CornerRadius="10"
+                                            BorderBrush="{DynamicResource LineSoftBrush}"
+                                            BorderThickness="1"
+                                            Background="{DynamicResource SurfaceBrush}"
+                                            Padding="12"
+                                            Margin="0,0,0,8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <TextBlock x:Name="TaskTitleText" Text="{Binding Title}" FontWeight="Black" TextWrapping="Wrap" />
+                                                <TextBlock Text="{Binding Details}" Foreground="{DynamicResource MutedBrush}" FontSize="12" Margin="0,5,0,0" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <Button Grid.Column="1"
+                                                    Content="{Binding ActionText}"
+                                                    Command="{Binding DataContext.Admin.ActionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding ActionCommandParameter}"
+                                                    MinHeight="32"
+                                                    Padding="12,0"
+                                                    Margin="12,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Visibility="{Binding HasAction, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                <Button.Style>
+                                                    <Style TargetType="Button" BasedOn="{StaticResource GhostButtonStyle}">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsPrimaryAction}" Value="True">
+                                                                <Setter Property="Background" Value="{DynamicResource GoldButtonBrush}" />
+                                                                <Setter Property="Foreground" Value="#111111" />
+                                                                <Setter Property="BorderBrush" Value="{DynamicResource GoldLightBrush}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding Kind}" Value="{x:Static vm:AdminTaskKind.Payment}">
+                                            <Setter TargetName="TaskTitleText" Property="Foreground" Value="{DynamicResource StatusReservedBrush}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Kind}" Value="{x:Static vm:AdminTaskKind.Service}">
+                                            <Setter TargetName="TaskTitleText" Property="Foreground" Value="{DynamicResource StatusServiceBrush}" />
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </StackPanel>
                 </Border>
 

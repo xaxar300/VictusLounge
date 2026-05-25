@@ -8,317 +8,17 @@ using VictusLounge.Helpers;
 using VictusLounge.Models;
 using VictusLounge.Repositories;
 using VictusLounge.Services;
+using VictusLounge.ViewModels;
 
 namespace VictusLounge;
 
 public partial class MainWindow
 {
-    private bool SaveGuestSession(string computerName, decimal amount)
-    {
-        if (!EnsureSignedInForDatabaseWrite())
-        {
-            return false;
-        }
-
-        try
-        {
-            using var unitOfWork = new UnitOfWork();
-            var computer = unitOfWork.Computers.GetByName(computerName);
-            if (computer is null)
-            {
-                return false;
-            }
-
-            var now = DateTime.Now;
-            var hasComputerSessionConflict = unitOfWork.GameSessions.HasOpenSession(computer.Id, now);
-            if (hasComputerSessionConflict)
-            {
-                ShowStatus("ПК занят", $"{computerName}: уже есть незакрытая сессия на этом ПК.");
-                return false;
-            }
-
-            var currentUser = unitOfWork.Users.GetById(_currentUserId);
-            if (currentUser is not null
-                && NormalizeRole(currentUser.Role) == "client"
-                && HasActiveIndividualSession(unitOfWork, _currentUserId, out var activeSessionComputer))
-            {
-                ShowStatus("Сессия уже активна", $"У клиента уже есть активная сессия на {activeSessionComputer}. Сначала завершите ее.");
-                return false;
-            }
-
-            unitOfWork.GameSessions.Add(new GameSession
-            {
-                Id = unitOfWork.GameSessions.GetNextId(session => session.Id),
-                UserId = _currentUserId,
-                ComputerId = computer.Id,
-                StartTime = now,
-                EndTime = null,
-                TotalPrice = amount,
-                Status = SessionStatuses.Active
-            });
-
-            unitOfWork.Payments.Add(new Payment
-            {
-                Id = unitOfWork.Payments.GetNextId(payment => payment.Id),
-                UserId = _currentUserId,
-                Amount = amount,
-                PaymentType = PaymentTypes.Cash,
-                CreatedAt = now,
-                Comment = $"Guest session: {computerName}"
-            });
-
-            computer.Status = PcStatuses.Busy;
-            unitOfWork.SaveChanges();
-            LoadDatabaseState();
-            var refreshedUser = unitOfWork.Users.GetByIdNoTracking(_currentUserId);
-            if (refreshedUser is not null)
-            {
-                RefreshClientUx(unitOfWork, refreshedUser);
-            }
-
-            return true;
-        }
-        catch (Exception ex)
-        {
-            ShowDatabaseError("Ошибка сохранения сессии", ex);
-            return false;
-        }
-    }
-
-    private void SavePaymentConfirmation(string computerName, decimal amount)
-    {
-        try
-        {
-            using var unitOfWork = new UnitOfWork();
-            var computer = unitOfWork.Computers.GetByName(computerName);
-            if (computer is null)
-            {
-                return;
-            }
-
-            var session = unitOfWork.GameSessions.GetOpenForComputer(computer.Id);
-            if (session is not null)
-            {
-                session.Status = SessionStatuses.Active;
-                session.TotalPrice += amount;
-            }
-
-            var booking = unitOfWork.Bookings.Query()
-                .Where(item => item.ComputerId == computer.Id && item.Status == BookingStatuses.PendingPayment)
-                .OrderByDescending(item => item.CreatedAt)
-                .FirstOrDefault();
-            if (booking is not null)
-            {
-                booking.Status = BookingStatuses.Confirmed;
-            }
-
-            var pendingPayment = unitOfWork.Payments.Query()
-                .Where(item => item.PaymentType.StartsWith(PaymentTypes.Pending) && item.Amount == amount)
-                .OrderByDescending(item => item.CreatedAt)
-                .FirstOrDefault();
-
-            if (pendingPayment is not null)
-            {
-                pendingPayment.PaymentType = PaymentTypes.Cash;
-                pendingPayment.Comment = $"Payment confirmed: {computerName}";
-            }
-            else
-            {
-                var paymentUserId = session?.UserId ?? booking?.UserId ?? ResolveCurrentOrAdminUserId(unitOfWork);
-                if (paymentUserId is null)
-                {
-                    ShowStatus("Войдите в систему", "Оплата не сохранена: не найден пользователь для записи платежа.");
-                    return;
-                }
-
-                unitOfWork.Payments.Add(new Payment
-                {
-                    Id = unitOfWork.Payments.GetNextId(payment => payment.Id),
-                    UserId = paymentUserId.Value,
-                    Amount = amount,
-                    PaymentType = PaymentTypes.Cash,
-                    CreatedAt = DateTime.Now,
-                    Comment = $"Payment confirmed: {computerName}"
-                });
-            }
-
-            unitOfWork.SaveChanges();
-            LoadDatabaseState();
-
-            var currentUser = unitOfWork.Users.GetByIdNoTracking(_currentUserId);
-            if (currentUser is not null)
-            {
-                RefreshClientUx(unitOfWork, currentUser);
-            }
-        }
-        catch (Exception ex)
-        {
-            ShowDatabaseError("Ошибка подтверждения оплаты", ex);
-        }
-    }
-
-    private void SaveAllPendingPaymentsAsCash(decimal amountPerPayment)
-    {
-        try
-        {
-            using var unitOfWork = new UnitOfWork();
-            var today = DateTime.Today;
-            var tomorrow = today.AddDays(1);
-            var pendingBookings = unitOfWork.Bookings.Query()
-                .Where(item => item.Status == BookingStatuses.PendingPayment
-                    && item.CreatedAt >= today
-                    && item.CreatedAt < tomorrow)
-                .ToList();
-            foreach (var booking in pendingBookings)
-            {
-                booking.Status = BookingStatuses.Confirmed;
-            }
-
-            var pendingSessions = unitOfWork.GameSessions.Query()
-                .Where(item => item.Status == SessionStatuses.AwaitingPayment
-                    && item.StartTime >= today
-                    && item.StartTime < tomorrow)
-                .ToList();
-            foreach (var session in pendingSessions)
-            {
-                session.Status = SessionStatuses.Active;
-            }
-
-            var pendingPayments = unitOfWork.Payments.Query()
-                .Where(item => item.PaymentType.StartsWith(PaymentTypes.Pending)
-                    && item.CreatedAt >= today
-                    && item.CreatedAt < tomorrow)
-                .ToList();
-            foreach (var payment in pendingPayments)
-            {
-                if (payment.Amount > 0
-                    && payment.Comment.StartsWith("Pending balance top-up", StringComparison.OrdinalIgnoreCase)
-                    && unitOfWork.Users.GetById(payment.UserId) is { } paymentUser)
-                {
-                    paymentUser.Balance += payment.Amount;
-                    var playedHours = LoyaltyTierService.CalculatePlayedHours(unitOfWork.GameSessions
-                        .QueryNoTracking()
-                        .Where(session => session.UserId == paymentUser.Id)
-                        .ToList());
-                    paymentUser.LoyaltyTier = GetClientTier(playedHours);
-                }
-
-                payment.PaymentType = PaymentTypes.Cash;
-                payment.Comment = $"{payment.Comment}; confirmed by admin";
-            }
-
-            unitOfWork.SaveChanges();
-            LoadDatabaseState();
-
-            var currentUser = unitOfWork.Users.GetByIdNoTracking(_currentUserId);
-            if (currentUser is not null)
-            {
-                RefreshClientUx(unitOfWork, currentUser);
-            }
-        }
-        catch (Exception ex)
-        {
-            ShowDatabaseError("Ошибка закрытия оплат", ex);
-        }
-    }
-
-    private void SaveSessionClosed(string computerName)
-    {
-        try
-        {
-            using var unitOfWork = new UnitOfWork();
-            var computer = unitOfWork.Computers.GetByName(computerName);
-            if (computer is null)
-            {
-                return;
-            }
-
-            var session = unitOfWork.GameSessions.GetOpenForComputer(computer.Id);
-            int? userId = null;
-            if (session is not null)
-            {
-                userId = session.UserId;
-                session.EndTime = DateTime.Now;
-                session.Status = SessionStatuses.Closed;
-            }
-
-            computer.Status = PcStatuses.Free;
-            unitOfWork.SaveChanges();
-            if (userId is not null)
-            {
-                RefreshStoredClientTier(unitOfWork, userId.Value);
-            }
-            LoadDatabaseState();
-        }
-        catch (Exception ex)
-        {
-            ShowDatabaseError("Ошибка закрытия сессии", ex);
-        }
-    }
-
-    private void SaveSessionExtension(string computerName, decimal amount)
-    {
-        try
-        {
-            using var unitOfWork = new UnitOfWork();
-            var computer = unitOfWork.Computers.GetByName(computerName);
-            if (computer is null)
-            {
-                return;
-            }
-
-            var session = unitOfWork.GameSessions.GetOpenForComputer(computer.Id);
-            if (session is null)
-            {
-                ShowStatus("Сессия не найдена", $"{computerName}: нет открытой сессии для продления.");
-                return;
-            }
-
-            var paymentUserId = session.UserId;
-            session.TotalPrice += amount;
-
-            unitOfWork.Payments.Add(new Payment
-            {
-                Id = unitOfWork.Payments.GetNextId(payment => payment.Id),
-                UserId = paymentUserId,
-                Amount = amount,
-                PaymentType = PaymentTypes.Online,
-                CreatedAt = DateTime.Now,
-                Comment = $"Session extension: {computerName}"
-            });
-
-            unitOfWork.SaveChanges();
-            LoadDatabaseState();
-        }
-        catch (Exception ex)
-        {
-            ShowDatabaseError("Ошибка продления сессии", ex);
-        }
-    }
-
     private void SaveShiftState(bool closeShift)
     {
         try
         {
-            using var unitOfWork = new UnitOfWork();
-            var shift = unitOfWork.Shifts.GetCurrentOrLatest();
-
-            if (shift is null)
-            {
-                shift = new Shift
-                {
-                    Id = unitOfWork.Shifts.GetNextId(item => item.Id),
-                    EmployeeName = _currentUserFullName,
-                    StartTime = DateTime.Now,
-                    CashTotal = _shiftCash
-                };
-                unitOfWork.Shifts.Add(shift);
-            }
-
-            shift.EmployeeName = _currentUserFullName;
-            shift.CashTotal = _shiftCash;
-            shift.EndTime = closeShift ? DateTime.Now : null;
-            unitOfWork.SaveChanges();
+            _adminOperationsService.SaveShiftState(closeShift, _currentUserFullName, _shiftCash);
             LoadDatabaseState();
         }
         catch (Exception ex)
@@ -331,34 +31,9 @@ public partial class MainWindow
     {
         try
         {
-            using var unitOfWork = new UnitOfWork();
-            var paymentUserId = ResolveCurrentOrAdminUserId(unitOfWork);
-            if (paymentUserId is null)
-            {
-                ShowStatus("Войдите в систему", "Расход смены не сохранен: не найден пользователь для записи платежа.");
-                return;
-            }
-
-            // Demo finance model: negative Payment.Amount marks cash expenses.
-            // Income/expense separation is documented in README as a production improvement.
-            unitOfWork.Payments.Add(new Payment
-            {
-                Id = unitOfWork.Payments.GetNextId(payment => payment.Id),
-                UserId = paymentUserId.Value,
-                Amount = -amount,
-                PaymentType = PaymentTypes.Cash,
-                CreatedAt = DateTime.Now,
-                Comment = comment
-            });
-
-            var shift = unitOfWork.Shifts.GetCurrent();
-            if (shift is not null)
-            {
-                shift.CashTotal = Math.Max(0, shift.CashTotal - amount);
-            }
-
-            unitOfWork.SaveChanges();
-            LoadDatabaseState();
+            ApplyAdminOperationResult(
+                _adminOperationsService.SaveShiftExpense(amount, comment, _currentUserId),
+                "Расход не сохранен");
         }
         catch (Exception ex)
         {
@@ -370,28 +45,7 @@ public partial class MainWindow
     {
         try
         {
-            using var unitOfWork = new UnitOfWork();
-            var tariff = unitOfWork.Tariffs.GetByNamePart(namePart);
-            if (tariff is not null)
-            {
-                tariff.PricePerHour = price;
-            }
-
-            var zone = namePart switch
-            {
-                "Standard" => "Standard",
-                "VIP" => "VIP",
-                "Royal" => "Royal VIP",
-                "Bootcamp" => "Bootcamp",
-                _ => namePart
-            };
-
-            foreach (var computer in unitOfWork.Computers.GetByZone(zone))
-            {
-                computer.HourPrice = price;
-            }
-
-            unitOfWork.SaveChanges();
+            _adminOperationsService.SaveTariffRate(namePart, price);
             LoadDatabaseState();
         }
         catch (Exception ex)
@@ -500,8 +154,7 @@ public partial class MainWindow
     {
         try
         {
-            using var unitOfWork = new UnitOfWork();
-            return unitOfWork.GameSessions.GetFirstPendingPaymentComputerName(DateTime.Now);
+            return _adminOperationsService.GetFirstPendingPaymentComputerName();
         }
         catch (Exception ex)
         {
@@ -528,29 +181,7 @@ public partial class MainWindow
     {
         try
         {
-            using var unitOfWork = new UnitOfWork();
-            var now = DateTime.Now;
-            var shift = unitOfWork.Shifts.Query()
-                .OrderByDescending(item => item.StartTime)
-                .FirstOrDefault(item => item.EmployeeName == employeeName && item.EndTime == null);
-
-            if (shift is null)
-            {
-                shift = new Shift
-                {
-                    Id = unitOfWork.Shifts.GetNextId(item => item.Id),
-                    EmployeeName = employeeName,
-                    StartTime = now,
-                    CashTotal = _shiftCash
-                };
-                unitOfWork.Shifts.Add(shift);
-            }
-            else
-            {
-                shift.CashTotal = _shiftCash;
-            }
-
-            unitOfWork.SaveChanges();
+            _adminOperationsService.UpsertManualShift(employeeName, _shiftCash);
         }
         catch (Exception ex)
         {
@@ -625,31 +256,14 @@ public partial class MainWindow
 
         try
         {
-            using var unitOfWork = new UnitOfWork();
-            var booking = unitOfWork.Bookings.GetById(bookingId);
-            if (booking is null || booking.Status == BookingStatuses.Cancelled)
+            var result = _adminOperationsService.RescheduleBooking(bookingId, newStart, durationHours);
+            if (!ApplyAdminOperationResult(result, "Бронь не перенесена"))
             {
-                ShowStatus("Бронь не найдена", $"Бронь #{bookingId} отсутствует или уже отменена.");
                 return;
             }
 
-            var newEnd = newStart.AddHours(durationHours);
-            var hasConflict = unitOfWork.Bookings.HasTimeConflict(booking.ComputerId, newStart, newEnd, booking.Id)
-                || unitOfWork.GameSessions.HasTimeConflict(booking.ComputerId, newStart, newEnd);
-
-            if (hasConflict)
-            {
-                ShowStatus("Конфликт расписания", "На выбранное время уже есть бронь или сессия на этом ПК.");
-                return;
-            }
-
-            booking.StartTime = newStart;
-            booking.EndTime = newEnd;
-            booking.CreatedAt = DateTime.Now;
-            unitOfWork.SaveChanges();
-            LoadDatabaseState();
             AddAdminLog($"Booking #{bookingId} rescheduled");
-            ShowStatus("Бронь перенесена", $"Бронь #{bookingId}: {newStart:dd.MM HH:mm}-{newEnd:HH:mm}.");
+            ShowStatus("Бронь перенесена", $"Бронь #{bookingId}: {newStart:dd.MM HH:mm}-{newStart.AddHours(durationHours):HH:mm}.");
         }
         catch (Exception ex)
         {
@@ -668,17 +282,12 @@ public partial class MainWindow
 
         try
         {
-            using var unitOfWork = new UnitOfWork();
-            var booking = unitOfWork.Bookings.GetById(bookingId);
-            if (booking is null || booking.Status == BookingStatuses.Cancelled)
+            var result = _adminOperationsService.CancelBooking(bookingId);
+            if (!ApplyAdminOperationResult(result, "Бронь не отменена"))
             {
-                ShowStatus("Бронь не найдена", $"Бронь #{bookingId} отсутствует или уже отменена.");
                 return;
             }
 
-            booking.Status = BookingStatuses.Cancelled;
-            unitOfWork.SaveChanges();
-            LoadDatabaseState();
             AddAdminLog($"Booking #{bookingId} cancelled");
             ShowStatus("Бронь отменена", $"Бронь #{bookingId} отменена администратором.");
         }
@@ -692,13 +301,7 @@ public partial class MainWindow
     {
         try
         {
-            using var unitOfWork = new UnitOfWork();
-            return unitOfWork.Bookings
-                .QueryNoTracking()
-                .Where(booking => booking.Status != BookingStatuses.Cancelled)
-                .OrderByDescending(booking => booking.CreatedAt)
-                .Select(booking => booking.Id)
-                .FirstOrDefault();
+            return _adminOperationsService.GetLatestActiveBookingId();
         }
         catch
         {
@@ -728,10 +331,11 @@ public partial class MainWindow
                     break;
                 }
 
-                if (SaveGuestSession(sessionComputer, sessionAmount))
+                if (ApplyAdminOperationResult(
+                    _adminOperationsService.CreateGuestSession(sessionComputer, sessionAmount, _currentUserId),
+                    "Сессия не сохранена"))
                 {
                     _shiftCash += sessionAmount;
-                    SetPcStatus(sessionComputer, PcStatuses.Busy);
                     CompleteAdminAction(
                         $"{sessionComputer} started as guest session",
                         "Новая сессия",
@@ -754,7 +358,12 @@ public partial class MainWindow
                     break;
                 }
 
-                SaveAllPendingPaymentsAsCash(settlementAmount);
+                if (!ApplyAdminOperationResult(
+                    _adminOperationsService.SettlePendingPayments(settlementAmount),
+                    "Payments were not settled"))
+                {
+                    break;
+                }
                 _adminPaymentQueue = 0;
                 CompleteAdminAction("All pending payments settled", "Оплаты закрыты", "Все ожидающие платежи отмечены как оплаченные, касса пересчитана.");
                 break;
@@ -958,6 +567,10 @@ public partial class MainWindow
                 PayAdminSession(parts[1]);
                 return true;
 
+            case "admin-payment":
+                PayAdminSession(parts[1]);
+                return true;
+
             case "admin-extend-session":
                 ExtendAdminSession(parts[1]);
                 return true;
@@ -1001,14 +614,18 @@ public partial class MainWindow
     {
         _adminActiveSessions = Math.Max(0, _adminActiveSessions - 1);
         _adminFreePcs++;
-        SaveSessionClosed(computerName);
-        SetPcStatus(computerName, PcStatuses.Free);
+        if (!ApplyAdminOperationResult(
+            _adminOperationsService.CloseSession(computerName),
+            "Session was not closed"))
+        {
+            return;
+        }
         CompleteAdminAction($"{computerName} closed and released", "Сессия закрыта", $"{computerName} освобожден и стал доступен на карте клуба.");
     }
 
     private void PayAdminSession(string computerName)
     {
-        var amount = GetOpenSessionAmount(computerName) ?? 0m;
+        var amount = _adminOperationsService.GetPendingPaymentAmount(computerName) ?? 0m;
         if (amount <= 0)
         {
             ShowStatus("Оплата не найдена", $"{computerName}: нет ожидающей оплаты в активных сессиях.");
@@ -1017,7 +634,12 @@ public partial class MainWindow
 
         _adminPaymentQueue = Math.Max(0, _adminPaymentQueue - 1);
         _shiftCash += amount;
-        SavePaymentConfirmation(computerName, amount);
+        if (!ApplyAdminOperationResult(
+            _adminOperationsService.ConfirmPayment(computerName, amount, _currentUserId),
+            "Payment was not saved"))
+        {
+            return;
+        }
         CompleteAdminAction($"{computerName} payment confirmed", "Оплата принята", $"{computerName}: касса +{amount:0.##} BYN.");
     }
 
@@ -1025,7 +647,12 @@ public partial class MainWindow
     {
         const decimal extensionPrice = 36m;
         _shiftOnline += extensionPrice;
-        SaveSessionExtension(computerName, extensionPrice);
+        if (!ApplyAdminOperationResult(
+            _adminOperationsService.ExtendSession(computerName, extensionPrice),
+            "Session was not extended"))
+        {
+            return;
+        }
         CompleteAdminAction($"{computerName} extended", "Сессия продлена", $"{computerName}: онлайн +{extensionPrice:0.##} BYN.");
     }
 
@@ -1034,20 +661,6 @@ public partial class MainWindow
         RefreshAdminUx();
         AddAdminLog(logEntry);
         ShowStatus(statusTitle, statusBody);
-    }
-
-    private decimal? GetOpenSessionAmount(string computerName)
-    {
-        try
-        {
-            using var unitOfWork = new UnitOfWork();
-            return unitOfWork.GameSessions.GetOpenSessionAmount(computerName);
-        }
-        catch (Exception ex)
-        {
-            ShowDatabaseError("Ошибка чтения сессии", ex);
-            return null;
-        }
     }
 
     private void RefreshAdminUx()
@@ -1085,93 +698,62 @@ public partial class MainWindow
         target.Text = value.ToString();
     }
 
-    private void RebuildAdminTaskQueue()
+    private bool ApplyAdminOperationResult(AdminOperationResult result, string failureTitle)
     {
-        if (!IsLoaded || AdminTaskQueueList is null)
+        if (!result.Success)
+        {
+            ShowStatus(failureTitle, result.ErrorMessage ?? "Операция не выполнена.");
+            return false;
+        }
+
+        LoadDatabaseState();
+        RefreshCurrentClientAfterAdminOperation();
+        return true;
+    }
+
+    private void RefreshCurrentClientAfterAdminOperation()
+    {
+        if (_currentUserId <= 0)
         {
             return;
         }
 
-        AdminTaskQueueList.Children.Clear();
-        var added = 0;
-
         try
         {
             using var unitOfWork = new UnitOfWork();
-            var now = DateTime.Now;
-            var computers = unitOfWork.Computers.GetDictionaryNoTracking();
-            var users = unitOfWork.Users.QueryNoTracking().ToDictionary(user => user.Id);
-
-            var pendingBookings = unitOfWork.Bookings
-                .QueryNoTracking()
-                .Where(booking => booking.Status == BookingStatuses.PendingPayment && booking.EndTime > now)
-                .OrderBy(booking => booking.StartTime)
-                .Take(2)
-                .ToList();
-
-            foreach (var booking in pendingBookings)
+            var currentUser = unitOfWork.Users.GetByIdNoTracking(_currentUserId);
+            if (currentUser is not null)
             {
-                var computerName = computers.TryGetValue(booking.ComputerId, out var computer)
-                    ? computer.Name
-                    : $"ПК-{booking.ComputerId}";
-                var clientName = users.TryGetValue(booking.UserId, out var user)
-                    ? user.FullName
-                    : $"User #{booking.UserId}";
-
-                AddAdminTaskQueueRow(
-                    "Оплатить бронь",
-                    $"{computerName} · {clientName} · {booking.StartTime:dd.MM HH:mm}",
-                    "StatusReservedBrush",
-                    "admin-payment",
-                    "Оплата",
-                    isPrimary: true);
-                added++;
+                RefreshClientUx(unitOfWork, currentUser);
             }
+        }
+        catch (Exception ex)
+        {
+            ShowDatabaseError("Ошибка обновления клиента", ex);
+        }
+    }
 
-            var pendingSessions = unitOfWork.GameSessions
-                .QueryNoTracking()
-                .Where(session => session.Status == SessionStatuses.AwaitingPayment
-                    && (session.EndTime == null || session.EndTime > now))
-                .OrderBy(session => session.StartTime)
-                .Take(2)
-                .ToList();
+    private void RebuildAdminTaskQueue()
+    {
+        if (!IsLoaded)
+        {
+            return;
+        }
 
-            foreach (var session in pendingSessions)
+        _viewModel.Admin.TaskQueue.Clear();
+        try
+        {
+            foreach (var item in _adminOperationsService.GetTaskQueue(DateTime.Now))
             {
-                var computerName = computers.TryGetValue(session.ComputerId, out var computer)
-                    ? computer.Name
-                    : $"ПК-{session.ComputerId}";
-                var clientName = users.TryGetValue(session.UserId, out var user)
-                    ? user.FullName
-                    : $"User #{session.UserId}";
-
-                AddAdminTaskQueueRow(
-                    "Принять оплату сессии",
-                    $"{computerName} · {clientName} · с {session.StartTime:HH:mm}",
-                    "StatusReservedBrush",
-                    $"admin-pay-session|{computerName}",
-                    "Оплата",
-                    isPrimary: true);
-                added++;
-            }
-
-            var serviceComputers = unitOfWork.Computers
-                .QueryNoTracking()
-                .ToList()
-                .Where(computer => NormalizePcStatus(computer.Status) == PcStatuses.Service)
-                .OrderBy(computer => computer.Name)
-                .Take(2);
-
-            foreach (var computer in serviceComputers)
-            {
-                AddAdminTaskQueueRow(
-                    "Проверить сервис",
-                    $"{computer.Name} · {computer.Zone}",
-                    "StatusServiceBrush",
-                    $"admin-clear-service|{computer.Name}",
-                    "Снять",
-                    isPrimary: false);
-                added++;
+                _viewModel.Admin.TaskQueue.Add(new AdminTaskQueueItemViewModel
+                {
+                    Title = item.Title,
+                    Details = item.Details,
+                    Kind = item.Kind == AdminTaskType.Payment ? AdminTaskKind.Payment : AdminTaskKind.Service,
+                    ActionText = item.ActionText,
+                    ActionCommandParameter = item.ActionCommandParameter,
+                    IsPrimaryAction = item.IsPrimaryAction
+                });
             }
         }
         catch (Exception ex)
@@ -1179,223 +761,49 @@ public partial class MainWindow
             ShowDatabaseError("Ошибка загрузки очереди задач", ex);
         }
 
-        if (added == 0)
+        if (_viewModel.Admin.TaskQueue.Count == 0)
         {
-            AdminTaskQueueList.Children.Add(new TextBlock
+            _viewModel.Admin.TaskQueue.Add(new AdminTaskQueueItemViewModel
             {
-                Text = "Очередь чистая: ожидающих оплат и сервисных задач нет.",
-                Foreground = (Brush)FindResource("MutedBrush"),
-                TextWrapping = TextWrapping.Wrap
+                Title = "Очередь чистая",
+                Details = "Ожидающих оплат и сервисных задач нет.",
+                Kind = AdminTaskKind.Payment,
+                ActionText = string.Empty,
+                ActionCommandParameter = string.Empty,
+                IsPrimaryAction = false
             });
         }
     }
 
-    private void AddAdminTaskQueueRow(
-        string title,
-        string details,
-        string brushKey,
-        string commandParameter,
-        string actionText,
-        bool isPrimary)
-    {
-        var accentBrush = (Brush)FindResource(brushKey);
-        var titleBlock = new TextBlock
-        {
-            Text = title,
-            Foreground = accentBrush,
-            FontWeight = FontWeights.Black,
-            TextWrapping = TextWrapping.Wrap
-        };
-        var detailsBlock = new TextBlock
-        {
-            Text = details,
-            Foreground = (Brush)FindResource("MutedBrush"),
-            FontSize = 12,
-            Margin = new Thickness(0, 5, 0, 0),
-            TextWrapping = TextWrapping.Wrap
-        };
-        var copy = new StackPanel();
-        copy.Children.Add(titleBlock);
-        copy.Children.Add(detailsBlock);
-
-        var button = new Button
-        {
-            Content = actionText,
-            Style = (Style)FindResource(isPrimary ? "PrimaryButtonStyle" : "GhostButtonStyle"),
-            Command = _viewModel.Admin.ActionCommand,
-            CommandParameter = commandParameter,
-            MinHeight = 32,
-            Padding = new Thickness(12, 0, 12, 0),
-            Margin = new Thickness(12, 0, 0, 0),
-            VerticalAlignment = VerticalAlignment.Center
-        };
-
-        var rowGrid = new Grid();
-        rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        rowGrid.Children.Add(copy);
-        Grid.SetColumn(button, 1);
-        rowGrid.Children.Add(button);
-
-        var row = new Border
-        {
-            CornerRadius = new CornerRadius(10),
-            BorderBrush = (Brush)FindResource("LineSoftBrush"),
-            BorderThickness = new Thickness(1),
-            Background = (Brush)FindResource("SurfaceBrush"),
-            Padding = new Thickness(12),
-            Margin = new Thickness(0, 0, 0, 8),
-            Child = rowGrid
-        };
-
-        AdminTaskQueueList.Children.Add(row);
-    }
-
     private void RebuildAdminSessionsGrid()
     {
-        if (!IsLoaded || AdminSessionsGrid is null)
+        if (!IsLoaded)
         {
             return;
         }
 
-        while (AdminSessionsGrid.Children.Count > 5)
-        {
-            AdminSessionsGrid.Children.RemoveAt(5);
-        }
-
-        while (AdminSessionsGrid.RowDefinitions.Count > 1)
-        {
-            AdminSessionsGrid.RowDefinitions.RemoveAt(AdminSessionsGrid.RowDefinitions.Count - 1);
-        }
-
+        _viewModel.Admin.Sessions.Clear();
         try
         {
-            using var unitOfWork = new UnitOfWork();
-            var sessions = unitOfWork.GameSessions.GetActive(DateTime.Now);
-            var computers = unitOfWork.Computers.GetDictionaryNoTracking();
-            var users = unitOfWork.Users.QueryNoTracking().ToDictionary(user => user.Id);
-
-            if (sessions.Count == 0)
+            foreach (var session in _adminOperationsService.GetActiveSessions(DateTime.Now))
             {
-                AdminSessionsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-                var emptyText = new TextBlock
+                _viewModel.Admin.Sessions.Add(new AdminSessionRowViewModel
                 {
-                    Text = "Нет активных сессий в базе данных.",
-                    Foreground = (Brush)FindResource("MutedBrush"),
-                    Margin = new Thickness(0, 14, 0, 0),
-                    TextWrapping = TextWrapping.Wrap
-                };
-                Grid.SetRow(emptyText, 1);
-                Grid.SetColumnSpan(emptyText, 5);
-                AdminSessionsGrid.Children.Add(emptyText);
-                return;
-            }
-
-            for (var i = 0; i < sessions.Count; i++)
-            {
-                var session = sessions[i];
-                var row = i + 1;
-                computers.TryGetValue(session.ComputerId, out var computer);
-                users.TryGetValue(session.UserId, out var user);
-
-                var computerName = computer?.Name ?? $"ПК-{session.ComputerId}";
-                var clientName = user?.FullName ?? $"User #{session.UserId}";
-                var endText = session.EndTime?.ToString("HH:mm") ?? "открыта";
-                var statusText = FormatAdminSessionStatus(session.Status);
-                var statusBrush = ResolveAdminSessionStatusBrush(session.Status);
-
-                AdminSessionsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-                AddAdminSessionCell(row, 0, computerName, "TextBrush", FontWeights.Bold);
-                AddAdminSessionCell(row, 1, clientName, "MutedBrush", FontWeights.Normal);
-                AddAdminSessionCell(row, 2, endText, "TextBrush", FontWeights.Normal);
-                AddAdminSessionStatusBadge(row, statusText, statusBrush);
-                AddAdminSessionButton(row, computerName, session.Status);
+                    ComputerName = session.ComputerName,
+                    ClientName = session.ClientName,
+                    EndText = session.EndText,
+                    Status = session.Status,
+                    StatusText = session.StatusText,
+                    ActionText = session.ActionText,
+                    ActionCommandParameter = session.ActionCommandParameter,
+                    IsPrimaryAction = session.IsPrimaryAction
+                });
             }
         }
         catch (Exception ex)
         {
             ShowDatabaseError("Ошибка загрузки сессий", ex);
         }
-    }
-
-    private void AddAdminSessionCell(int row, int column, string text, string brushKey, FontWeight weight)
-    {
-        var block = new TextBlock
-        {
-            Text = text,
-            Foreground = (Brush)FindResource(brushKey),
-            FontWeight = weight,
-            Margin = new Thickness(0, 14, 0, 0),
-            TextWrapping = TextWrapping.Wrap
-        };
-        Grid.SetRow(block, row);
-        Grid.SetColumn(block, column);
-        AdminSessionsGrid.Children.Add(block);
-    }
-
-    private void AddAdminSessionStatusBadge(int row, string text, string brushKey)
-    {
-        var label = new TextBlock
-        {
-            Text = text,
-            Style = (Style)FindResource("StatusBadgeTextStyle"),
-            Foreground = (Brush)FindResource(brushKey)
-        };
-        var badge = new Border
-        {
-            Style = (Style)FindResource("StatusBadgeStyle"),
-            Margin = new Thickness(0, 10, 0, 0),
-            Child = label
-        };
-        Grid.SetRow(badge, row);
-        Grid.SetColumn(badge, 3);
-        AdminSessionsGrid.Children.Add(badge);
-    }
-
-    private void AddAdminSessionButton(int row, string computerName, string status)
-    {
-        var isAwaitingPayment = string.Equals(status, SessionStatuses.AwaitingPayment, StringComparison.OrdinalIgnoreCase);
-        var isTeamSession = string.Equals(status, SessionStatuses.Team, StringComparison.OrdinalIgnoreCase);
-        var button = new Button
-        {
-            Content = isAwaitingPayment ? "Оплата" : isTeamSession ? "Продлить" : "Закрыть",
-            Style = (Style)FindResource(isAwaitingPayment ? "PrimaryButtonStyle" : "GhostButtonStyle"),
-            Tag = isAwaitingPayment
-                ? $"admin-pay-session|{computerName}"
-                : isTeamSession
-                    ? $"admin-extend-session|{computerName}"
-                    : $"admin-close-session|{computerName}",
-            MinHeight = 30,
-            Padding = new Thickness(14, 0, 14, 0),
-            Margin = new Thickness(10, 8, 0, 0),
-            Command = _viewModel.Admin.ActionCommand
-        };
-        button.CommandParameter = button.Tag;
-        Grid.SetRow(button, row);
-        Grid.SetColumn(button, 4);
-        AdminSessionsGrid.Children.Add(button);
-    }
-
-    private static string FormatAdminSessionStatus(string status)
-    {
-        return status switch
-        {
-            SessionStatuses.AwaitingPayment => "Ожидает",
-            SessionStatuses.Team => "Команда",
-            SessionStatuses.Active => "Оплачено",
-            _ => status
-        };
-    }
-
-    private static string ResolveAdminSessionStatusBrush(string status)
-    {
-        return status switch
-        {
-            SessionStatuses.AwaitingPayment => "StatusReservedBrush",
-            SessionStatuses.Team => "GoldLightBrush",
-            SessionStatuses.Active => "StatusFreeBrush",
-            _ => "MutedBrush"
-        };
     }
 
     private void RecalculateOwnerMetrics()

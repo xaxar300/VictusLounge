@@ -20,6 +20,7 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _announcementTimer;
     private readonly DispatcherTimer _liveRefreshTimer;
     private readonly MainWindowViewModel _viewModel;
+    private readonly AdminOperationsService _adminOperationsService = new();
     private readonly BookingFacade _bookingFacade = new();
     private readonly TopupFacade _topupFacade = new();
     private readonly UserSettingsStore _userSettingsStore = new();

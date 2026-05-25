@@ -1,5 +1,7 @@
 using System;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
+using VictusLounge.Helpers;
 
 namespace VictusLounge.ViewModels;
 
@@ -26,6 +28,8 @@ public sealed class AdminDashboardViewModel : ViewModelBase
 
     public ICommand ActionCommand { get; }
     public ICommand ShiftTaskCommand { get; }
+    public ObservableCollection<AdminSessionRowViewModel> Sessions { get; } = [];
+    public ObservableCollection<AdminTaskQueueItemViewModel> TaskQueue { get; } = [];
 
     public int ActiveSessions
     {
@@ -86,4 +90,34 @@ public sealed class AdminDashboardViewModel : ViewModelBase
         get => _isPaymentTaskDone;
         set => SetProperty(ref _isPaymentTaskDone, value);
     }
+}
+
+public sealed class AdminSessionRowViewModel
+{
+    public required string ComputerName { get; init; }
+    public required string ClientName { get; init; }
+    public required string EndText { get; init; }
+    public required SessionStatus Status { get; init; }
+    public required string StatusText { get; init; }
+    public required string ActionText { get; init; }
+    public required string ActionCommandParameter { get; init; }
+    public bool IsPrimaryAction { get; init; }
+    public bool HasAction => !string.IsNullOrWhiteSpace(ActionCommandParameter);
+}
+
+public sealed class AdminTaskQueueItemViewModel
+{
+    public required string Title { get; init; }
+    public required string Details { get; init; }
+    public required AdminTaskKind Kind { get; init; }
+    public required string ActionText { get; init; }
+    public required string ActionCommandParameter { get; init; }
+    public bool IsPrimaryAction { get; init; }
+    public bool HasAction => !string.IsNullOrWhiteSpace(ActionCommandParameter);
+}
+
+public enum AdminTaskKind
+{
+    Payment,
+    Service
 }
