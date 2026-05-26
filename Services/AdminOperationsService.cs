@@ -326,7 +326,7 @@ public sealed class AdminOperationsService
         unitOfWork.SaveChanges();
     }
 
-    public AdminOperationResult RescheduleBooking(int bookingId, DateTime newStart, double durationHours)
+    public AdminOperationResult RescheduleBooking(int bookingId, DateTime newStart, double durationHours, string? targetComputerName = null)
     {
         using var unitOfWork = new UnitOfWork();
         var booking = unitOfWork.Bookings.GetById(bookingId);
@@ -335,15 +335,28 @@ public sealed class AdminOperationsService
             return AdminOperationResult.Fail($"Booking #{bookingId} was not found or is cancelled.");
         }
 
+        var targetComputerId = booking.ComputerId;
+        if (!string.IsNullOrWhiteSpace(targetComputerName))
+        {
+            var targetComputer = unitOfWork.Computers.GetByName(targetComputerName);
+            if (targetComputer is null)
+            {
+                return AdminOperationResult.Fail($"{targetComputerName}: PC not found.");
+            }
+
+            targetComputerId = targetComputer.Id;
+        }
+
         var newEnd = newStart.AddHours(durationHours);
-        var hasConflict = unitOfWork.Bookings.HasTimeConflict(booking.ComputerId, newStart, newEnd, booking.Id)
-            || unitOfWork.GameSessions.HasTimeConflict(booking.ComputerId, newStart, newEnd);
+        var hasConflict = unitOfWork.Bookings.HasTimeConflict(targetComputerId, newStart, newEnd, booking.Id)
+            || unitOfWork.GameSessions.HasTimeConflict(targetComputerId, newStart, newEnd);
 
         if (hasConflict)
         {
             return AdminOperationResult.Fail("Selected interval already has a booking or session.");
         }
 
+        booking.ComputerId = targetComputerId;
         booking.StartTime = newStart;
         booking.EndTime = newEnd;
         booking.CreatedAt = DateTime.Now;
@@ -374,6 +387,48 @@ public sealed class AdminOperationsService
             .OrderByDescending(booking => booking.CreatedAt)
             .Select(booking => booking.Id)
             .FirstOrDefault();
+    }
+
+    public IReadOnlyList<AdminBookingInfo> GetActiveBookings(DateTime now)
+    {
+        using var unitOfWork = new UnitOfWork();
+        var computers = unitOfWork.Computers.GetDictionaryNoTracking();
+        var users = unitOfWork.Users.QueryNoTracking().ToDictionary(user => user.Id);
+
+        return unitOfWork.Bookings
+            .QueryNoTracking()
+            .Where(booking => booking.Status != BookingStatuses.Cancelled && booking.EndTime > now)
+            .OrderBy(booking => booking.StartTime)
+            .ToList()
+            .Select(booking =>
+            {
+                var computerName = computers.TryGetValue(booking.ComputerId, out var computer)
+                    ? computer.Name
+                    : $"PC-{booking.ComputerId}";
+                var clientName = users.TryGetValue(booking.UserId, out var user)
+                    ? user.FullName
+                    : $"User #{booking.UserId}";
+
+                return new AdminBookingInfo(
+                    booking.Id,
+                    computerName,
+                    clientName,
+                    booking.StartTime,
+                    booking.EndTime,
+                    booking.Status,
+                    booking.TotalPrice);
+            })
+            .ToList();
+    }
+
+    public IReadOnlyList<string> GetComputerNames()
+    {
+        using var unitOfWork = new UnitOfWork();
+        return unitOfWork.Computers
+            .QueryNoTracking()
+            .OrderBy(computer => computer.Id)
+            .Select(computer => computer.Name)
+            .ToList();
     }
 
     public decimal? GetOpenSessionAmount(string computerName)
@@ -448,7 +503,6 @@ public sealed class AdminOperationsService
             .QueryNoTracking()
             .Where(booking => booking.Status == BookingStatuses.PendingPayment && booking.EndTime > now)
             .OrderBy(booking => booking.StartTime)
-            .Take(2)
             .ToList();
 
         foreach (var booking in pendingBookings)
@@ -474,7 +528,6 @@ public sealed class AdminOperationsService
             .Where(session => session.Status == SessionStatuses.AwaitingPayment
                 && (session.EndTime == null || session.EndTime > now))
             .OrderBy(session => session.StartTime)
-            .Take(2)
             .ToList();
 
         foreach (var session in pendingSessions)
@@ -500,7 +553,7 @@ public sealed class AdminOperationsService
             .ToList()
             .Where(computer => StatusMapper.ToPcStatus(computer.Status) == PcStatus.Service)
             .OrderBy(computer => computer.Name)
-            .Take(2);
+            .ToList();
 
         foreach (var computer in serviceComputers)
         {
@@ -516,17 +569,94 @@ public sealed class AdminOperationsService
         return items;
     }
 
-    public void SetComputerStatus(string computerName, PcStatus status)
+    public IReadOnlyList<AdminPaymentInfo> GetPendingPayments(DateTime now)
+    {
+        using var unitOfWork = new UnitOfWork();
+        var items = new List<AdminPaymentInfo>();
+        var computers = unitOfWork.Computers.GetDictionaryNoTracking();
+        var users = unitOfWork.Users.QueryNoTracking().ToDictionary(user => user.Id);
+
+        var pendingBookings = unitOfWork.Bookings
+            .QueryNoTracking()
+            .Where(booking => booking.Status == BookingStatuses.PendingPayment && booking.EndTime > now)
+            .OrderBy(booking => booking.StartTime)
+            .ToList();
+
+        foreach (var booking in pendingBookings)
+        {
+            var computerName = computers.TryGetValue(booking.ComputerId, out var computer)
+                ? computer.Name
+                : $"PC-{booking.ComputerId}";
+            var clientName = users.TryGetValue(booking.UserId, out var user)
+                ? user.FullName
+                : $"User #{booking.UserId}";
+
+            items.Add(new AdminPaymentInfo(
+                "Бронь",
+                computerName,
+                clientName,
+                booking.TotalPrice,
+                $"{booking.StartTime:dd.MM HH:mm}-{booking.EndTime:HH:mm}",
+                $"admin-payment|{computerName}"));
+        }
+
+        var pendingSessions = unitOfWork.GameSessions
+            .QueryNoTracking()
+            .Where(session => session.Status == SessionStatuses.AwaitingPayment
+                && (session.EndTime == null || session.EndTime > now))
+            .OrderBy(session => session.StartTime)
+            .ToList();
+
+        foreach (var session in pendingSessions)
+        {
+            var computerName = computers.TryGetValue(session.ComputerId, out var computer)
+                ? computer.Name
+                : $"PC-{session.ComputerId}";
+            var clientName = users.TryGetValue(session.UserId, out var user)
+                ? user.FullName
+                : $"User #{session.UserId}";
+
+            items.Add(new AdminPaymentInfo(
+                "Сессия",
+                computerName,
+                clientName,
+                session.TotalPrice,
+                $"с {session.StartTime:HH:mm}",
+                $"admin-pay-session|{computerName}"));
+        }
+
+        return items;
+    }
+
+    public AdminOperationResult SetComputerStatus(string computerName, PcStatus status)
     {
         using var unitOfWork = new UnitOfWork();
         var computer = unitOfWork.Computers.GetByName(computerName);
         if (computer is null)
         {
-            return;
+            return AdminOperationResult.Fail($"{computerName}: PC not found.");
+        }
+
+        if (status == PcStatus.Service)
+        {
+            var now = DateTime.Now;
+            if (unitOfWork.GameSessions.HasOpenSession(computer.Id, now))
+            {
+                return AdminOperationResult.Fail($"{computerName}: нельзя поставить в сервис, пока на ПК активная сессия.");
+            }
+
+            if (unitOfWork.Bookings.Query().Any(booking =>
+                    booking.ComputerId == computer.Id
+                    && booking.Status != BookingStatuses.Cancelled
+                    && booking.EndTime > now))
+            {
+                return AdminOperationResult.Fail($"{computerName}: нельзя поставить в сервис, пока на ПК есть активная или будущая бронь.");
+            }
         }
 
         computer.Status = status.ToStorageValue();
         unitOfWork.SaveChanges();
+        return AdminOperationResult.Ok();
     }
 
     private static int? ResolveCurrentOrAdminUserId(IUnitOfWork unitOfWork, int currentUserId)
@@ -568,22 +698,22 @@ public sealed class AdminOperationsService
 
     private static string ResolveSessionActionText(SessionStatus status)
     {
-        return status switch
+        if (status == SessionStatus.AwaitingPayment)
         {
-            SessionStatus.AwaitingPayment => "Оплата",
-            SessionStatus.Team => "Продлить",
-            _ => "Закрыть"
-        };
+            return "Оплата";
+        }
+
+        return status == SessionStatus.Team ? "Продлить" : string.Empty;
     }
 
     private static string ResolveSessionAction(string computerName, SessionStatus status)
     {
-        return status switch
+        if (status == SessionStatus.AwaitingPayment)
         {
-            SessionStatus.AwaitingPayment => $"admin-pay-session|{computerName}",
-            SessionStatus.Team => $"admin-extend-session|{computerName}",
-            _ => $"admin-close-session|{computerName}"
-        };
+            return $"admin-pay-session|{computerName}";
+        }
+
+        return status == SessionStatus.Team ? $"admin-extend-session|{computerName}" : string.Empty;
     }
 }
 
@@ -617,6 +747,29 @@ public sealed record AdminTaskQueueInfo(
     string ActionText,
     string ActionCommandParameter,
     bool IsPrimaryAction);
+
+public sealed record AdminPaymentInfo(
+    string Kind,
+    string ComputerName,
+    string ClientName,
+    decimal Amount,
+    string Details,
+    string ActionCommandParameter)
+{
+    public string Summary => $"{Kind}: {ComputerName} · {ClientName} · {Amount:0.##} BYN · {Details}";
+}
+
+public sealed record AdminBookingInfo(
+    int Id,
+    string ComputerName,
+    string ClientName,
+    DateTime StartTime,
+    DateTime EndTime,
+    string Status,
+    decimal TotalPrice)
+{
+    public string Summary => $"#{Id} · {ComputerName} · {ClientName} · {StartTime:dd.MM HH:mm}-{EndTime:HH:mm} · {Status}";
+}
 
 public enum AdminTaskType
 {

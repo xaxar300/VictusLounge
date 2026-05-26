@@ -118,9 +118,14 @@ public partial class MainWindow
     private System.Windows.Controls.Button EventFilterLanButton => EventsView.EventFilterLanButton;
     private System.Windows.Controls.TextBlock EventApplicationsTitleText => EventsView.EventApplicationsTitleText;
     private System.Windows.Controls.TextBlock EventApplicationsText => EventsView.EventApplicationsText;
+    private System.Windows.Controls.Button CancelEventApplicationButton => EventsView.CancelEventApplicationButton;
     private System.Windows.Controls.Border DotaEventCard => EventsView.DotaEventCard;
     private System.Windows.Controls.Border CsEventCard => EventsView.CsEventCard;
     private System.Windows.Controls.Border LanEventCard => EventsView.LanEventCard;
+    private System.Windows.Controls.Button DotaHeroJoinButton => EventsView.DotaHeroJoinButton;
+    private System.Windows.Controls.Button DotaEventJoinButton => EventsView.DotaEventJoinButton;
+    private System.Windows.Controls.Button CsEventJoinButton => EventsView.CsEventJoinButton;
+    private System.Windows.Controls.Button LanEventJoinButton => EventsView.LanEventJoinButton;
     private System.Windows.Controls.TextBlock AdminActiveSessionsValue => AdminView.AdminActiveSessionsValue;
     private System.Windows.Controls.TextBlock AdminPaymentQueueValue => AdminView.AdminPaymentQueueValue;
     private System.Windows.Controls.TextBlock AdminPaymentQueueHintText => AdminView.AdminPaymentQueueHintText;

@@ -151,7 +151,8 @@
                     <StackPanel>
                         <TextBlock Text="TASK QUEUE" Style="{StaticResource KickerTextStyle}" />
                         <TextBlock Text="Очередь задач" FontSize="24" FontWeight="Black" Margin="0,6,0,12" />
-                        <ItemsControl x:Name="AdminTaskQueueList" ItemsSource="{Binding Admin.TaskQueue}">
+                        <ScrollViewer MaxHeight="230" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl x:Name="AdminTaskQueueList" ItemsSource="{Binding Admin.TaskQueue}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border CornerRadius="10"
@@ -203,6 +204,7 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+                        </ScrollViewer>
                     </StackPanel>
                 </Border>
 
@@ -211,12 +213,10 @@
                         <TextBlock Text="Быстрые операции" FontSize="22" FontWeight="Black" Margin="0,0,0,14" />
                         <UniformGrid Columns="2">
                             <Button Content="Оплата" Style="{StaticResource PrimaryButtonStyle}" Tag="admin-payment" Command="{Binding Admin.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="38" Padding="12,0" Margin="0,0,8,8" />
-                            <Button Content="Бронь" Style="{StaticResource GhostButtonStyle}" Tag="booking" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="38" Padding="12,0" Margin="0,0,0,8" />
                             <Button Content="Перенести" Style="{StaticResource GhostButtonStyle}" Tag="admin-reschedule-booking" Command="{Binding Admin.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="38" Padding="12,0" Margin="0,0,8,8" />
                             <Button Content="Отменить" Style="{StaticResource GhostButtonStyle}" Tag="admin-cancel-booking" Command="{Binding Admin.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="38" Padding="12,0" Margin="0,0,0,8" />
                             <Button Content="В сервис" Style="{StaticResource GhostButtonStyle}" Tag="admin-service" Command="{Binding Admin.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="38" Padding="12,0" Margin="0,0,8,8" />
                             <Button Content="Снять сервис" Style="{StaticResource GhostButtonStyle}" Tag="admin-clear-service" Command="{Binding Admin.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="38" Padding="12,0" Margin="0,0,0,8" />
-                            <Button Content="Закрыть оплаты" Style="{StaticResource GhostButtonStyle}" Tag="admin-settle-all" Command="{Binding Admin.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="38" Padding="12,0" Margin="0,0,8,0" />
                             <Button Content="Карта" Style="{StaticResource GhostButtonStyle}" Tag="map" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="38" Padding="12,0" />
                         </UniformGrid>
                     </StackPanel>

@@ -10,7 +10,7 @@ public static class PasswordBoxBinder
             "BoundPassword",
             typeof(string),
             typeof(PasswordBoxBinder),
-            new FrameworkPropertyMetadata(string.Empty, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnBoundPasswordChanged));
+            new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnBoundPasswordChanged));
 
     private static readonly DependencyProperty IsUpdatingProperty =
         DependencyProperty.RegisterAttached(
@@ -21,7 +21,7 @@ public static class PasswordBoxBinder
 
     public static string GetBoundPassword(DependencyObject dependencyObject)
     {
-        return (string)dependencyObject.GetValue(BoundPasswordProperty);
+        return (string?)dependencyObject.GetValue(BoundPasswordProperty) ?? string.Empty;
     }
 
     public static void SetBoundPassword(DependencyObject dependencyObject, string value)

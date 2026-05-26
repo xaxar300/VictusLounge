@@ -78,6 +78,7 @@ public partial class MainWindow
         DotaEventCard.Visibility = filter is "all" or "dota" ? Visibility.Visible : Visibility.Collapsed;
         CsEventCard.Visibility = filter is "all" or "cs2" ? Visibility.Visible : Visibility.Collapsed;
         LanEventCard.Visibility = filter is "all" or "lan" ? Visibility.Visible : Visibility.Collapsed;
+        RefreshEventRegistrationState();
     }
 
     private void JoinEvent(string raw)
@@ -87,14 +88,122 @@ public partial class MainWindow
             return;
         }
 
+        if (raw.Equals("cancel-event", StringComparison.OrdinalIgnoreCase))
+        {
+            CancelLatestEventApplication();
+            return;
+        }
+
         var parts = raw.Split('|');
         var eventName = parts.ElementAtOrDefault(0) ?? "Событие";
         var category = parts.ElementAtOrDefault(1) ?? "Event";
         var time = parts.ElementAtOrDefault(2) ?? "--:--";
 
+        if (IsEventRegistered(eventName))
+        {
+            CancelEventApplication(eventName);
+            return;
+        }
+
         RegisterEventApplication(eventName, category, time, null);
     }
 
+    private bool IsEventRegistered(string eventName)
+    {
+        if (_currentUserId <= 0)
+        {
+            return false;
+        }
+
+        using var unitOfWork = new UnitOfWork();
+        return unitOfWork.Payments.Any(payment =>
+            payment.UserId == _currentUserId
+            && payment.PaymentType == PaymentTypes.EventRegistration
+            && payment.Comment.Contains(eventName));
+    }
+
+    private void CancelLatestEventApplication()
+    {
+        if (!EnsureSignedInForDatabaseWrite())
+        {
+            return;
+        }
+
+        try
+        {
+            using var unitOfWork = new UnitOfWork();
+            var payment = unitOfWork.Payments.Query()
+                .Where(item => item.UserId == _currentUserId && item.PaymentType == PaymentTypes.EventRegistration)
+                .OrderByDescending(item => item.CreatedAt)
+                .FirstOrDefault();
+            if (payment is null)
+            {
+                ShowStatus("Заявка не найдена", "У клиента нет активных заявок на события.");
+                return;
+            }
+
+            var eventName = ExtractEventName(payment.Comment);
+            unitOfWork.Payments.Remove(payment);
+            unitOfWork.SaveChanges();
+            LoadDatabaseState();
+            RefreshEventRegistrationState();
+            ShowStatus("Заявка отменена", $"{eventName}: запись на событие удалена.");
+        }
+        catch (Exception ex)
+        {
+            ShowDatabaseError("Ошибка отмены заявки", ex);
+        }
+    }
+
+    private void CancelEventApplication(string eventName)
+    {
+        if (!EnsureSignedInForDatabaseWrite())
+        {
+            return;
+        }
+
+        try
+        {
+            using var unitOfWork = new UnitOfWork();
+            var payments = unitOfWork.Payments.Query()
+                .Where(item => item.UserId == _currentUserId
+                    && item.PaymentType == PaymentTypes.EventRegistration
+                    && item.Comment.Contains(eventName))
+                .ToList();
+            if (payments.Count == 0)
+            {
+                ShowStatus("Заявка не найдена", $"{eventName}: активной заявки нет.");
+                return;
+            }
+
+            foreach (var payment in payments)
+            {
+                unitOfWork.Payments.Remove(payment);
+            }
+
+            unitOfWork.SaveChanges();
+            LoadDatabaseState();
+            RefreshEventRegistrationState();
+            ShowStatus("Заявка отменена", $"{eventName}: запись на турнир отменена.");
+        }
+        catch (Exception ex)
+        {
+            ShowDatabaseError("Ошибка отмены заявки", ex);
+        }
+    }
+
+    private static string ExtractEventName(string comment)
+    {
+        const string prefix = "Event registration:";
+        if (!comment.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return "Событие";
+        }
+
+        var rest = comment[prefix.Length..].Trim();
+        var separator = rest.IndexOf(';');
+        return separator >= 0 ? rest[..separator].Trim() : rest;
+    }
     private void RegisterEventApplication(string eventName, string category, string time, Button? sourceButton)
     {
         if (!EnsureSignedInForDatabaseWrite())
@@ -126,12 +235,12 @@ public partial class MainWindow
             if (sourceButton is not null)
             {
                 sourceButton.Content = existing ? "Уже записан" : "Заявка отправлена";
-                sourceButton.IsEnabled = false;
                 sourceButton.Opacity = 0.65;
             }
 
             EventApplicationsText.Text = $"{category}: {eventName} · {time}";
             LoadDatabaseState();
+            RefreshEventRegistrationState();
             if (existing)
             {
                 ShowStatus("Заявка уже есть", $"{eventName}: запись уже сохранена в истории клиента.");
@@ -145,6 +254,83 @@ public partial class MainWindow
         {
             ShowDatabaseError("Ошибка записи на событие", ex);
         }
+    }
+
+    private void RefreshEventRegistrationState()
+    {
+        if (!IsLoaded || _currentUserId <= 0)
+        {
+            return;
+        }
+
+        try
+        {
+            using var unitOfWork = new UnitOfWork();
+            var registeredEvents = unitOfWork.Payments
+                .QueryNoTracking()
+                .Where(payment => payment.UserId == _currentUserId
+                    && payment.PaymentType == PaymentTypes.EventRegistration)
+                .Select(payment => payment.Comment)
+                .ToList();
+
+            if (registeredEvents.Count == 0)
+            {
+                EventApplicationsText.Text = "Пока нет активных заявок";
+                CancelEventApplicationButton.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                EventApplicationsText.Text = string.Join(Environment.NewLine, registeredEvents.Select(FormatEventApplication));
+                CancelEventApplicationButton.Visibility = Visibility.Visible;
+            }
+
+            foreach (var button in GetEventJoinButtons())
+            {
+                var eventName = GetEventNameFromButton(button);
+                var isRegistered = registeredEvents.Any(comment => comment.Contains(eventName, StringComparison.OrdinalIgnoreCase));
+                ApplyEventJoinButtonState(button, isRegistered);
+            }
+        }
+        catch
+        {
+            // The events page remains usable even if the history lookup fails.
+        }
+    }
+
+    private static string FormatEventApplication(string comment)
+    {
+        var eventName = ExtractEventName(comment);
+        var timeMarker = "; time ";
+        var timeIndex = comment.IndexOf(timeMarker, StringComparison.OrdinalIgnoreCase);
+        var time = timeIndex >= 0 ? comment[(timeIndex + timeMarker.Length)..].Trim() : string.Empty;
+        return string.IsNullOrWhiteSpace(time) ? eventName : $"{time} · {eventName}";
+    }
+
+    private IEnumerable<Button> GetEventJoinButtons()
+    {
+        yield return DotaHeroJoinButton;
+        yield return DotaEventJoinButton;
+        yield return CsEventJoinButton;
+        yield return LanEventJoinButton;
+    }
+
+    private static string GetEventNameFromButton(Button button)
+    {
+        return button.Tag?.ToString()?.Split('|').ElementAtOrDefault(0) ?? string.Empty;
+    }
+
+    private void ApplyEventJoinButtonState(Button button, bool isRegistered)
+    {
+        button.Style = (Style)FindResource(isRegistered ? "GhostButtonStyle" : "PrimaryButtonStyle");
+        button.Opacity = isRegistered ? 0.82 : 1;
+        button.ToolTip = isRegistered
+            ? "Нажмите, чтобы отменить заявку."
+            : null;
+        button.Content = isRegistered
+            ? "Отменить заявку"
+            : ReferenceEquals(button, DotaHeroJoinButton)
+                ? "Записаться на Dota 2 Weekend Cup"
+                : "Записаться";
     }
 
     private string ExportBalanceHistory()

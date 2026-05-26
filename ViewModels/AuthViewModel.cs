@@ -152,6 +152,7 @@ public sealed class AuthViewModel : ViewModelBase
                 ErrorMessage = result.ErrorMessage ?? "Не удалось войти.";
             }
 
+            _stateChanged?.Invoke();
             return;
         }
 

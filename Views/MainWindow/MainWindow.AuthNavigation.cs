@@ -345,6 +345,10 @@ public partial class MainWindow
         {
             LoadDatabaseState();
         }
+        if (view == "events")
+        {
+            RefreshEventRegistrationState();
+        }
         if (view == "map")
         {
             Dispatcher.InvokeAsync(ApplyMapPcButtonStatuses, DispatcherPriority.Loaded);

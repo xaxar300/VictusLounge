@@ -43,6 +43,15 @@ public sealed class BookingService
                 return BookingCreateResult.Fail(error);
             }
 
+            var hasActiveUserBooking = unitOfWork.Bookings.QueryNoTracking().Any(booking =>
+                booking.UserId == request.UserId
+                && booking.Status != BookingStatuses.Cancelled
+                && booking.EndTime > DateTime.Now);
+            if (hasActiveUserBooking)
+            {
+                return BookingCreateResult.Fail("У клиента уже есть активная бронь. Несколько ПК можно выбрать только сразу в режиме мультиброни.");
+            }
+
             var nextBookingId = await unitOfWork.Bookings.GetNextIdAsync(booking => booking.Id);
             var isImminent = start.Date == DateTime.Today && start <= DateTime.Now.AddMinutes(15);
 

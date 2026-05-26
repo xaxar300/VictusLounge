@@ -698,9 +698,18 @@ public partial class MainWindow
 
     private void SetPcStatus(string pc, string status)
     {
+        TrySetPcStatus(pc, status);
+    }
+
+    private bool TrySetPcStatus(string pc, string status)
+    {
         status = NormalizePcStatus(status);
+        if (!SaveComputerStatus(pc, status))
+        {
+            return false;
+        }
+
         _pcStatusOverrides[pc] = status;
-        SaveComputerStatus(pc, status);
         ApplyMapPcButtonStatuses();
         RebuildBookingSeatGrid();
 
@@ -708,34 +717,36 @@ public partial class MainWindow
         {
             _selectedMapStatus = status;
         }
+
+        return true;
     }
 
-    private void SaveComputerStatus(string pc, string status)
+    private bool SaveComputerStatus(string pc, string status)
     {
         var localComputer = _computers.FirstOrDefault(computer => computer.Name == pc);
-        if (localComputer is not null)
-        {
-            localComputer.Status = status;
-        }
 
         try
         {
-            using var unitOfWork = new UnitOfWork();
-            var computer = unitOfWork.Computers.GetByName(pc);
-            if (computer is null)
+            var result = _adminOperationsService.SetComputerStatus(pc, StatusMapper.ToPcStatus(status));
+            if (!result.Success)
             {
-                return;
+                ShowStatus("Статус ПК не изменен", result.ErrorMessage ?? "Операция не выполнена.");
+                return false;
             }
 
-            computer.Status = status;
-            unitOfWork.SaveChanges();
+            if (localComputer is not null)
+            {
+                localComputer.Status = status;
+            }
+
+            return true;
         }
         catch (Exception ex)
         {
             ShowDatabaseError("Ошибка сохранения статуса ПК", ex);
+            return false;
         }
     }
-
     private static string NormalizePcStatus(string status)
     {
         return PcStatusNormalizer.Normalize(status);

@@ -66,13 +66,14 @@
                                 </StackPanel>
                             </Border>
                         </UniformGrid>
-                        <Button Content="Записаться на Dota 2 Weekend Cup" Style="{StaticResource PrimaryButtonStyle}" Tag="Dota 2 Weekend Cup|Dota 2|22:00" Command="{Binding Events.JoinCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Width="320" HorizontalAlignment="Left" />
+                        <Button x:Name="DotaHeroJoinButton" Content="Записаться на Dota 2 Weekend Cup" Style="{StaticResource PrimaryButtonStyle}" Tag="Dota 2 Weekend Cup|Dota 2|22:00" Command="{Binding Events.JoinCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Width="320" HorizontalAlignment="Left" />
                     </StackPanel>
 
                     <Border Grid.Column="1" CornerRadius="16" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Background="#D50F0F0F" Padding="20" VerticalAlignment="Center">
                         <StackPanel>
                             <TextBlock x:Name="EventApplicationsTitleText" Text="Мои заявки" FontWeight="Black" FontSize="22" />
                             <TextBlock x:Name="EventApplicationsText" Text="Пока нет активных заявок" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,20" TextWrapping="Wrap" />
+                            <Button x:Name="CancelEventApplicationButton" Content="Отменить заявку" Style="{StaticResource GhostButtonStyle}" Tag="cancel-event" Command="{Binding Events.JoinCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" Visibility="Collapsed" Margin="0,0,0,16" />
                             <Grid Margin="0,0,0,12">
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="70" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
                                 <TextBlock Text="22:00" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Black" />
@@ -115,7 +116,7 @@
                             <StackPanel><TextBlock Text="Приз" Foreground="{DynamicResource MutedBrush}" FontSize="11" /><TextBlock Text="600" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Black" /></StackPanel>
                             <StackPanel><TextBlock Text="Мест" Foreground="{DynamicResource MutedBrush}" FontSize="11" /><TextBlock Text="4" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Black" /></StackPanel>
                         </UniformGrid>
-                        <Button Content="Записаться" Style="{StaticResource PrimaryButtonStyle}" Tag="Dota 2 Weekend Cup|Dota 2|22:00" Command="{Binding Events.JoinCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" />
+                        <Button x:Name="DotaEventJoinButton" Content="Записаться" Style="{StaticResource PrimaryButtonStyle}" Tag="Dota 2 Weekend Cup|Dota 2|22:00" Command="{Binding Events.JoinCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" />
                     </StackPanel>
                 </Grid>
             </Border>
@@ -139,7 +140,7 @@
                             <StackPanel><TextBlock Text="Приз" Foreground="{DynamicResource MutedBrush}" FontSize="11" /><TextBlock Text="320" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Black" /></StackPanel>
                             <StackPanel><TextBlock Text="Мест" Foreground="{DynamicResource MutedBrush}" FontSize="11" /><TextBlock Text="6" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Black" /></StackPanel>
                         </UniformGrid>
-                        <Button Content="Записаться" Style="{StaticResource PrimaryButtonStyle}" Tag="CS2 Night Tournament|CS2|23:30" Command="{Binding Events.JoinCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" />
+                        <Button x:Name="CsEventJoinButton" Content="Записаться" Style="{StaticResource PrimaryButtonStyle}" Tag="CS2 Night Tournament|CS2|23:30" Command="{Binding Events.JoinCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" />
                     </StackPanel>
                 </Grid>
             </Border>
@@ -163,7 +164,7 @@
                             <StackPanel><TextBlock Text="Приз" Foreground="{DynamicResource MutedBrush}" FontSize="11" /><TextBlock Text="мерч" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Black" /></StackPanel>
                             <StackPanel><TextBlock Text="Мест" Foreground="{DynamicResource MutedBrush}" FontSize="11" /><TextBlock Text="12" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Black" /></StackPanel>
                         </UniformGrid>
-                        <Button Content="Записаться" Style="{StaticResource PrimaryButtonStyle}" Tag="LAN Party|LAN|19:00" Command="{Binding Events.JoinCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" />
+                        <Button x:Name="LanEventJoinButton" Content="Записаться" Style="{StaticResource PrimaryButtonStyle}" Tag="LAN Party|LAN|19:00" Command="{Binding Events.JoinCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" />
                     </StackPanel>
                 </Grid>
             </Border>

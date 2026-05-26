@@ -226,44 +226,234 @@ public partial class MainWindow
         return path;
     }
 
-    private void RescheduleBookingManually()
+    private T? PromptSelection<T>(string title, string prompt, IReadOnlyList<T> items, string actionText, string emptyMessage)
+        where T : class
     {
-        var bookingIdText = PromptText("Перенести бронь", "Введите ID брони:", GetLatestActiveBookingId().ToString(System.Globalization.CultureInfo.InvariantCulture));
-        if (!int.TryParse(bookingIdText, out var bookingId))
+        if (items.Count == 0)
         {
-            ShowStatus("Бронь не изменена", "Введите числовой ID брони.");
-            return;
+            ShowStatus(title, emptyMessage);
+            return null;
         }
 
-        var startText = PromptText("Перенести бронь", "Новое начало в формате yyyy-MM-dd HH:mm:", DateTime.Now.AddHours(1).ToString("yyyy-MM-dd HH:00"));
-        if (!DateTime.TryParse(startText, out var newStart))
+        var list = new ListBox
         {
-            ShowStatus("Бронь не изменена", "Не удалось распознать дату и время начала.");
-            return;
-        }
+            ItemsSource = items,
+            DisplayMemberPath = "Summary",
+            SelectedIndex = 0,
+            MinWidth = 560,
+            MaxHeight = 320,
+            Margin = new Thickness(0, 10, 0, 14),
+            Foreground = (Brush)FindResource("TextBrush"),
+            Background = (Brush)FindResource("SurfaceBrush"),
+            BorderBrush = (Brush)FindResource("LineBrush")
+        };
 
-        var durationText = PromptText("Перенести бронь", "Длительность в часах:", "2");
-        if (!double.TryParse(
-                durationText?.Replace(',', '.'),
-                System.Globalization.NumberStyles.Number,
-                System.Globalization.CultureInfo.InvariantCulture,
-                out var durationHours)
-            || durationHours <= 0)
+        var okButton = new Button
         {
-            ShowStatus("Бронь не изменена", "Введите положительную длительность в часах.");
-            return;
-        }
+            Content = actionText,
+            IsDefault = true,
+            MinWidth = 120,
+            Margin = new Thickness(0, 0, 8, 0),
+            Style = (Style)FindResource("PrimaryButtonStyle")
+        };
 
+        var dialog = new Window
+        {
+            Title = title,
+            Owner = this,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            SizeToContent = SizeToContent.WidthAndHeight,
+            ResizeMode = ResizeMode.NoResize,
+            Background = (Brush)FindResource("PanelBrush"),
+            Foreground = (Brush)FindResource("TextBrush"),
+            Content = new StackPanel
+            {
+                Margin = new Thickness(18),
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = prompt,
+                        Foreground = (Brush)FindResource("TextBrush"),
+                        TextWrapping = TextWrapping.Wrap,
+                        MaxWidth = 620
+                    },
+                    list,
+                    new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        HorizontalAlignment = HorizontalAlignment.Right,
+                        Children =
+                        {
+                            okButton,
+                            new Button
+                            {
+                                Content = "Отмена",
+                                IsCancel = true,
+                                MinWidth = 86,
+                                Style = (Style)FindResource("GhostButtonStyle")
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        okButton.Click += (_, _) => dialog.DialogResult = true;
+        list.MouseDoubleClick += (_, _) => dialog.DialogResult = true;
+        return dialog.ShowDialog() == true ? list.SelectedItem as T : null;
+    }
+
+    private void ShowPendingPaymentsDialog()
+    {
         try
         {
-            var result = _adminOperationsService.RescheduleBooking(bookingId, newStart, durationHours);
+            var payment = PromptSelection(
+                "Оплата",
+                "Выберите бронь или сессию, которая ожидает оплату:",
+                _adminOperationsService.GetPendingPayments(DateTime.Now),
+                "Принять оплату",
+                "Нет броней или сессий, ожидающих оплату.");
+            if (payment is null)
+            {
+                return;
+            }
+
+            ExecuteAdminAction(payment.ActionCommandParameter);
+        }
+        catch (Exception ex)
+        {
+            ShowDatabaseError("Ошибка загрузки оплат", ex);
+        }
+    }
+
+    private void RescheduleBookingManually()
+    {
+        try
+        {
+            var bookings = _adminOperationsService.GetActiveBookings(DateTime.Now);
+            var computers = _adminOperationsService.GetComputerNames();
+            var bookingBox = new ComboBox
+            {
+                ItemsSource = bookings,
+                DisplayMemberPath = "Summary",
+                SelectedIndex = bookings.Count > 0 ? 0 : -1,
+                MinWidth = 620,
+                Margin = new Thickness(0, 8, 0, 12),
+                Foreground = Brushes.Black,
+                Background = Brushes.White
+            };
+            var computerBox = new ComboBox
+            {
+                ItemsSource = computers,
+                MinWidth = 260,
+                Margin = new Thickness(0, 8, 0, 12),
+                Foreground = Brushes.Black,
+                Background = Brushes.White
+            };
+            var startBox = new TextBox
+            {
+                Text = DateTime.Now.AddHours(1).ToString("yyyy-MM-dd HH:00"),
+                MinWidth = 260,
+                Margin = new Thickness(0, 8, 12, 12),
+                Padding = new Thickness(10, 6, 10, 6),
+                Foreground = Brushes.Black,
+                Background = Brushes.White
+            };
+            var durationBox = new TextBox
+            {
+                Text = "2",
+                MinWidth = 120,
+                Margin = new Thickness(0, 8, 0, 12),
+                Padding = new Thickness(10, 6, 10, 6),
+                Foreground = Brushes.Black,
+                Background = Brushes.White
+            };
+
+            if (bookings.Count == 0)
+            {
+                ShowStatus("Перенос брони", "Нет активных броней для переноса.");
+                return;
+            }
+
+            bookingBox.SelectionChanged += (_, _) =>
+            {
+                if (bookingBox.SelectedItem is AdminBookingInfo selected)
+                {
+                    computerBox.SelectedItem = selected.ComputerName;
+                    startBox.Text = selected.StartTime.ToString("yyyy-MM-dd HH:mm");
+                    durationBox.Text = Math.Max(1, (selected.EndTime - selected.StartTime).TotalHours).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+                }
+            };
+            if (bookingBox.SelectedItem is AdminBookingInfo initial)
+            {
+                computerBox.SelectedItem = initial.ComputerName;
+                startBox.Text = initial.StartTime.ToString("yyyy-MM-dd HH:mm");
+                durationBox.Text = Math.Max(1, (initial.EndTime - initial.StartTime).TotalHours).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+            }
+
+            var okButton = new Button { Content = "Перенести", IsDefault = true, MinWidth = 120, Margin = new Thickness(0, 0, 8, 0), Style = (Style)FindResource("PrimaryButtonStyle") };
+            var dialog = new Window
+            {
+                Title = "Перенести бронь",
+                Owner = this,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                SizeToContent = SizeToContent.WidthAndHeight,
+                ResizeMode = ResizeMode.NoResize,
+                Background = (Brush)FindResource("PanelBrush"),
+                Foreground = (Brush)FindResource("TextBrush"),
+                Content = new StackPanel
+                {
+                    Margin = new Thickness(18),
+                    Children =
+                    {
+                        new TextBlock { Text = "Выберите бронь и новый слот:", FontWeight = FontWeights.Bold },
+                        bookingBox,
+                        new TextBlock { Text = "Новый ПК" },
+                        computerBox,
+                        new StackPanel
+                        {
+                            Orientation = Orientation.Horizontal,
+                            Children =
+                            {
+                                new StackPanel { Children = { new TextBlock { Text = "Старт" }, startBox } },
+                                new StackPanel { Children = { new TextBlock { Text = "Часы" }, durationBox } }
+                            }
+                        },
+                        new StackPanel
+                        {
+                            Orientation = Orientation.Horizontal,
+                            HorizontalAlignment = HorizontalAlignment.Right,
+                            Children =
+                            {
+                                okButton,
+                                new Button { Content = "Отмена", IsCancel = true, MinWidth = 86, Style = (Style)FindResource("GhostButtonStyle") }
+                            }
+                        }
+                    }
+                }
+            };
+            okButton.Click += (_, _) => dialog.DialogResult = true;
+            if (dialog.ShowDialog() != true || bookingBox.SelectedItem is not AdminBookingInfo booking)
+            {
+                return;
+            }
+
+            if (!DateTime.TryParse(startBox.Text, out var newStart)
+                || !double.TryParse(durationBox.Text.Replace(',', '.'), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var durationHours)
+                || durationHours <= 0)
+            {
+                ShowStatus("Бронь не перенесена", "Проверьте дату старта и длительность.");
+                return;
+            }
+
+            var result = _adminOperationsService.RescheduleBooking(booking.Id, newStart, durationHours, computerBox.SelectedItem?.ToString());
             if (!ApplyAdminOperationResult(result, "Бронь не перенесена"))
             {
                 return;
             }
 
-            AddAdminLog($"Booking #{bookingId} rescheduled");
-            ShowStatus("Бронь перенесена", $"Бронь #{bookingId}: {newStart:dd.MM HH:mm}-{newStart.AddHours(durationHours):HH:mm}.");
+            AddAdminLog($"Booking #{booking.Id} rescheduled");
+            ShowStatus("Бронь перенесена", $"#{booking.Id}: {computerBox.SelectedItem}, {newStart:dd.MM HH:mm}-{newStart.AddHours(durationHours):HH:mm}.");
         }
         catch (Exception ex)
         {
@@ -273,30 +463,33 @@ public partial class MainWindow
 
     private void CancelBookingManually()
     {
-        var bookingIdText = PromptText("Отменить бронь", "Введите ID брони:", GetLatestActiveBookingId().ToString(System.Globalization.CultureInfo.InvariantCulture));
-        if (!int.TryParse(bookingIdText, out var bookingId))
-        {
-            ShowStatus("Бронь не отменена", "Введите числовой ID брони.");
-            return;
-        }
-
         try
         {
-            var result = _adminOperationsService.CancelBooking(bookingId);
+            var booking = PromptSelection(
+                "Отменить бронь",
+                "Выберите активную бронь для отмены:",
+                _adminOperationsService.GetActiveBookings(DateTime.Now),
+                "Отменить бронь",
+                "Нет активных броней для отмены.");
+            if (booking is null)
+            {
+                return;
+            }
+
+            var result = _adminOperationsService.CancelBooking(booking.Id);
             if (!ApplyAdminOperationResult(result, "Бронь не отменена"))
             {
                 return;
             }
 
-            AddAdminLog($"Booking #{bookingId} cancelled");
-            ShowStatus("Бронь отменена", $"Бронь #{bookingId} отменена администратором.");
+            AddAdminLog($"Booking #{booking.Id} cancelled");
+            ShowStatus("Бронь отменена", $"Бронь #{booking.Id} отменена администратором.");
         }
         catch (Exception ex)
         {
             ShowDatabaseError("Ошибка отмены брони", ex);
         }
     }
-
     private int GetLatestActiveBookingId()
     {
         try
@@ -345,27 +538,7 @@ public partial class MainWindow
 
             case "admin-payment":
             case "admin-pay-std10":
-                var paymentComputer = PromptText("Отметить оплату", "Введите ПК ожидающей оплаты:", GetFirstPendingPaymentComputerName() ?? string.Empty);
-                if (!string.IsNullOrWhiteSpace(paymentComputer))
-                {
-                    PayAdminSession(paymentComputer);
-                }
-                break;
-
-            case "admin-settle-all":
-                if (!PromptMoney("Закрыть все оплаты", "Сумма по умолчанию для платежей без цены:", "18", out var settlementAmount))
-                {
-                    break;
-                }
-
-                if (!ApplyAdminOperationResult(
-                    _adminOperationsService.SettlePendingPayments(settlementAmount),
-                    "Payments were not settled"))
-                {
-                    break;
-                }
-                _adminPaymentQueue = 0;
-                CompleteAdminAction("All pending payments settled", "Оплаты закрыты", "Все ожидающие платежи отмечены как оплаченные, касса пересчитана.");
+                ShowPendingPaymentsDialog();
                 break;
 
             case "admin-reschedule-booking":
@@ -381,12 +554,15 @@ public partial class MainWindow
                 if (!string.IsNullOrWhiteSpace(serviceComputer))
                 {
                     var previousStatus = GetPcStatus(serviceComputer, _computers.FirstOrDefault(computer => computer.Name.Equals(serviceComputer, StringComparison.OrdinalIgnoreCase))?.Status ?? PcStatuses.Free);
-                    SetPcStatus(serviceComputer, PcStatuses.Service);
+                    if (!TrySetPcStatus(serviceComputer, PcStatuses.Service))
+                    {
+                        break;
+                    }
                     LoadDatabaseState();
                     CompleteAdminAction($"{serviceComputer} moved to service", "Сервис", $"{serviceComputer} переведен в обслуживание. Карта и выбор брони обновлены.");
                     ShowUndoSnackbar("Можно отменить", $"{serviceComputer}: вернуть предыдущий статус.", () =>
                     {
-                        SetPcStatus(serviceComputer, previousStatus);
+                        TrySetPcStatus(serviceComputer, previousStatus);
                         LoadDatabaseState();
                         RefreshAdminUx();
                         AddAdminLog($"{serviceComputer} service action undone");
@@ -400,12 +576,15 @@ public partial class MainWindow
                 if (!string.IsNullOrWhiteSpace(clearServiceComputer))
                 {
                     var previousStatus = GetPcStatus(clearServiceComputer, _computers.FirstOrDefault(computer => computer.Name.Equals(clearServiceComputer, StringComparison.OrdinalIgnoreCase))?.Status ?? PcStatuses.Service);
-                    SetPcStatus(clearServiceComputer, PcStatuses.Free);
+                    if (!TrySetPcStatus(clearServiceComputer, PcStatuses.Free))
+                    {
+                        break;
+                    }
                     LoadDatabaseState();
                     CompleteAdminAction($"Service released {clearServiceComputer}", "Сервис снят", $"{clearServiceComputer} вернулся из обслуживания и доступен для брони.");
                     ShowUndoSnackbar("Можно отменить", $"{clearServiceComputer}: вернуть предыдущий статус.", () =>
                     {
-                        SetPcStatus(clearServiceComputer, previousStatus);
+                        TrySetPcStatus(clearServiceComputer, previousStatus);
                         LoadDatabaseState();
                         RefreshAdminUx();
                         AddAdminLog($"{clearServiceComputer} service release undone");
@@ -474,24 +653,12 @@ public partial class MainWindow
 
             case "owner-peak":
                 _ownerDemandMode = _ownerDemandMode == "peak" ? "normal" : "peak";
-                if (_ownerDemandMode == "peak")
-                {
-                    _vipRate = Math.Max(_vipRate, 16);
-                    _royalRate = Math.Max(_royalRate, 28);
-                    SaveTariffRate("VIP", _vipRate);
-                    SaveTariffRate("Royal", _royalRate);
-                }
-                CompleteAdminAction($"Owner scenario applied: {_ownerDemandMode}", "Режим спроса", $"Активный режим: {_ownerDemandMode}. Метрики пересчитаны из тарифов и загрузки.");
+                CompleteAdminAction($"Owner DB slice applied: {_ownerDemandMode}", "Режим спроса", $"Показан срез из БД: {_ownerDemandMode}.");
                 break;
 
             case "owner-night":
                 _ownerDemandMode = _ownerDemandMode == "night" ? "normal" : "night";
-                if (_ownerDemandMode == "night")
-                {
-                    _standardRate = 7;
-                    SaveTariffRate("Standard", _standardRate);
-                }
-                CompleteAdminAction($"Owner scenario applied: {_ownerDemandMode}", "Режим спроса", $"Активный режим: {_ownerDemandMode}. Метрики пересчитаны без ручного накручивания.");
+                CompleteAdminAction($"Owner DB slice applied: {_ownerDemandMode}", "Режим спроса", $"Показан срез из БД: {_ownerDemandMode}.");
                 break;
 
             case "owner-export":
@@ -559,10 +726,6 @@ public partial class MainWindow
 
         switch (parts[0])
         {
-            case "admin-close-session":
-                CloseAdminSession(parts[1]);
-                return true;
-
             case "admin-pay-session":
                 PayAdminSession(parts[1]);
                 return true;
@@ -808,37 +971,66 @@ public partial class MainWindow
 
     private void RecalculateOwnerMetrics()
     {
-        var totalPcs = Math.Max(1, _computers.Count);
-        var occupiedPcs = Math.Clamp(totalPcs - _adminFreePcs - _adminSupportQueue, 0, totalPcs);
-        var demandMultiplier = _ownerDemandMode switch
+        try
         {
-            "peak" => 1.18m,
-            "night" => 0.88m,
-            "loyalty" => 1.05m,
-            _ => 1m
-        };
-        var loadBonus = _ownerDemandMode switch
+            using var unitOfWork = new UnitOfWork();
+            var today = DateTime.Today;
+            var tomorrow = today.AddDays(1);
+            var now = DateTime.Now;
+            var totalPcs = Math.Max(1, unitOfWork.Computers.Count(_ => true));
+
+            bool InSelectedSlice(DateTime value)
+            {
+                return _ownerDemandMode switch
+                {
+                    "peak" => value.Hour is >= 18 and < 23,
+                    "night" => value.Hour >= 22 || value.Hour < 6,
+                    _ => value >= today && value < tomorrow
+                };
+            }
+
+            var payments = unitOfWork.Payments
+                .QueryNoTracking()
+                .Where(payment => payment.Amount > 0
+                    && payment.PaymentType != PaymentTypes.AdminLog
+                    && payment.PaymentType != PaymentTypes.EventRegistration
+                    && !payment.PaymentType.StartsWith(PaymentTypes.Pending)
+                    && payment.CreatedAt >= today
+                    && payment.CreatedAt < tomorrow)
+                .ToList()
+                .Where(payment => InSelectedSlice(payment.CreatedAt))
+                .ToList();
+
+            var sessionsToday = unitOfWork.GameSessions
+                .QueryNoTracking()
+                .Where(session => session.StartTime < tomorrow && (session.EndTime == null || session.EndTime >= today))
+                .ToList();
+            var sessionsInSlice = sessionsToday.Where(session => InSelectedSlice(session.StartTime)).ToList();
+            var occupiedNow = unitOfWork.GameSessions.Count(session => session.Status != SessionStatuses.Closed
+                && session.StartTime <= now
+                && (session.EndTime == null || session.EndTime > now));
+            var serviceNow = unitOfWork.Computers.Count(computer => computer.Status == PcStatuses.Service);
+
+            _ownerRevenue = (int)Math.Round(payments.Sum(payment => payment.Amount));
+            _ownerLoad = _ownerDemandMode == "normal"
+                ? Math.Clamp((int)Math.Round((occupiedNow + serviceNow) * 100m / totalPcs), 0, 100)
+                : Math.Clamp((int)Math.Round(sessionsInSlice.Select(session => session.ComputerId).Distinct().Count() * 100m / totalPcs), 0, 100);
+            _ownerAverageCheck = payments.Count == 0 ? 0 : (int)Math.Round(payments.Average(payment => payment.Amount));
+
+            var paidUserIds = payments.Select(payment => payment.UserId).Distinct().ToHashSet();
+            var repeatUsers = unitOfWork.Payments.QueryNoTracking()
+                .Where(payment => paidUserIds.Contains(payment.UserId)
+                    && payment.Amount > 0
+                    && payment.CreatedAt < today)
+                .Select(payment => payment.UserId)
+                .Distinct()
+                .Count();
+            _ownerRepeatRate = paidUserIds.Count == 0 ? 0 : Math.Clamp((int)Math.Round(repeatUsers * 100m / paidUserIds.Count), 0, 100);
+        }
+        catch (Exception ex)
         {
-            "peak" => 7,
-            "night" => 3,
-            "loyalty" => 2,
-            _ => 0
-        };
-
-        var standardRevenue = 14 * 3.2m * _standardRate;
-        var vipRevenue = 8 * 2.8m * _vipRate;
-        var royalRevenue = 5 * 2.4m * _royalRate;
-        var bootcampRevenue = _bootcampRate * 0.75m;
-        var packageRevenue = _shiftOnline * 0.35m;
-        var pendingPenalty = _adminPaymentQueue * 12m;
-        var servicePenalty = _adminSupportQueue * 18m;
-
-        _ownerRevenue = (int)Math.Round((standardRevenue + vipRevenue + royalRevenue + bootcampRevenue + packageRevenue + _shiftCash - pendingPenalty - servicePenalty) * demandMultiplier);
-        _ownerLoad = Math.Clamp((int)Math.Round(occupiedPcs * 100m / totalPcs) + loadBonus, 0, 100);
-
-        var paidSessions = Math.Max(1, _adminActiveSessions - _adminPaymentQueue);
-        _ownerAverageCheck = Math.Max(0, (int)Math.Round(_ownerRevenue / (decimal)paidSessions));
-        _ownerRepeatRate = Math.Clamp(58 + (_ownerDemandMode == "loyalty" ? 6 : 0) + (_ownerDemandMode == "night" ? 3 : 0) - Math.Max(0, _adminSupportQueue - 3), 0, 99);
+            ShowDatabaseError("Ошибка расчета метрик владельца", ex);
+        }
     }
     private void AddIncident(string text)
     {
