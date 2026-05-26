@@ -76,45 +76,46 @@
                     </DockPanel>
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="0.75*" />
-                            <ColumnDefinition Width="1.25*" />
-                            <ColumnDefinition Width="0.8*" />
-                            <ColumnDefinition Width="0.95*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
+                            <ColumnDefinition Width="130" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="110" />
+                            <ColumnDefinition Width="160" />
+                            <ColumnDefinition Width="150" />
+                        </Grid.ColumnDefinitions><Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <TextBlock Text="ПК" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" />
                         <TextBlock Grid.Column="1" Text="Клиент" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" />
                         <TextBlock Grid.Column="2" Text="До" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" />
-                        <TextBlock Grid.Column="3" Text="Статус" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" />
-                        <TextBlock Grid.Column="4" Text="Действие" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" HorizontalAlignment="Right" />
+                        <TextBlock Grid.Column="3" Text="Статус" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" HorizontalAlignment="Center" />
+                        <TextBlock Grid.Column="4" Text="Действие" Foreground="{DynamicResource GoldLightBrush}" FontWeight="Bold" HorizontalAlignment="Center" />
                     </Grid>
                     <ItemsControl x:Name="AdminSessionsGrid" ItemsSource="{Binding Admin.Sessions}" Margin="0,4,0,0">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Grid Margin="0,8,0,0">
+                                <Grid MinHeight="48" Margin="0,8,0,0">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="0.75*" />
-                                        <ColumnDefinition Width="1.25*" />
-                                        <ColumnDefinition Width="0.8*" />
-                                        <ColumnDefinition Width="0.95*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{Binding ComputerName}" FontWeight="Bold" TextWrapping="Wrap" VerticalAlignment="Center" />
+                            <ColumnDefinition Width="130" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="110" />
+                            <ColumnDefinition Width="160" />
+                            <ColumnDefinition Width="150" />
+                        </Grid.ColumnDefinitions><TextBlock Text="{Binding ComputerName}" FontWeight="Bold" TextWrapping="Wrap" VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="1" Text="{Binding ClientName}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="2" Text="{Binding EndText}" TextWrapping="Wrap" VerticalAlignment="Center" />
-                                    <Border Grid.Column="3" Style="{StaticResource StatusBadgeStyle}" Margin="0">
+                                    <TextBlock Grid.Column="2" Text="{Binding EndText}" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                    <Border Grid.Column="3" Style="{StaticResource StatusBadgeStyle}" Margin="0" MinWidth="118" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <TextBlock x:Name="SessionStatusText" Text="{Binding StatusText}" Style="{StaticResource StatusBadgeTextStyle}" />
                                     </Border>
                                     <Button Grid.Column="4"
                                             Content="{Binding ActionText}"
                                             Command="{Binding DataContext.Admin.ActionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding ActionCommandParameter}"
-                                            MinHeight="30"
+                                            MinHeight="34"
+                                            MinWidth="136"
                                             Padding="14,0"
-                                            Margin="10,0,0,0"
+                                            Margin="0"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
                                             Visibility="{Binding HasAction, Converter={StaticResource BoolToVisibilityConverter}}">
                                         <Button.Style>
                                             <Style TargetType="Button" BasedOn="{StaticResource GhostButtonStyle}">
@@ -211,15 +212,23 @@
                 <Border Style="{StaticResource PanelBorderStyle}" Margin="0,0,0,16">
                     <StackPanel x:Name="AdminQuickOpsPanel">
                         <TextBlock Text="Быстрые операции" FontSize="22" FontWeight="Black" Margin="0,0,0,14" />
-                        <UniformGrid Columns="2">
-                            <Button Content="Оплата" Style="{StaticResource PrimaryButtonStyle}" Tag="admin-payment" Command="{Binding Admin.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="38" Padding="12,0" Margin="0,0,8,8" />
-                            <Button Content="Перенести" Style="{StaticResource GhostButtonStyle}" Tag="admin-reschedule-booking" Command="{Binding Admin.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="38" Padding="12,0" Margin="0,0,8,8" />
-                            <Button Content="Отменить" Style="{StaticResource GhostButtonStyle}" Tag="admin-cancel-booking" Command="{Binding Admin.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="38" Padding="12,0" Margin="0,0,0,8" />
-                            <Button Content="В сервис" Style="{StaticResource GhostButtonStyle}" Tag="admin-service" Command="{Binding Admin.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="38" Padding="12,0" Margin="0,0,8,8" />
-                            <Button Content="Снять сервис" Style="{StaticResource GhostButtonStyle}" Tag="admin-clear-service" Command="{Binding Admin.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="38" Padding="12,0" Margin="0,0,0,8" />
-                            <Button Content="Карта" Style="{StaticResource GhostButtonStyle}" Tag="map" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="38" Padding="12,0" />
-                        </UniformGrid>
-                    </StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="56" />
+                                <RowDefinition Height="56" />
+                                <RowDefinition Height="56" />
+                            </Grid.RowDefinitions>
+                            <Button Grid.Row="0" Grid.Column="0" Content="Оплата" Style="{StaticResource PrimaryButtonStyle}" Tag="admin-payment" Command="{Binding Admin.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="44" Margin="0,0,8,8" />
+                            <Button Grid.Row="0" Grid.Column="1" Content="Перенести" Style="{StaticResource GhostButtonStyle}" Tag="admin-reschedule-booking" Command="{Binding Admin.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="44" Margin="8,0,0,8" />
+                            <Button Grid.Row="1" Grid.Column="0" Content="Отменить" Style="{StaticResource GhostButtonStyle}" Tag="admin-cancel-booking" Command="{Binding Admin.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="44" Margin="0,4,8,4" />
+                            <Button Grid.Row="1" Grid.Column="1" Content="В сервис" Style="{StaticResource GhostButtonStyle}" Tag="admin-service" Command="{Binding Admin.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="44" Margin="8,4,0,4" />
+                            <Button Grid.Row="2" Grid.Column="0" Content="Снять сервис" Style="{StaticResource GhostButtonStyle}" Tag="admin-clear-service" Command="{Binding Admin.ActionCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="44" Margin="0,8,8,0" />
+                            <Button Grid.Row="2" Grid.Column="1" Content="Карта" Style="{StaticResource GhostButtonStyle}" Tag="map" Command="{Binding Navigation.NavigateCommand}" CommandParameter="{Binding Tag, RelativeSource={RelativeSource Self}}" MinHeight="44" Margin="8,8,0,0" />
+                        </Grid></StackPanel>
                 </Border>
 
                 <Border Style="{StaticResource PanelBorderStyle}">
